@@ -29,15 +29,16 @@ LookaheadFilterInterpreter::LookaheadFilterInterpreter(
       min_delay_(prop_reg, "Input Queue Delay", 0.0),
       max_delay_(prop_reg, "Input Queue Max Delay", 0.017),
       split_min_period_(prop_reg, "Min Interpolate Period", 0.021),
-      drumroll_suppression_enable_(prop_reg, "Drumroll Suppression Enable", 1),
+      drumroll_suppression_enable_(prop_reg, "Drumroll Suppression Enable",
+                                   true),
       drumroll_speed_thresh_(prop_reg, "Drumroll Speed Thresh", 400.0),
       drumroll_max_speed_ratio_(prop_reg,
                                 "Drumroll Max Speed Change Factor",
                                 15.0),
       quick_move_thresh_(prop_reg, "Quick Move Distance Thresh", 3.0),
       co_move_ratio_(prop_reg, "Drumroll Co Move Ratio", 1.2),
-      suppress_immediate_tapdown_(prop_reg, "Suppress Immediate Tapdown", 1),
-      delay_on_possible_liftoff_(prop_reg, "Delay On Possible Liftoff", 0),
+      suppress_immediate_tapdown_(prop_reg, "Suppress Immediate Tapdown", true),
+      delay_on_possible_liftoff_(prop_reg, "Delay On Possible Liftoff", false),
       liftoff_speed_increase_threshold_(prop_reg, "Liftoff Speed Factor", 5.0) {
   InitName();
 }

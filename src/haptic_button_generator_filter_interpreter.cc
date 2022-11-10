@@ -26,7 +26,7 @@ HapticButtonGeneratorFilterInterpreter::HapticButtonGeneratorFilterInterpreter(
       sensitivity_(prop_reg, "Haptic Button Sensitivity", 3),
       use_custom_thresholds_(prop_reg,
                              "Use Custom Haptic Button Force Thresholds",
-                             0),
+                             false),
       custom_down_threshold_(prop_reg,
                              "Custom Haptic Button Force Threshold Down",
                              150.0),

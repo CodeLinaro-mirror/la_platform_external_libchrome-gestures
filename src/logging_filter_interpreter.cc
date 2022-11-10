@@ -22,7 +22,7 @@ LoggingFilterInterpreter::LoggingFilterInterpreter(PropRegistry* prop_reg,
       logging_reset_(prop_reg, "Logging Reset", 0, this),
       log_location_(prop_reg, "Log Path",
                     "/var/log/xorg/touchpad_activity_log.txt"),
-      integrated_touchpad_(prop_reg, "Integrated Touchpad", 0) {
+      integrated_touchpad_(prop_reg, "Integrated Touchpad", false) {
   InitName();
   if (prop_reg && log_.get())
     prop_reg->set_activity_log(log_.get());

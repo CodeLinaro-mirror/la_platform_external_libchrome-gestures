@@ -36,7 +36,7 @@ PalmClassifyingFilterInterpreter::PalmClassifyingFilterInterpreter(
                                       "Palm Pointing Max Reverse Move Distance",
                                       0.3),
       palm_split_max_distance_(prop_reg, "Palm Split Maximum Distance", 4.0),
-      filter_top_edge_(prop_reg, "Palm Filter Top Edge Enable", 0)
+      filter_top_edge_(prop_reg, "Palm Filter Top Edge Enable", false)
 {
   InitName();
   requires_metrics_ = true;

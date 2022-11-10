@@ -38,24 +38,24 @@ AccelFilterInterpreter::AccelFilterInterpreter(PropRegistry* prop_reg,
                                sizeof(mouse_custom_point_) / sizeof(double)),
 #pragma GCC diagnostic pop
       use_custom_tp_point_curve_(
-          prop_reg, "Use Custom Touchpad Pointer Accel Curve", 0),
+          prop_reg, "Use Custom Touchpad Pointer Accel Curve", false),
       use_custom_tp_scroll_curve_(
-          prop_reg, "Use Custom Touchpad Scroll Accel Curve", 0),
+          prop_reg, "Use Custom Touchpad Scroll Accel Curve", false),
       use_custom_mouse_curve_(
-          prop_reg, "Use Custom Mouse Pointer Accel Curve", 0),
+          prop_reg, "Use Custom Mouse Pointer Accel Curve", false),
       pointer_sensitivity_(prop_reg, "Pointer Sensitivity", 3),
       scroll_sensitivity_(prop_reg, "Scroll Sensitivity", 3),
       point_x_out_scale_(prop_reg, "Point X Out Scale", 1.0),
       point_y_out_scale_(prop_reg, "Point Y Out Scale", 1.0),
       scroll_x_out_scale_(prop_reg, "Scroll X Out Scale", 2.5),
       scroll_y_out_scale_(prop_reg, "Scroll Y Out Scale", 2.5),
-      use_mouse_point_curves_(prop_reg, "Mouse Accel Curves", 0),
-      use_mouse_scroll_curves_(prop_reg, "Mouse Scroll Curves", 0),
-      use_old_mouse_point_curves_(prop_reg, "Old Mouse Accel Curves", 0),
-      pointer_acceleration_(prop_reg, "Pointer Acceleration", 1),
+      use_mouse_point_curves_(prop_reg, "Mouse Accel Curves", false),
+      use_mouse_scroll_curves_(prop_reg, "Mouse Scroll Curves", false),
+      use_old_mouse_point_curves_(prop_reg, "Old Mouse Accel Curves", false),
+      pointer_acceleration_(prop_reg, "Pointer Acceleration", true),
       min_reasonable_dt_(prop_reg, "Accel Min dt", 0.003),
       max_reasonable_dt_(prop_reg, "Accel Max dt", 0.050),
-      smooth_accel_(prop_reg, "Smooth Accel", 0) {
+      smooth_accel_(prop_reg, "Smooth Accel", false) {
   InitName();
   // Set up default curves.
 
