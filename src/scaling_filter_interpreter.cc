@@ -37,11 +37,11 @@ ScalingFilterInterpreter::ScalingFilterInterpreter(
       pressure_scale_(prop_reg, "Pressure Calibration Slope", 1.0),
       pressure_translate_(prop_reg, "Pressure Calibration Offset", 0.0),
       pressure_threshold_(prop_reg, "Pressure Minimum Threshold", 0.0),
-      filter_low_pressure_(prop_reg, "Filter Low Pressure", 0),
+      filter_low_pressure_(prop_reg, "Filter Low Pressure", false),
       force_touch_count_to_match_finger_count_(
           prop_reg,
           "Force Touch Count To Match Finger Count",
-          0),
+          false),
       mouse_cpi_(prop_reg, "Mouse CPI", 1000.0),
       device_mouse_(prop_reg, "Device Mouse", IsMouseDevice(devclass)),
       device_pointing_stick_(prop_reg, "Device Pointing Stick",

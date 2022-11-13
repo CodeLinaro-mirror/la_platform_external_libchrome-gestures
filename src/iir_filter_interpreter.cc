@@ -40,7 +40,7 @@ IirFilterInterpreter::IirFilterInterpreter(PropRegistry* prop_reg,
       a1_(prop_reg, "IIR a1", -1.1429805025399, this),
       a2_(prop_reg, "IIR a2", 0.412801598096189, this),
       iir_dist_thresh_(prop_reg, "IIR Distance Threshold", 10, this),
-      adjust_iir_on_warp_(prop_reg, "Adjust IIR History On Warp", 0) {
+      adjust_iir_on_warp_(prop_reg, "Adjust IIR History On Warp", false) {
   InitName();
 }
 

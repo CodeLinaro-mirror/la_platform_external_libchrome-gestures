@@ -15,7 +15,7 @@ namespace gestures {
 SplitCorrectingFilterInterpreter::SplitCorrectingFilterInterpreter(
     PropRegistry* prop_reg, Interpreter* next, Tracer* tracer)
     : FilterInterpreter(NULL, next, tracer, false),
-      enabled_(prop_reg, "Split Corrector Enabled", 0),
+      enabled_(prop_reg, "Split Corrector Enabled", false),
       merge_max_separation_(prop_reg, "Split Merge Max Separation", 17.0),
       merge_max_movement_(prop_reg, "Split Merge Max Movement", 3.0),
       merge_max_ratio_(prop_reg, "Merge Max Ratio", sinf(DegToRad(19.0))) {

@@ -6,7 +6,7 @@ third_party {
     type: GIT
     value: "https://chromium.googlesource.com/chromiumos/platform/gestures/"
   }
-  version: "44402922a580fe41c30e2e9cc546a740eca8832d"
-  last_upgrade_date { year: 2022 month: 10 day: 25  }
+  version: "0fb1633ce4aa228dcdf417cf03c47e6ee78eae6d"
+  last_upgrade_date { year: 2022 month: 11 day: 02  }
   license_type: NOTICE
 }
