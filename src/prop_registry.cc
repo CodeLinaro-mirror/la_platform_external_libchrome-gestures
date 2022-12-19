@@ -312,7 +312,7 @@ void StringProperty::CreatePropImpl() {
       name(),
       &val_,
       val_);
-  if (delegate_ && strcmp(orig_val, val_) == 0)
+  if (delegate_ && strcmp(orig_val, val_) != 0)
     delegate_->StringWasWritten(this);
 }
 

@@ -84,6 +84,10 @@ TEST(ListTest, SimpleTest) {
   ASSERT_TRUE(node);
   EXPECT_EQ(4, node->val_);
   delete node;
+
+  node = list.PopBack();
+  VerifyList(list);
+  EXPECT_EQ(NULL, node);
 }
 
 }  // namespace gestures

@@ -21,6 +21,7 @@ namespace gestures {
 // button click event and suppresses that motion.
 
 class ClickWiggleFilterInterpreter : public FilterInterpreter {
+  FRIEND_TEST(ClickWiggleFilterInterpreterTest, ClickWiggleRecEquate);
   FRIEND_TEST(ClickWiggleFilterInterpreterTest, SimpleTest);
   FRIEND_TEST(ClickWiggleFilterInterpreterTest, OneFingerClickSuppressTest);
 

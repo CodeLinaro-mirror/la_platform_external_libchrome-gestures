@@ -157,6 +157,7 @@ struct Point {
 // Helper class for compute scroll and fling.
 class ScrollManager {
   FRIEND_TEST(ImmediateInterpreterTest, FlingDepthTest);
+  FRIEND_TEST(ImmediateInterpreterTest, ScrollManagerTest);
   FRIEND_TEST(MultitouchMouseInterpreterTest, SimpleTest);
 
  public:

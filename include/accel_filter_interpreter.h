@@ -23,6 +23,7 @@ namespace gestures {
 // For additional documentation, see ../docs/accel_filter_interpreter.md.
 
 class AccelFilterInterpreter : public FilterInterpreter {
+  FRIEND_TEST(AccelFilterInterpreterTest, CurveSegmentInitializerTest);
   FRIEND_TEST(AccelFilterInterpreterTest, CustomAccelTest);
   FRIEND_TEST(AccelFilterInterpreterTest, SimpleTest);
   FRIEND_TEST(AccelFilterInterpreterTest, TimingTest);

@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "include/activity_replay.h"
+#include "include/file_util.h"
 #include "include/gestures.h"
 #include "include/interpreter.h"
 #include "include/logging_filter_interpreter.h"
@@ -71,5 +72,17 @@ TEST(LoggingFilterInterpreterTest, LogResetHandlerTest) {
 
   wrapper.SyncInterpret(&hardware_state, &timeout);
   EXPECT_EQ(interpreter.log_->size(), 1);
+
+  std::string str = interpreter.EncodeActivityLog();
+  EXPECT_NE(0, str.size());
+
+  const char* filename = "testlog.dump";
+  interpreter.Dump(filename);
+
+  std::string read_str = "";
+  bool couldRead = ReadFileToString(filename, &read_str);
+
+  EXPECT_TRUE(couldRead);
+  EXPECT_NE(0, read_str.size());
 }
 }  // namespace gestures

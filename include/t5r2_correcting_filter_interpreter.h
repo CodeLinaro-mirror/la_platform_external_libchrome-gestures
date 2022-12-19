@@ -12,6 +12,11 @@
 
 namespace gestures {
 
+// T5R2 ("Track 5, Report 2") is an approach used by some old touchpads which
+// can track up to five fingers but only report the locations of two of them.
+// (See https://crrev.com/37cccb42e652b50f9e788d90e82252f78c78f1ed for more
+// details.)
+//
 // This interpreter corrects some T5R2 HardwareState structures. It
 // has been noticed that in some cases, fingers are removed from the
 // touchpad but, a HardwareState with touch_cnt set to 0 is never
