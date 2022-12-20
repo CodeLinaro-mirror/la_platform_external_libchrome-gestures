@@ -41,6 +41,15 @@ class ClickWiggleFilterInterpreterTestInterpreter : public Interpreter {
   short expected_fingers_;
 };
 
+TEST(ClickWiggleFilterInterpreterTest, ClickWiggleRecEquate) {
+  ClickWiggleFilterInterpreter::ClickWiggleRec rec1 = {1.0, 1.0, 0, true};
+  ClickWiggleFilterInterpreter::ClickWiggleRec rec2 = {1.0, 1.0, 0, true};
+  ClickWiggleFilterInterpreter::ClickWiggleRec rec3 = {0.0, 0.0, 0, false};
+
+  ASSERT_EQ(rec1, rec2);
+  ASSERT_NE(rec1, rec3);
+}
+
 TEST(ClickWiggleFilterInterpreterTest, WiggleSuppressTest) {
   ClickWiggleFilterInterpreterTestInterpreter* base_interpreter =
       new ClickWiggleFilterInterpreterTestInterpreter;

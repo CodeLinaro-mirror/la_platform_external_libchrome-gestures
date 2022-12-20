@@ -23,8 +23,8 @@ class PropRegistryTestDelegate : public PropertyDelegate {
   PropRegistryTestDelegate() : call_cnt_(0) {}
   virtual void BoolWasWritten(BoolProperty* prop) { call_cnt_++; };
   virtual void DoubleWasWritten(DoubleProperty* prop) { call_cnt_++; };
-  virtual void IntWasWritten(IntProperty* prop) { call_cnt_++; }
-  virtual void StringWasWritten(StringProperty* prop) { call_cnt_++; }
+  virtual void IntWasWritten(IntProperty* prop) { call_cnt_++; };
+  virtual void StringWasWritten(StringProperty* prop) { call_cnt_++; };
 
   int call_cnt_;
 };
@@ -166,10 +166,11 @@ TEST(PropRegistryTest, SetAtCreateShouldNotifyTest) {
   DoubleProperty my_double(&reg, "MyDouble", 0.0, &delegate);
   IntProperty my_int(&reg, "MyInt", 0, &delegate);
   IntProperty my_int_no_change(&reg, "MyIntNoChange", 1, &delegate);
-  EXPECT_EQ(0, delegate.call_cnt_);
+  StringProperty my_string(&reg, "MyString", "mine", &delegate);
 
+  EXPECT_EQ(0, delegate.call_cnt_);
   reg.SetPropProvider(&mock_gestures_props_provider, NULL);
-  EXPECT_EQ(3, delegate.call_cnt_);
+  EXPECT_EQ(4, delegate.call_cnt_);
 }
 
 TEST(PropRegistryTest, DoublePromoteIntTest) {

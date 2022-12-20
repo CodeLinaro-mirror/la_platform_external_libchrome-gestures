@@ -377,7 +377,7 @@ void GestureInterpreterSetHardwareProperties(
 void GestureInterpreterSetCallback(GestureInterpreter* obj,
                                    GestureReadyFunction fn,
                                    void* user_data) {
-  obj->set_callback(fn, user_data);
+  obj->SetCallback(fn, user_data);
 }
 
 void GestureInterpreterSetTimerProvider(GestureInterpreter* obj,
@@ -514,13 +514,18 @@ void GestureInterpreter::SetPropProvider(GesturesPropProvider* pp,
   prop_reg_->SetPropProvider(pp, data);
 }
 
-void GestureInterpreter::set_callback(GestureReadyFunction callback,
-                  void* client_data) {
+void GestureInterpreter::SetCallback(GestureReadyFunction callback,
+                                     void* client_data) {
   callback_ = callback;
   callback_data_ = client_data;
 
   if (consumer_)
     consumer_->SetCallback(callback, client_data);
+}
+
+void GestureInterpreter::set_callback(GestureReadyFunction callback,
+                                      void* client_data) {
+  SetCallback(callback, client_data);
 }
 
 void GestureInterpreter::InitializeTouchpad(void) {

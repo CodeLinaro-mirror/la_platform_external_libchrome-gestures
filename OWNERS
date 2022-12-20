@@ -4,3 +4,5 @@ hcutts@chromium.org
 jora@google.com
 kenalba@google.com
 seobrien@chromium.org
+
+per-file Android.bp=benm@chromium.org,hcutts@chromium.org

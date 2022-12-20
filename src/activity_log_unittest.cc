@@ -92,9 +92,26 @@ TEST(ActivityLogTest, SimpleTest) {
   Gesture buttons(kGestureButtonsChange, 1.0, 847, 3, 4, false);
   Gesture contact_initiated;
   contact_initiated.type = kGestureTypeContactInitiated;
+  Gesture mousewheel(kGestureMouseWheel, 1.0, 2.0, 30.0, 40.0, 3, 4);
+  Gesture pinch(kGesturePinch, 1.0, 2.0, 3.0, 4.0);
+  Gesture fling(kGestureFling, 1.0, 2.0, 42.0, 24.0, 1);
+  Gesture swipe(kGestureSwipe, 1.0, 2.0, 128.0, 4.0);
+  Gesture swipelift(kGestureSwipeLift, 1.0, 2.0);
+  Gesture swipe4f(kGestureFourFingerSwipe, 1.0, 2.0, 256.0, 4.0);
+  Gesture swipe4flift(kGestureFourFingerSwipeLift, 1.0, 2.0);
+  Gesture metrics(kGestureMetrics, 1.0, 2.0,
+                  kGestureMetricsTypeMouseMovement, 3.0, 4.0);
 
-  Gesture* gs[] = { &null, &move, &scroll, &buttons, &contact_initiated };
-  const char* test_strs[] = { "null", "773", "312", "847", "nitiated" };
+  Gesture* gs[] = {
+    &null, &move, &scroll, &buttons, &contact_initiated,
+    &mousewheel, &pinch, &fling, &swipe, &swipelift,
+    &swipe4f, &swipe4flift, &metrics
+  };
+  const char* test_strs[] = {
+    "null", "773", "312", "847", "nitiated",
+    "30", "3", "42", "128", "null",
+    "256", "null", "1"
+  };
 
   ASSERT_EQ(arraysize(gs), arraysize(test_strs));
   for (size_t i = 0; i < arraysize(gs); ++i) {
