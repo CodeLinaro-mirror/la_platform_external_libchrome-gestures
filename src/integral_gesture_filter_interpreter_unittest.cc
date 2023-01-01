@@ -220,4 +220,28 @@ TEST(IntegralGestureFilterInterpreterTest, SlowScrollTest) {
   EXPECT_FLOAT_EQ(1.0, out->details.scroll.dy);
 }
 
+TEST(IntegralGestureFilterInterpreterTestInterpreter, ConsumeGesture) {
+  PropRegistry prop_reg;
+  IntegralGestureFilterInterpreterTestInterpreter* base_interpreter =
+      new IntegralGestureFilterInterpreterTestInterpreter;
+  IntegralGestureFilterInterpreter interpreter(base_interpreter, nullptr);
+
+  using EventDebug = ActivityLog::EventDebug;
+  interpreter.SetEventLoggingEnabled(true);
+  interpreter.EventDebugLoggingEnable(EventDebug::Gesture);
+  interpreter.log_.reset(new ActivityLog(&prop_reg));
+
+  Gesture move(kGestureMove, 0, 0.1, 5, 6);
+  Gesture mouse_wheel(kGestureMouseWheel, 0.2, 0.3, 0.0010, 0, 0, 1);
+  Gesture button_change(kGestureButtonsChange, 0.4, 0.5, 0, 0, false);
+
+  EXPECT_EQ(interpreter.log_->size(), 0);
+  interpreter.ConsumeGesture(move);
+  EXPECT_EQ(interpreter.log_->size(), 2);
+  interpreter.ConsumeGesture(mouse_wheel);
+  EXPECT_EQ(interpreter.log_->size(), 4);
+  interpreter.ConsumeGesture(button_change);
+  EXPECT_EQ(interpreter.log_->size(), 6);
+}
+
 }  // namespace gestures

@@ -13,6 +13,7 @@
 
 #include "include/gestures.h"
 #include "include/lookahead_filter_interpreter.h"
+#include "include/string_util.h"
 #include "include/unittest_util.h"
 #include "include/util.h"
 
@@ -22,6 +23,9 @@ using std::pair;
 namespace gestures {
 
 class LookaheadFilterInterpreterTest : public ::testing::Test {};
+class LookaheadFilterInterpreterParmTest :
+          public LookaheadFilterInterpreterTest,
+          public testing::WithParamInterface<int> {};
 
 class LookaheadFilterInterpreterTestInterpreter : public Interpreter {
  public:
@@ -88,21 +92,22 @@ class LookaheadFilterInterpreterTestInterpreter : public Interpreter {
   std::set<short> all_ids_;
 };
 
-TEST(LookaheadFilterInterpreterTest, SimpleTest) {
+TEST_P(LookaheadFilterInterpreterParmTest, SimpleTest) {
   LookaheadFilterInterpreterTestInterpreter* base_interpreter = nullptr;
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties initial_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    10,  // x res (pixels/mm)
-    10,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 10,
+    .res_y = 10,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &initial_hwprops);
 
@@ -137,6 +142,8 @@ TEST(LookaheadFilterInterpreterTest, SimpleTest) {
 
   stime_t expected_timeout = 0.0;
   Gesture expected_movement;
+  int suppress = GetParam();
+
   for (size_t i = 3; i < arraysize(hs); ++i) {
     if (i % 3 == 0) {
       base_interpreter = new LookaheadFilterInterpreterTestInterpreter;
@@ -159,6 +166,7 @@ TEST(LookaheadFilterInterpreterTest, SimpleTest) {
       wrapper.Reset(interpreter.get());
       interpreter->min_delay_.val_ = 0.05;
       expected_timeout = interpreter->min_delay_.val_;
+      interpreter->suppress_immediate_tapdown_.val_ = suppress;
     }
     stime_t timeout = NO_DEADLINE;
     Gesture* out = wrapper.SyncInterpret(hs[i], &timeout);
@@ -204,6 +212,9 @@ TEST(LookaheadFilterInterpreterTest, SimpleTest) {
     }
   }
 }
+INSTANTIATE_TEST_SUITE_P(LookaheadFilterInterpreter,
+                         LookaheadFilterInterpreterParmTest,
+                         testing::Values(0, 1));
 
 class LookaheadFilterInterpreterVariableDelayTestInterpreter
     : public Interpreter {
@@ -233,16 +244,17 @@ TEST(LookaheadFilterInterpreterTest, VariableDelayTest) {
   LookaheadFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
 
   HardwareProperties initial_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5, 5,  // max fingers, max_touch,
-    0, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 5, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &initial_hwprops);
 
@@ -309,16 +321,17 @@ TEST(LookaheadFilterInterpreterTest, NoTapSetTest) {
   interpreter.min_delay_.val_ = 0.0;
 
   HardwareProperties initial_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5, 5,  // max fingers, max_touch
-    0, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 5, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState fs[] = {
@@ -364,16 +377,17 @@ TEST(LookaheadFilterInterpreterTest, SpuriousCallbackTest) {
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties initial_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    10,  // x res (pixels/mm)
-    10,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 10,
+    .res_y = 10,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &initial_hwprops);
 
@@ -417,16 +431,17 @@ TEST(LookaheadFilterInterpreterTest, TimeGoesBackwardsTest) {
   LookaheadFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
 
   HardwareProperties initial_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &initial_hwprops);
 
@@ -512,16 +527,17 @@ TEST(LookaheadFilterInterpreterTest, InterpolateTest) {
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties initial_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    10,  // x res (pixels/mm)
-    10,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 10,
+    .res_y = 10,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &initial_hwprops);
 
@@ -593,16 +609,17 @@ TEST(LookaheadFilterInterpreterTest, InterpolationOverdueTest) {
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties initial_hwprops = {
-    0, 0, 10, 10,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    25, 25,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 10, .bottom = 10,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &initial_hwprops);
 
@@ -668,16 +685,17 @@ TEST(LookaheadFilterInterpreterTest, DrumrollTest) {
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties initial_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    25, 25,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &initial_hwprops);
 
@@ -744,16 +762,17 @@ TEST(LookaheadFilterInterpreterTest, QuickMoveTest) {
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties initial_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    25, 25,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &initial_hwprops);
 
@@ -840,24 +859,22 @@ TEST(LookaheadFilterInterpreterTest, QuickSwipeTest) {
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties initial_hwprops = {
-    0.000000,  // left edge
-    0.000000,  // top edge
-    95.934784,  // right edge
-    65.259262,  // bottom edge
-    1.000000,  // x pixels/TP width
-    1.000000,  // y pixels/TP height
-    25.400000,  // x screen DPI
-    25.400000,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    1,  // t5r2
-    0,  // semi-mt
-    1,   // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 95.934784,
+    .bottom = 65.259262,
+    .res_x = 1.000000,
+    .res_y = 1.000000,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 1,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &initial_hwprops);
 
@@ -937,24 +954,22 @@ TEST(LookaheadFilterInterpreterTest, CyapaDrumrollTest) {
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties initial_hwprops = {
-    0.000000,  // left edge
-    0.000000,  // top edge
-    106.666672,  // right edge
-    68.000000,  // bottom edge
-    1.000000,  // x pixels/TP width
-    1.000000,  // y pixels/TP height
-    25.400000,  // x screen DPI
-    25.400000,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    0,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1.000000,
+    .res_y = 1.000000,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 0,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &initial_hwprops);
 
@@ -1147,24 +1162,22 @@ TEST(LookaheadFilterInterpreterTest, CyapaQuickTwoFingerMoveTest) {
   interpreter.min_delay_.val_ = 0.0;
 
   HardwareProperties initial_hwprops = {
-    0.000000,  // left edge
-    0.000000,  // top edge
-    106.666672,  // right edge
-    68.000000,  // bottom edge
-    1.000000,  // x pixels/TP width
-    1.000000,  // y pixels/TP height
-    25.400000,  // x screen DPI
-    25.400000,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    0,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1.000000,
+    .res_y = 1.000000,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 0,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &initial_hwprops);
 
@@ -1212,16 +1225,17 @@ TEST(LookaheadFilterInterpreterTest, SemiMtNoTrackingIdAssignmentTest) {
   std::unique_ptr<LookaheadFilterInterpreter> interpreter;
 
   HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    25, 25,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 1, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 1, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &hwprops);
 
@@ -1273,6 +1287,124 @@ TEST(LookaheadFilterInterpreterTest, SemiMtNoTrackingIdAssignmentTest) {
     EXPECT_EQ(queue.back().fs_[0].tracking_id, 20);  // the same input id
     EXPECT_EQ(queue.back().fs_[1].tracking_id, 21);
   }
+}
+
+TEST(LookaheadFilterInterpreterTest, AddFingerFlingTest) {
+  LookaheadFilterInterpreterTestInterpreter* base_interpreter = nullptr;
+  std::unique_ptr<LookaheadFilterInterpreter> interpreter;
+
+  HardwareProperties hwprops = {
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 1, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
+  };
+  TestInterpreterWrapper wrapper(interpreter.get(), &hwprops);
+
+  base_interpreter = new LookaheadFilterInterpreterTestInterpreter;
+  interpreter.reset(new LookaheadFilterInterpreter(
+      nullptr, base_interpreter, nullptr));
+  wrapper.Reset(interpreter.get());
+
+  // Gesture Consumer that verifies and counts each Fling type gesture
+  class FlingConsumer : public GestureConsumer {
+    public:
+      void ConsumeGesture(const Gesture& gesture) {
+        EXPECT_EQ(gesture.type, kGestureTypeFling);
+        ++gestures_consumed_;
+      }
+      int gestures_consumed_ = 0;
+  } fling_consumer{};
+  interpreter->consumer_ = &fling_consumer;
+
+  FingerState fs[] = {
+    // TM, Tm, WM, Wm, pr, orient, x, y, id
+    { 0, 0, 0, 0, 5, 0, 76, 45, 20, 0},  // 0 - One Finger
+
+    { 0, 0, 0, 0, 62, 0, 56, 43, 20, 0}, // 1 - Two Fingers
+    { 0, 0, 0, 0, 62, 0, 76, 41, 21, 0},
+  };
+  HardwareState hs[] = {
+    make_hwstate(328.989039, 0, 1, 1, &fs[0]),
+    make_hwstate(329.013853, 0, 2, 2, &fs[1]),
+  };
+
+  // Disable Suppress Immediate Tapdown
+  interpreter->suppress_immediate_tapdown_.val_ = 0;
+
+  // Run through the two hardware states and verify a fling is detected
+  stime_t timeout = NO_DEADLINE;
+  EXPECT_EQ(fling_consumer.gestures_consumed_, 0);
+  wrapper.SyncInterpret(hs[0], &timeout);
+  EXPECT_EQ(fling_consumer.gestures_consumed_, 0);
+  wrapper.SyncInterpret(hs[1], &timeout);
+  EXPECT_EQ(fling_consumer.gestures_consumed_, 1);
+}
+
+TEST(LookaheadFilterInterpreterTest, ConsumeGestureTest) {
+  LookaheadFilterInterpreterTestInterpreter* base_interpreter = nullptr;
+  std::unique_ptr<LookaheadFilterInterpreter> interpreter;
+
+  HardwareProperties hwprops = {
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 1, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
+  };
+  TestInterpreterWrapper wrapper(interpreter.get(), &hwprops);
+
+  base_interpreter = new LookaheadFilterInterpreterTestInterpreter;
+  interpreter.reset(new LookaheadFilterInterpreter(
+      nullptr, base_interpreter, nullptr));
+  wrapper.Reset(interpreter.get());
+
+  // Gesture Consumer that counts each Metrics and Scroll type gesture
+  class TestGestureConsumer : public GestureConsumer {
+    public:
+      void ConsumeGesture(const Gesture& gesture) {
+        if (gesture.type == kGestureTypeMetrics)
+          ++metric_gestures_consumed_;
+        else if (gesture.type == kGestureTypeScroll)
+          ++scroll_gestures_consumed_;
+      }
+      int metric_gestures_consumed_ = 0;
+      int scroll_gestures_consumed_ = 0;
+  } test_consumer{};
+  interpreter->consumer_ = &test_consumer;
+
+  // Both gestures counters should start with zero
+  EXPECT_EQ(test_consumer.metric_gestures_consumed_, 0);
+  EXPECT_EQ(test_consumer.scroll_gestures_consumed_, 0);
+
+  // Push a Metrics gesture into the interpreter
+  interpreter->ConsumeGesture(Gesture(kGestureMetrics, 0, 0,
+                              kGestureMetricsTypeMouseMovement,
+                              0, 0));
+
+  // Verify it was detected
+  EXPECT_EQ(test_consumer.metric_gestures_consumed_, 1);
+  EXPECT_EQ(test_consumer.scroll_gestures_consumed_, 0);
+
+  // Push a Scroll gesture into the interpreter
+  interpreter->ConsumeGesture(Gesture(kGestureScroll, 0, 0, 0, 0));
+
+  // Verify it was detected
+  EXPECT_EQ(test_consumer.metric_gestures_consumed_, 1);
+  EXPECT_EQ(test_consumer.scroll_gestures_consumed_, 1);
 }
 
 }  // namespace gestures

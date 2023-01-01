@@ -43,6 +43,9 @@ MetricsFilterInterpreter::MetricsFilterInterpreter(
 
 void MetricsFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                  stime_t* timeout) {
+  const char name[] = "MetricsFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if (devclass_ == GESTURES_DEVCLASS_TOUCHPAD) {
     // Right now, we only want to update finger states for built-in touchpads
     // because all the generated metrics gestures would be put under each
@@ -61,6 +64,8 @@ void MetricsFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
              devclass_ == GESTURES_DEVCLASS_POINTING_STICK) {
     UpdateMouseMovementState(hwstate);
   }
+
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

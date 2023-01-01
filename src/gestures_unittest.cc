@@ -342,15 +342,12 @@ TEST(GesturesTest, SimpleTest) {
   gs_ptr->Initialize(GESTURES_DEVCLASS_POINTING_STICK);
   DeleteGestureInterpreter(gs_ptr);
 
-#ifndef __ANDROID__
-  // TODO(b/311110623): re-enable this section once we've tracked down the hwasan crash
   gs_ptr = NewGestureInterpreter();
   EXPECT_NE(nullptr, gs_ptr);
   gs_ptr->Initialize(GESTURES_DEVCLASS_MULTITOUCH_MOUSE);
   std::string activity = gs_ptr->EncodeActivityLog();
   EXPECT_NE(activity.size(), 0);
   DeleteGestureInterpreter(gs_ptr);
-#endif
 
   EXPECT_EQ("1073741824", FingerState::FlagsString(1 << 30));
 }
@@ -435,16 +432,17 @@ TEST(GesturesTest, HardwareStateGetFingerStateTest) {
 
 TEST(GesturesTest, HardwarePropertiesToStringTest) {
   HardwareProperties hp = {
-    1009.5, 1002.4, 1003.9, 1004.5,  // left, top, right, bottom
-    1005.4, 1006.9,  // res_x, res_y
-    1007.4, 1008.5, // x, y screen dpi
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    12,  // max fingers
-    11,  // max touches
-    0, 1, 1,  // t5r2, semi-mt, is_button_pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // is_haptic_pad
+    .left = 1009.5, .top = 1002.4, .right = 1003.9, .bottom = 1004.5,
+    .res_x = 1005.4, .res_y = 1006.9,
+    .screen_x_dpi = 1007.4,
+    .screen_y_dpi = 1008.5,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 12,
+    .max_touch_cnt = 11,
+    .supports_t5r2 = 0, .support_semi_mt = 1, .is_button_pad = 1,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   string str = hp.String();
   fprintf(stderr, "str: %s\n", str.c_str());
@@ -527,6 +525,50 @@ TEST(GesturesTest, HardwareStateToStringTest) {
         << " str: " << short_expected[i];
 
   return;
+}
+
+TEST(GesturesTest, HardwareStateDeepCopyWithFingersTest) {
+  FingerState fingerStates[] = {
+    { 1.0, 2.0, 3.0, 4.5, 30.0, 11.0, 20.0, 30.0, 14, 0 },
+    { 1.5, 2.5, 3.5, 5.0, 30.5, 11.5, 20.5, 30.5, 15, 0 }
+  };
+  const HardwareState hardwareState = make_hwstate(1.123, 1, 2, 2, fingerStates);
+
+  HardwareState hardwareStateCopy;
+  hardwareStateCopy.fingers = new FingerState[hardwareState.finger_cnt];
+  hardwareStateCopy.DeepCopy(hardwareState, hardwareState.finger_cnt);
+
+  EXPECT_EQ(hardwareStateCopy.String(), hardwareState.String());
+  delete[] hardwareStateCopy.fingers;
+}
+
+TEST(GesturesTest, HardwareStateDeepCopyWithoutFingersTest) {
+  const HardwareState hardwareState = make_hwstate(1.123, 1, 0, 2, nullptr);
+
+  HardwareState hardwareStateCopy;
+  hardwareStateCopy.DeepCopy(hardwareState, hardwareState.finger_cnt);
+
+  EXPECT_EQ(hardwareStateCopy.String(), hardwareState.String());
+}
+
+TEST(GesturesTest, InvalidHardwareStateDeepCopyTest) {
+  // 2 finger_cnt without any fingersState(s) specified
+  const HardwareState invalidHardwareState = make_hwstate(1.123, 1, 2, 2, nullptr);
+
+  HardwareState hardwareStateCopy;
+  hardwareStateCopy.DeepCopy(invalidHardwareState, invalidHardwareState.finger_cnt);
+
+  EXPECT_EQ(invalidHardwareState.timestamp, hardwareStateCopy.timestamp);
+  EXPECT_EQ(invalidHardwareState.buttons_down, hardwareStateCopy.buttons_down);
+  EXPECT_EQ(invalidHardwareState.finger_cnt, hardwareStateCopy.finger_cnt);
+  EXPECT_EQ(invalidHardwareState.touch_cnt, hardwareStateCopy.touch_cnt);
+  EXPECT_EQ(invalidHardwareState.fingers, hardwareStateCopy.fingers);
+  EXPECT_EQ(invalidHardwareState.rel_x, hardwareStateCopy.rel_x);
+  EXPECT_EQ(invalidHardwareState.rel_y, hardwareStateCopy.rel_y);
+  EXPECT_EQ(invalidHardwareState.rel_wheel, hardwareStateCopy.rel_wheel);
+  EXPECT_EQ(invalidHardwareState.rel_wheel_hi_res, hardwareStateCopy.rel_wheel_hi_res);
+  EXPECT_EQ(invalidHardwareState.rel_hwheel, hardwareStateCopy.rel_wheel);
+  EXPECT_EQ(invalidHardwareState.msc_timestamp, hardwareStateCopy.msc_timestamp);
 }
 
 }  // namespace gestures

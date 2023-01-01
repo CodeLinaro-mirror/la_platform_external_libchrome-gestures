@@ -68,16 +68,17 @@ TEST(T5R2CorrectingFilterInterpreterTest, SimpleTest) {
   std::unique_ptr<T5R2CorrectingFilterInterpreter> interpreter;
 
   HardwareProperties hwprops = {
-    0, 0, 10, 10,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    0, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 10, .bottom = 10,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(interpreter.get(), &hwprops);
 

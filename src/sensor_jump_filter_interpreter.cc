@@ -32,6 +32,9 @@ SensorJumpFilterInterpreter::SensorJumpFilterInterpreter(PropRegistry* prop_reg,
 
 void SensorJumpFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                         stime_t* timeout) {
+  const char name[] = "SensorJumpFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if (!enabled_.val_) {
     next_->SyncInterpret(hwstate, timeout);
     return;
@@ -130,6 +133,7 @@ void SensorJumpFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   previous_input_[1] = previous_input_[0];
   previous_input_[0] = current_input;
 
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

@@ -109,13 +109,15 @@ TEST(IirFilterInterpreterTest, SemiMTIIRTest) {
   IirFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
 
   HardwareProperties hwprops = {
-    0, 0, 100, 60,  // left, top, right, bottom
-    1.0, 1.0, 25.4, 25.4, // x res, y res, x DPI, y DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 3, 0, 0, 0,  // max_fingers, max_touch, t5r2, semi_mt, is_button_pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // is_haptic_pad
+    .right = 100, .bottom = 60,
+    .res_x = 1.0, .res_y = 1.0,
+    .screen_x_dpi = 0, .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 3,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 

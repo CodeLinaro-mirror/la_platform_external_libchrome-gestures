@@ -112,6 +112,9 @@ abort_load:
 
 void NonLinearityFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                       stime_t* timeout) {
+  const char name[] = "NonLinearityFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if (enabled_.val_ && err_.get() && hwstate.finger_cnt == 1) {
     FingerState* finger = &(hwstate.fingers[0]);
     if (finger) {
@@ -121,6 +124,7 @@ void NonLinearityFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
       finger->position_y -= error.y_error;
     }
   }
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

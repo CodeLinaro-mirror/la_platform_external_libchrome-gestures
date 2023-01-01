@@ -36,6 +36,7 @@ class LoggingFilterInterpreter : public FilterInterpreter,
  private:
   void Dump(const char* filename);
 
+  IntProperty event_debug_logging_enable_;
   BoolProperty event_logging_enable_;
   IntProperty logging_notify_;
   // Reset the log by setting the property value.

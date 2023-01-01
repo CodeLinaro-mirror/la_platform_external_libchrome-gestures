@@ -18,7 +18,7 @@ license {
 }
 
 cc_defaults {
-    name: "libchrome-gestures_cflags",
+    name: "libchrome-gestures_defaults",
     cflags: [
         "-fno-exceptions",
         "-fno-strict-aliasing",
@@ -39,6 +39,27 @@ cc_defaults {
         "-D_FILE_OFFSET_BITS=64",
         "-DGESTURES_INTERNAL=1",
     ],
+    sanitize: {
+        all_undefined: true,
+        integer_overflow: true,
+        undefined: true,
+    },
+    arch: {
+        x86_64: {
+            sanitize: {
+                all_undefined: false,
+                integer_overflow: false,
+                undefined: false,
+            },
+        }
+    },
+    target: {
+        host: {
+            sanitize: {
+                address: true,
+            },
+        },
+    },
 }
 
 cc_library_headers {
@@ -52,7 +73,7 @@ cc_library_headers {
 cc_library_static {
     name: "libchrome-gestures",
     defaults: [
-        "libchrome-gestures_cflags",
+        "libchrome-gestures_defaults",
     ],
     local_include_dirs: ["."],
     header_libs: [
@@ -102,18 +123,13 @@ cc_library_static {
         "//frameworks/native/services/inputflinger:__subpackages__",
     ],
     rtti: true,
-    sanitize: {
-        cfi: true,
-        integer_overflow: true,
-        misc_undefined: ["bounds"],
-    },
     host_supported: true,
 }
 
 cc_test {
     name: "libchrome-gestures_test",
     defaults: [
-        "libchrome-gestures_cflags",
+        "libchrome-gestures_defaults",
     ],
     srcs: [
         "src/accel_filter_interpreter_unittest.cc",
@@ -168,5 +184,11 @@ cc_test {
        "-Wno-sign-compare",
     ],
     host_supported: false,
+    sanitize: {
+        hwaddress: true,
+        diag: {
+            integer_overflow: true,
+        },
+    },
     test_suites: ["general-tests"],
 }

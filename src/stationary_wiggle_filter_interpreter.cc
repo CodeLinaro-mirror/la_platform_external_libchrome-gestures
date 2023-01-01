@@ -110,8 +110,13 @@ StationaryWiggleFilterInterpreter::StationaryWiggleFilterInterpreter(
 
 void StationaryWiggleFilterInterpreter::SyncInterpretImpl(
     HardwareState& hwstate, stime_t* timeout) {
+  const char name[] = "StationaryWiggleFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if (enabled_.val_)
     UpdateStationaryFlags(hwstate);
+
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

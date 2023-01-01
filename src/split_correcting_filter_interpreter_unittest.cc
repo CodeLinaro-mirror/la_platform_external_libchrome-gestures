@@ -70,21 +70,21 @@ void DoTest(InputEventWithExpectations* events, size_t events_len, bool t5r2) {
   interpreter.Enable();
 
   HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // res_x
-    1,  // res_y
-    133,  // screen_x_dpi
-    133,  // screen_y_dpi
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5,  // max finger cnt
-    static_cast<unsigned short>(t5r2 ? 2 : 5),  // max touch cnt
-    t5r2 ? 1u : 0u,  // supports_t5r2
-    0,   // support_semi_mt
-    1,  // is_button_pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is_haptic_pad
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = static_cast<unsigned short>(t5r2 ? 2 : 5),
+    .supports_t5r2 = t5r2 ? 1u : 0u,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
@@ -167,21 +167,21 @@ TEST(SplitCorrectingFilterInterpreterTest, FalseMergeTest) {
   interpreter.Enable();
 
   HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // res_x
-    1,  // res_y
-    133,  // screen_x_dpi
-    133,  // screen_y_dpi
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5,  // max finger cnt
-    5,  // max touch cnt
-    0,  // supports_t5r2
-    0,   // support_semi_mt
-    1,  // is_button_pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is_haptic_pad
+    .right = 100, .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
@@ -323,24 +323,22 @@ TEST(SplitCorrectingFilterInterpreterTest, LumpyThumbSplitTest) {
   base_interpreter->expect_finger_ids_ = true;
 
   HardwareProperties hwprops = {
-    0.0,  // left edge
-    0.0,  // top edge
-    106.666672,  // right edge
-    68.0,  // bottom edge
-    1.0,  // x pixels/TP width
-    1.0,  // y pixels/TP height
-    25.4,  // x screen DPI
-    25.4,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad,
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.0,
+    .res_x = 1.0,
+    .res_y = 1.0,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 

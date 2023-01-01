@@ -22,6 +22,8 @@ using std::vector;
 
 namespace gestures {
 
+using EventDebug = ActivityLog::EventDebug;
+
 class AccelFilterInterpreterTest : public ::testing::Test {
  protected:
   HardwareState empty_hwstate_ = {};
@@ -175,6 +177,225 @@ TEST_F(AccelFilterInterpreterTest, TinyMoveTest) {
   EXPECT_EQ(kGestureTypeScroll, out->type);
   EXPECT_FLOAT_EQ(orig_x_scroll * accel_interpreter.scroll_x_out_scale_.val_,
                   out->details.scroll.dx);
+}
+
+TEST_F(AccelFilterInterpreterTest, BadGestureTest) {
+  PropRegistry prop_reg;
+  AccelFilterInterpreterTestInterpreter* base_interpreter =
+      new AccelFilterInterpreterTestInterpreter;
+  AccelFilterInterpreter accel_interpreter(&prop_reg, base_interpreter,
+                                           nullptr);
+  TestInterpreterWrapper interpreter(&accel_interpreter);
+
+  accel_interpreter.SetEventLoggingEnabled(true);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Gesture);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Accel);
+  accel_interpreter.log_.reset(new ActivityLog(&prop_reg));
+
+  // AccelFilterInterpreter should not add gain to a ButtonsChange gesture.
+  base_interpreter->return_values_.push_back(Gesture(kGestureButtonsChange,
+                                                     1,  // start time
+                                                     2,  // end time
+                                                     0, // down
+                                                     0, // up
+                                                     false)); // is_tap
+
+  // Send the ButtonsChange into AccelFilterInterpreter. The filter
+  // should send it right back out.
+  EXPECT_EQ(accel_interpreter.log_->size(), 0);
+  Gesture* out = interpreter.SyncInterpret(empty_hwstate_, nullptr);
+  ASSERT_NE(nullptr, out);
+  EXPECT_EQ(kGestureTypeButtonsChange, out->type);
+
+  // Encode the log into Json
+  Json::Value node;
+  Json::Value tree = accel_interpreter.log_->EncodeCommonInfo();
+
+  // Verify the Json information
+  EXPECT_EQ(accel_interpreter.log_->size(), 5);
+  node = tree[ActivityLog::kKeyRoot][0];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHardwareState));
+  node = tree[ActivityLog::kKeyRoot][1];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureConsume));
+  node = tree[ActivityLog::kKeyRoot][2];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyAccelGestureDebug));
+  node = tree[ActivityLog::kKeyRoot][3];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureProduce));
+  node = tree[ActivityLog::kKeyRoot][4];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGesture));
+  accel_interpreter.log_->Clear();
+}
+
+TEST_F(AccelFilterInterpreterTest, BadDeltaTTest) {
+  PropRegistry prop_reg;
+  AccelFilterInterpreterTestInterpreter* base_interpreter =
+      new AccelFilterInterpreterTestInterpreter;
+  AccelFilterInterpreter accel_interpreter(&prop_reg, base_interpreter,
+                                           nullptr);
+  TestInterpreterWrapper interpreter(&accel_interpreter);
+
+  accel_interpreter.SetEventLoggingEnabled(true);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Gesture);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Accel);
+  accel_interpreter.log_.reset(new ActivityLog(&prop_reg));
+
+  // Change the bounds for reasonable minimum Dt.  This will allow the filter
+  // to keep a very small Dt without adjusting it.
+  accel_interpreter.min_reasonable_dt_.val_ = 0;
+
+  // Send the filter a very small Dt and have the logic catch that it
+  // is too small.  This will not allow a fictitious Dt to be used but
+  // will just not apply gain to this specific gesture.
+  base_interpreter->return_values_.push_back(Gesture(kGestureMove,
+                                                     1,  // start time
+                                                     1.000001, // end time
+                                                     4,  // dx
+                                                     0));  // dy
+
+  // Send the Move into AccelFilterInterpreter. No gain should be applied
+  // to Dx, even though this small of a Dt would normally have added a lot
+  // of gain.
+  EXPECT_EQ(accel_interpreter.log_->size(), 0);
+  Gesture* out = interpreter.SyncInterpret(empty_hwstate_, nullptr);
+  ASSERT_NE(nullptr, out);
+  EXPECT_EQ(kGestureTypeMove, out->type);
+  EXPECT_EQ(fabsf(out->details.move.dx), 4);
+
+  // Encode the log into Json
+  Json::Value node;
+  Json::Value tree = accel_interpreter.log_->EncodeCommonInfo();
+
+  // Verify the Json information
+  EXPECT_EQ(accel_interpreter.log_->size(), 5);
+  node = tree[ActivityLog::kKeyRoot][0];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHardwareState));
+  node = tree[ActivityLog::kKeyRoot][1];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureConsume));
+  node = tree[ActivityLog::kKeyRoot][2];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyAccelGestureDebug));
+  node = tree[ActivityLog::kKeyRoot][3];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureProduce));
+  node = tree[ActivityLog::kKeyRoot][4];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGesture));
+  accel_interpreter.log_->Clear();
+}
+
+TEST_F(AccelFilterInterpreterTest, BadSpeedFlingTest) {
+  PropRegistry prop_reg;
+  AccelFilterInterpreterTestInterpreter* base_interpreter =
+      new AccelFilterInterpreterTestInterpreter;
+  AccelFilterInterpreter accel_interpreter(&prop_reg, base_interpreter,
+                                           nullptr);
+  TestInterpreterWrapper interpreter(&accel_interpreter);
+
+  accel_interpreter.SetEventLoggingEnabled(true);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Gesture);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Accel);
+  accel_interpreter.log_.reset(new ActivityLog(&prop_reg));
+
+  // Change the bounds for reasonable maximum Dt.  This will allow the filter
+  // to keep a large Dt without adjusting it.
+  accel_interpreter.max_reasonable_dt_.val_ = 1000;
+
+  // Send the filter a Fling with a large Dt and have the logic catch that it
+  // is too big.  This will not allow a fictitious Dt to be used but will
+  // just not apply gain to this specific gesture.
+  base_interpreter->return_values_.push_back(Gesture(kGestureFling,
+                                                     1,  // start time
+                                                     2,  // end time
+                                                     0.000001,  // vx
+                                                     0,   // vy
+                                                     0)); // state
+
+  // Send the Fling into AccelFilterInterpreter. No gain should be applied
+  // to Vx.
+  EXPECT_EQ(accel_interpreter.log_->size(), 0);
+  Gesture* out = interpreter.SyncInterpret(empty_hwstate_, nullptr);
+  ASSERT_NE(nullptr, out);
+  EXPECT_EQ(kGestureTypeFling, out->type);
+  EXPECT_NEAR(fabsf(out->details.fling.vx), 0.000001, 0.0000001);
+
+  // Encode the log into Json
+  Json::Value node;
+  Json::Value tree = accel_interpreter.log_->EncodeCommonInfo();
+
+  // Verify the Json information
+  EXPECT_EQ(accel_interpreter.log_->size(), 5);
+  node = tree[ActivityLog::kKeyRoot][0];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHardwareState));
+  node = tree[ActivityLog::kKeyRoot][1];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureConsume));
+  node = tree[ActivityLog::kKeyRoot][2];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyAccelGestureDebug));
+  node = tree[ActivityLog::kKeyRoot][3];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureProduce));
+  node = tree[ActivityLog::kKeyRoot][4];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGesture));
+  accel_interpreter.log_->Clear();
+}
+
+TEST_F(AccelFilterInterpreterTest, BadSpeedMoveTest) {
+  PropRegistry prop_reg;
+  AccelFilterInterpreterTestInterpreter* base_interpreter =
+      new AccelFilterInterpreterTestInterpreter;
+  AccelFilterInterpreter accel_interpreter(&prop_reg, base_interpreter,
+                                           nullptr);
+  TestInterpreterWrapper interpreter(&accel_interpreter);
+
+  accel_interpreter.SetEventLoggingEnabled(true);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Gesture);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Accel);
+  accel_interpreter.log_.reset(new ActivityLog(&prop_reg));
+
+  // Change the bounds for reasonable maximum Dt.  This will allow the filter
+  // to keep a large Dt without adjusting it.
+  accel_interpreter.max_reasonable_dt_.val_ = 1000;
+
+  // Send the filter a Move with a large Dt and have the logic catch that it
+  // is too big.  This will not allow a fictitious Dt to be used but will
+  // just not apply gain to this specific gesture.
+  base_interpreter->return_values_.push_back(Gesture(kGestureMove,
+                                                     1,  // start time
+                                                     1000, // end time
+                                                     0.0001,  // dx
+                                                     0));  // dy
+
+  // Send the Move into AccelFilterInterpreter. The gesture should be dropped.
+  EXPECT_EQ(accel_interpreter.log_->size(), 0);
+  Gesture* out = interpreter.SyncInterpret(empty_hwstate_, nullptr);
+  ASSERT_EQ(nullptr, out);
+
+  // Encode the log into Json
+  Json::Value node;
+  Json::Value tree = accel_interpreter.log_->EncodeCommonInfo();
+
+  // Verify the Json information
+  EXPECT_EQ(accel_interpreter.log_->size(), 3);
+  node = tree[ActivityLog::kKeyRoot][0];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHardwareState));
+  node = tree[ActivityLog::kKeyRoot][1];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureConsume));
+  node = tree[ActivityLog::kKeyRoot][2];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyAccelGestureDebug));
+  accel_interpreter.log_->Clear();
 }
 
 TEST_F(AccelFilterInterpreterTest, TimingTest) {
@@ -887,6 +1108,57 @@ TEST_F(AccelFilterInterpreterTest, TouchpadScrollAccelCurveTest) {
       ASSERT_GE(expected + 0.001, y);
     }
   }
+}
+
+TEST_F(AccelFilterInterpreterTest, AccelDebugDataTest) {
+  PropRegistry prop_reg;
+  AccelFilterInterpreterTestInterpreter* base_interpreter =
+      new AccelFilterInterpreterTestInterpreter;
+  AccelFilterInterpreter accel_interpreter(&prop_reg, base_interpreter,
+                                           nullptr);
+  TestInterpreterWrapper interpreter(&accel_interpreter);
+
+  accel_interpreter.SetEventLoggingEnabled(true);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Gesture);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::HardwareState);
+  accel_interpreter.EventDebugLoggingEnable(EventDebug::Accel);
+  accel_interpreter.log_.reset(new ActivityLog(&prop_reg));
+
+  accel_interpreter.scroll_x_out_scale_.val_ =
+      accel_interpreter.scroll_y_out_scale_.val_ = 1.0;
+
+  base_interpreter->return_values_.push_back(Gesture(kGestureScroll,
+                                                     2,  // start time
+                                                     2.1,  // end time
+                                                     4.1,  // dx
+                                                     -10.3));  // dy
+
+  Gesture* out = interpreter.SyncInterpret(empty_hwstate_, nullptr);
+  ASSERT_NE(nullptr, out);
+  EXPECT_EQ(kGestureTypeScroll, out->type);
+
+  // Encode the log into Json
+  Json::Value node;
+  Json::Value tree = accel_interpreter.log_->EncodeCommonInfo();
+
+  // Verify the Json information
+  EXPECT_EQ(accel_interpreter.log_->size(), 5);
+  node = tree[ActivityLog::kKeyRoot][0];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHardwareState));
+  node = tree[ActivityLog::kKeyRoot][1];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureConsume));
+  node = tree[ActivityLog::kKeyRoot][2];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyAccelGestureDebug));
+  node = tree[ActivityLog::kKeyRoot][3];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureProduce));
+  node = tree[ActivityLog::kKeyRoot][4];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGesture));
+  accel_interpreter.log_->Clear();
 }
 
 }  // namespace gestures

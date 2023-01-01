@@ -55,7 +55,12 @@ ScalingFilterInterpreter::ScalingFilterInterpreter(
 
 void ScalingFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                      stime_t* timeout) {
+  const char name[] = "ScalingFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   ScaleHardwareState(hwstate);
+
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 
@@ -214,6 +219,9 @@ void ScalingFilterInterpreter::ScaleTouchpadHardwareState(
 }
 
 void ScalingFilterInterpreter::ConsumeGesture(const Gesture& gs) {
+  const char name[] = "ScalingFilterInterpreter::ConsumeGesture";
+  LogGestureConsume(name, gs);
+
   Gesture copy = gs;
   switch (copy.type) {
     case kGestureTypeMove: {
@@ -310,6 +318,8 @@ void ScalingFilterInterpreter::ConsumeGesture(const Gesture& gs) {
     default:
       break;
   }
+
+  LogGestureProduce(name, copy);
   ProduceGesture(copy);
 }
 
