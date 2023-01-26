@@ -44,25 +44,61 @@ enum GestureInterpreterDeviceClass {
 stime_t StimeFromTimeval(const struct timeval*);
 stime_t StimeFromTimespec(const struct timespec*);
 
+// Describes the capabilities of a touchpad or mouse.
 struct HardwareProperties {
   // Touch properties
-  float left, top, right, bottom;
-  float res_x;  // pixels/mm
-  float res_y;  // pixels/mm
-  float screen_x_dpi;  // read from X server and passed to library
-  float screen_y_dpi;  // read from X server and passed to library
+  // The minimum X coordinate that the device can report.
+  float left;
+  // The minimum Y coordinate that the device can report.
+  float top;
+  // The maximum X coordinate that the device can report.
+  float right;
+  // The maximum Y coordinate that the device can report.
+  float bottom;
+  // The resolutions of the X and Y axes, in units per mm.
+  float res_x;
+  float res_y;
+
+  // Deprecated: these values are now ignored. Previously, they specified the
+  // DPI of the screen to which gestures output by the library should be
+  // scaled.
+  float screen_x_dpi;
+  float screen_y_dpi;
+
+  // The minimum and maximum orientation values.
   float orientation_minimum;
   float orientation_maximum;
-  unsigned short max_finger_cnt; // Max finger slots in one report
-  unsigned short max_touch_cnt;  // Max fingers that can be detected at once
+
+  // The maximum number of finger slots that the device can report in one
+  // HardwareState struct.
+  unsigned short max_finger_cnt;
+  // The maximum number of contacts that the device can detect at once, whether
+  // or not it can report their coordinates.
+  unsigned short max_touch_cnt;
+
+  // Whether this is a "Track 5, Report 2" touchpad, which can track up to five
+  // fingers but only report the locations of two. (For more details, see
+  // https://crrev.com/37cccb42e652b50f9e788d90e82252f78c78f1ed)
   unsigned supports_t5r2:1;
+
+  // Whether this is a "Semi-Multitouch" touchpad, which can detect two separate
+  // fingers but only report their bounding box, not individual locations.
   unsigned support_semi_mt:1;
+
+  // Whether the touchpad has a button under its touch surface, allowing the
+  // user to click by pressing (almost) anywhere on the pad, as opposed to
+  // having one or more separate buttons for clicking.
   unsigned is_button_pad:1;
 
   // Mouse properties
+  // Whether the mouse has a scroll wheel.
   unsigned has_wheel:1;
+  // Whether the mouse's scroll wheel is high-resolution (reported through the
+  // rel_wheel_hi_res field of the HardwareState struct).
   unsigned wheel_is_hi_res:1;
 
+  // Whether the touchpad is haptic, meaning that it reports true pressure (not
+  // just touch area) via the pressure axis, and can provide haptic feedback.
   unsigned is_haptic_pad:1;
 #ifdef __cplusplus
   std::string String() const;
@@ -130,6 +166,9 @@ struct HardwareProperties {
 #define GESTURES_FINGER_WARP_Y    (GESTURES_FINGER_WARP_Y_NON_MOVE | \
                                    GESTURES_FINGER_WARP_Y_MOVE)
 
+// Describes a single contact on a touch surface. Unless otherwise noted, the
+// fields have the same meaning as the equivalent ABS_MT_... axis in the Linux
+// evdev protocol.
 struct FingerState {
   float touch_major, touch_minor;
   float width_major, width_minor;
@@ -138,6 +177,9 @@ struct FingerState {
   float position_x;
   float position_y;
   short tracking_id;
+
+  // A bit field of flags that are used internally by the library. (See the
+  // GESTURES_FINGER_* constants.) Should be set to 0 on incoming FingerStates.
   unsigned flags;
 #ifdef __cplusplus
   bool NonFlagsEquals(const FingerState& that) const {
@@ -167,7 +209,7 @@ struct FingerState {
 #define GESTURES_BUTTON_BACK 8
 #define GESTURES_BUTTON_FORWARD 16
 
-// One frame of trackpad data
+// Describes one frame of data from the input device.
 struct HardwareState {
 #ifdef __cplusplus
   FingerState* GetFingerState(short tracking_id);
@@ -176,18 +218,32 @@ struct HardwareState {
   std::string String() const;
   void DeepCopy(const HardwareState& that, unsigned short max_finger_cnt);
 #endif  // __cplusplus
-  stime_t timestamp;  // 64-bit Wall clock time in microseconds (10^-6 s)
-  int buttons_down;  // bit field, use GESTURES_BUTTON_*
-  unsigned short finger_cnt;  // Number of valid finger slots
-  unsigned short touch_cnt;  // Number of fingers touching pad
+  // The time at which the event was received by the system.
+  stime_t timestamp;
+  // A bit field indicating which buttons are pressed. (See the
+  // GESTURES_BUTTON_* constants.)
+  int buttons_down;
+  // The number of FingerState structs pointed to by the fingers field.
+  unsigned short finger_cnt;
+  // The number of fingers touching the pad, which may be more than finger_cnt.
+  unsigned short touch_cnt;
+  // A pointer to finger_cnt FingerState structs representing the contacts
+  // currently being tracked.
   struct FingerState* fingers;
-  // For EV_REL events
+
+  // Mouse axes, which have the same meanings as the Linux evdev axes of the
+  // same name.
   float rel_x;
   float rel_y;
   float rel_wheel;
   float rel_wheel_hi_res;
   float rel_hwheel;
-  stime_t msc_timestamp;  // MSC_TIMESTAMP as reported by firmware, if available
+
+  // The timestamp for the frame, as reported by the device's firmware. This may
+  // be different from the timestamp field above, for example if events were
+  // batched when being sent over Bluetooth. Set to 0.0 if no such timestamp is
+  // available. (Named after the MSC_TIMESTAMP axis from evdev.)
+  stime_t msc_timestamp;
 };
 
 #define GESTURES_FLING_START 0  // Scroll end/fling begin
@@ -325,10 +381,10 @@ struct Gesture {
   // Create Move/Scroll gesture
 #ifdef GESTURES_INTERNAL
   Gesture() : start_time(0), end_time(0), type(kGestureTypeNull) {}
-  std::string String() const;
   bool operator==(const Gesture& that) const;
   bool operator!=(const Gesture& that) const { return !(*this == that); };
 #endif  // GESTURES_INTERNAL
+  std::string String() const;
   Gesture(const GestureMove&, stime_t start, stime_t end, float dx, float dy)
       : start_time(start), end_time(end), type(kGestureTypeMove) {
     details.move.ordinal_dx = details.move.dx = dx;
@@ -551,6 +607,8 @@ struct GestureInterpreter {
 
   void TimerCallback(stime_t now, stime_t* timeout);
 
+  void SetCallback(GestureReadyFunction callback, void* client_data);
+  // Deprecated; use SetCallback instead.
   void set_callback(GestureReadyFunction callback,
                     void* client_data);
   void SetTimerProvider(GesturesTimerProvider* tp, void* data);

@@ -19,6 +19,44 @@ using std::string;
 
 class ImmediateInterpreterTest : public ::testing::Test {};
 
+TEST(ImmediateInterpreterTest, ScrollEventTest) {
+  ScrollEvent ev1 = {1.0, 2.0, 3.0};
+  ScrollEvent ev2 = {10.0, 20.0, 30.0};
+  ScrollEvent ev3 = ScrollEvent::Add(ev1, ev2);
+  EXPECT_EQ(11.0, ev3.dx);
+  EXPECT_EQ(22.0, ev3.dy);
+  EXPECT_EQ(33.0, ev3.dt);
+
+  ScrollEventBuffer* evbuf = new ScrollEventBuffer(2);
+  evbuf->Insert(1.0, 2.0, 3.0);
+  ev1 = evbuf->Get(0);
+  EXPECT_EQ(1.0, ev1.dx);
+  EXPECT_EQ(2.0, ev1.dy);
+  EXPECT_EQ(3.0, ev1.dt);
+  ev1 = evbuf->Get(3);
+  EXPECT_EQ(0.0, ev1.dx);
+  EXPECT_EQ(0.0, ev1.dy);
+  EXPECT_EQ(0.0, ev1.dt);
+}
+
+TEST(ImmediateInterpreterTest, HardwareStateBufferTest) {
+  HardwareStateBuffer* hsb = new HardwareStateBuffer(10);
+  hsb->Reset(0);
+  EXPECT_EQ(hsb->Size(), 10);
+}
+
+TEST(ImmediateInterpreterTest, ScrollManagerTest) {
+  PropRegistry* my_prop_reg = new PropRegistry();
+  ScrollManager* sm = new ScrollManager(my_prop_reg);
+  ScrollEventBuffer* scroll_buffer = new ScrollEventBuffer(2);
+  ScrollEvent ev;
+
+  sm->RegressScrollVelocity(*scroll_buffer, 1, &ev);
+  EXPECT_EQ(0.0, ev.dx);
+  EXPECT_EQ(0.0, ev.dy);
+  EXPECT_EQ(1.0, ev.dt);
+}
+
 TEST(ImmediateInterpreterTest, MoveDownTest) {
   ImmediateInterpreter ii(NULL, NULL);
 
@@ -3132,6 +3170,8 @@ TEST(ImmediateInterpreterTest, AvoidAccidentalPinchTest) {
       MetricsProperties* mprops = new MetricsProperties(NULL);
       mprops->two_finger_close_vertical_distance_thresh.val_ = 35.0;
       wrapper.Reset(ii.get(), mprops);
+      EXPECT_EQ(ImmediateInterpreter::TapToClickState::kTtcIdle,
+                ii->tap_to_click_state());
     }
     // Prep inputs
     FingerState fs[] = {
@@ -3591,6 +3631,19 @@ TEST(ImmediateInterpreterTest, ZeroClickInitializationTest) {
   hwprops.is_button_pad = 0;
   wrapper.Reset(&ii, &hwprops);
   EXPECT_EQ(1, ii.zero_finger_click_enable_.val_);
+}
+
+TEST(ImmediateInterpreterTest, PointTest) {
+  Point point;
+  Point point_eq;
+  Point point_ne0(42.0, 0.0);
+  Point point_ne1(0.0, 42.0);
+  EXPECT_TRUE(point == point_eq);
+  EXPECT_FALSE(point == point_ne0);
+  EXPECT_FALSE(point == point_ne1);
+  EXPECT_FALSE(point != point_eq);
+  EXPECT_TRUE(point != point_ne0);
+  EXPECT_TRUE(point != point_ne1);
 }
 
 }  // namespace gestures

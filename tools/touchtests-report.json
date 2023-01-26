@@ -132,6 +132,13 @@
     "result": "failure",
     "score": false
   },
+  "atlas-1.0/tap-drag": {
+    "description": "",
+    "disabled": false,
+    "error": "",
+    "result": "success",
+    "score": 1.0
+  },
   "atlas-1.0/tap-sides": {
     "description": "",
     "disabled": false,

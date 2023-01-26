@@ -319,8 +319,8 @@ void ScalingFilterInterpreter::Initialize(const HardwareProperties* hwprops,
   tp_x_translate_ = -1.0 * (hwprops->left * tp_x_scale_);
   tp_y_translate_ = -1.0 * (hwprops->top * tp_y_scale_);
 
-  screen_x_scale_ = hwprops->screen_x_dpi / 25.4;
-  screen_y_scale_ = hwprops->screen_y_dpi / 25.4;
+  screen_x_scale_ = 133 / 25.4;
+  screen_y_scale_ = 133 / 25.4;
 
   if (hwprops->orientation_maximum)
     orientation_scale_ =

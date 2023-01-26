@@ -239,6 +239,18 @@ TEST(AccelFilterInterpreterTest, TimingTest) {
   EXPECT_GT(fabsf(last_dy), fabsf(out->details.scroll.dy));
 }
 
+TEST(AccelFilterInterpreterTest, CurveSegmentInitializerTest) {
+  AccelFilterInterpreter::CurveSegment temp1 =
+      AccelFilterInterpreter::CurveSegment(INFINITY, 0.0, 2.0, -2.0);
+  AccelFilterInterpreter::CurveSegment temp2 =
+      AccelFilterInterpreter::CurveSegment(temp1);
+
+  ASSERT_EQ(temp1.x_, temp2.x_);
+
+  temp1 = AccelFilterInterpreter::CurveSegment(0.0, 0.0, 0.0, 0.0);
+  ASSERT_NE(temp1.x_, temp2.x_);
+}
+
 TEST(AccelFilterInterpreterTest, CustomAccelTest) {
   AccelFilterInterpreterTestInterpreter* base_interpreter =
       new AccelFilterInterpreterTestInterpreter;
@@ -316,6 +328,112 @@ TEST(AccelFilterInterpreterTest, CustomAccelTest) {
     out = interpreter.SyncInterpret(NULL, NULL);
     ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
     EXPECT_EQ(kGestureTypeMove, out->type) << "i=" << i;
+    EXPECT_FLOAT_EQ(0, out->details.move.dx) << "i=" << i;
+    EXPECT_FLOAT_EQ(expected / 2.0, out->details.move.dy) << "i=" << i;
+  }
+
+  float swipe_in[]  = { 1.0, 2.5, 3.5, 5.0 };
+  float swipe_out[] = { 0.5, 2.0, 3.0, 3.0 };
+
+  for (size_t i = 0; i < arraysize(swipe_in); ++i) {
+    float dist = swipe_in[i];
+    float expected = swipe_out[i];
+    base_interpreter->return_values_.push_back(Gesture(kGestureSwipe,
+                                                       1,  // start time
+                                                       2,  // end time
+                                                       dist,  // dx
+                                                       0));  // dy
+    base_interpreter->return_values_.push_back(Gesture(kGestureSwipe,
+                                                       1,  // start time
+                                                       2,  // end time
+                                                       0,  // dx
+                                                       dist));  // dy
+    // half time, half distance = same speed
+    base_interpreter->return_values_.push_back(Gesture(kGestureSwipe,
+                                                       1,  // start time
+                                                       1.5,  // end time
+                                                       dist / 2.0,  // dx
+                                                       0));  // dy
+    base_interpreter->return_values_.push_back(Gesture(kGestureSwipe,
+                                                       1,  // start time
+                                                       1.5,  // end time
+                                                       0,  // dx
+                                                       dist / 2.0));  // dy
+
+    Gesture* out = interpreter.SyncInterpret(NULL, NULL);
+    ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
+    EXPECT_EQ(kGestureTypeSwipe, out->type) << "i=" << i;
+    EXPECT_FLOAT_EQ(expected, out->details.move.dx) << "i=" << i;
+    EXPECT_FLOAT_EQ(0, out->details.move.dy) << "i=" << i;
+
+    out = interpreter.SyncInterpret(NULL, NULL);
+    ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
+    EXPECT_EQ(kGestureTypeSwipe, out->type) << "i=" << i;
+    EXPECT_FLOAT_EQ(0, out->details.move.dx) << "i=" << i;
+    EXPECT_FLOAT_EQ(expected, out->details.move.dy) << "i=" << i;
+
+    out = interpreter.SyncInterpret(NULL, NULL);
+    ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
+    EXPECT_EQ(kGestureTypeSwipe, out->type) << "i=" << i;
+    EXPECT_FLOAT_EQ(expected / 2.0, out->details.move.dx) << "i=" << i;
+    EXPECT_FLOAT_EQ(0, out->details.move.dy) << "i=" << i;
+
+    out = interpreter.SyncInterpret(NULL, NULL);
+    ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
+    EXPECT_EQ(kGestureTypeSwipe, out->type) << "i=" << i;
+    EXPECT_FLOAT_EQ(0, out->details.move.dx) << "i=" << i;
+    EXPECT_FLOAT_EQ(expected / 2.0, out->details.move.dy) << "i=" << i;
+  }
+
+  float swipe4_in[]  = { 1.0, 2.5, 3.5, 5.0 };
+  float swipe4_out[] = { 0.5, 2.0, 3.0, 3.0 };
+
+  for (size_t i = 0; i < arraysize(swipe4_in); ++i) {
+    float dist = swipe4_in[i];
+    float expected = swipe4_out[i];
+    base_interpreter->return_values_.push_back(Gesture(kGestureFourFingerSwipe,
+                                                       1,  // start time
+                                                       2,  // end time
+                                                       dist,  // dx
+                                                       0));  // dy
+    base_interpreter->return_values_.push_back(Gesture(kGestureFourFingerSwipe,
+                                                       1,  // start time
+                                                       2,  // end time
+                                                       0,  // dx
+                                                       dist));  // dy
+    // half time, half distance = same speed
+    base_interpreter->return_values_.push_back(Gesture(kGestureFourFingerSwipe,
+                                                       1,  // start time
+                                                       1.5,  // end time
+                                                       dist / 2.0,  // dx
+                                                       0));  // dy
+    base_interpreter->return_values_.push_back(Gesture(kGestureFourFingerSwipe,
+                                                       1,  // start time
+                                                       1.5,  // end time
+                                                       0,  // dx
+                                                       dist / 2.0));  // dy
+
+    Gesture* out = interpreter.SyncInterpret(NULL, NULL);
+    ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
+    EXPECT_EQ(kGestureTypeFourFingerSwipe, out->type) << "i=" << i;
+    EXPECT_FLOAT_EQ(expected, out->details.move.dx) << "i=" << i;
+    EXPECT_FLOAT_EQ(0, out->details.move.dy) << "i=" << i;
+
+    out = interpreter.SyncInterpret(NULL, NULL);
+    ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
+    EXPECT_EQ(kGestureTypeFourFingerSwipe, out->type) << "i=" << i;
+    EXPECT_FLOAT_EQ(0, out->details.move.dx) << "i=" << i;
+    EXPECT_FLOAT_EQ(expected, out->details.move.dy) << "i=" << i;
+
+    out = interpreter.SyncInterpret(NULL, NULL);
+    ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
+    EXPECT_EQ(kGestureTypeFourFingerSwipe, out->type) << "i=" << i;
+    EXPECT_FLOAT_EQ(expected / 2.0, out->details.move.dx) << "i=" << i;
+    EXPECT_FLOAT_EQ(0, out->details.move.dy) << "i=" << i;
+
+    out = interpreter.SyncInterpret(NULL, NULL);
+    ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out) << "i=" << i;
+    EXPECT_EQ(kGestureTypeFourFingerSwipe, out->type) << "i=" << i;
     EXPECT_FLOAT_EQ(0, out->details.move.dx) << "i=" << i;
     EXPECT_FLOAT_EQ(expected / 2.0, out->details.move.dy) << "i=" << i;
   }

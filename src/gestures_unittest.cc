@@ -62,6 +62,43 @@ TEST(GesturesTest, GestureStringTest) {
   EXPECT_TRUE(strstr(buttons.String().c_str(), "3"));
   EXPECT_TRUE(strstr(buttons.String().c_str(), "4"));
 
+  Gesture mousewheel(kGestureMouseWheel, 1.0, 2.0, 3.0, 4.0, 3, 4);
+  EXPECT_TRUE(strstr(mousewheel.String().c_str(), "1"));
+  EXPECT_TRUE(strstr(mousewheel.String().c_str(), "2"));
+  EXPECT_TRUE(strstr(mousewheel.String().c_str(), "3"));
+  EXPECT_TRUE(strstr(mousewheel.String().c_str(), "4"));
+
+  Gesture pinch(kGesturePinch, 1.0, 2.0, 3.0, 4.0);
+  EXPECT_TRUE(strstr(pinch.String().c_str(), "1"));
+  EXPECT_TRUE(strstr(pinch.String().c_str(), "2"));
+  EXPECT_TRUE(strstr(pinch.String().c_str(), "3"));
+  EXPECT_TRUE(strstr(pinch.String().c_str(), "4"));
+
+  Gesture swipe(kGestureSwipe, 1.0, 2.0, 3.0, 4.0);
+  EXPECT_TRUE(strstr(swipe.String().c_str(), "1"));
+  EXPECT_TRUE(strstr(swipe.String().c_str(), "2"));
+  EXPECT_TRUE(strstr(swipe.String().c_str(), "3"));
+  EXPECT_TRUE(strstr(swipe.String().c_str(), "4"));
+
+  Gesture swipelift(kGestureSwipeLift, 1.0, 2.0);
+  EXPECT_TRUE(strstr(swipelift.String().c_str(), "1"));
+  EXPECT_TRUE(strstr(swipelift.String().c_str(), "2"));
+
+  Gesture swipe4f(kGestureFourFingerSwipe, 1.0, 2.0, 3.0, 4.0);
+  EXPECT_TRUE(strstr(swipe4f.String().c_str(), "1"));
+  EXPECT_TRUE(strstr(swipe4f.String().c_str(), "2"));
+  EXPECT_TRUE(strstr(swipe4f.String().c_str(), "3"));
+  EXPECT_TRUE(strstr(swipe4f.String().c_str(), "4"));
+
+  Gesture swipe4flift(kGestureFourFingerSwipeLift, 1.0, 2.0);
+  EXPECT_TRUE(strstr(swipe4flift.String().c_str(), "1"));
+  EXPECT_TRUE(strstr(swipe4flift.String().c_str(), "2"));
+
+  Gesture metrics(kGestureMetrics, 1.0, 2.0,
+                  kGestureMetricsTypeMouseMovement, 3.0, 4.0);
+  EXPECT_TRUE(strstr(metrics.String().c_str(), "1"));
+  EXPECT_TRUE(strstr(metrics.String().c_str(), "2"));
+
   Gesture contact_initiated;
   contact_initiated.type = kGestureTypeContactInitiated;
   EXPECT_TRUE(strstr(contact_initiated.String().c_str(), "nitiated"));
@@ -148,6 +185,120 @@ TEST(GesturesTest, GestureEqTest) {
   EXPECT_TRUE(contact_initiated == contact_initiated2);
   EXPECT_FALSE(contact_initiated != contact_initiated2);
 
+  Gesture wheelmouse(kGestureMouseWheel, 1.0, 2.0, 3.0, 4.0, 3, 4);
+  Gesture wheelmouse2(kGestureMouseWheel, 1.0, 2.0, 3.0, 4.0, 3, 4);
+  Gesture wheelmouse_ne0(kGestureMouseWheel, 9.0, 2.0, 3.0, 4.0, 3, 4);
+  Gesture wheelmouse_ne1(kGestureMouseWheel, 1.0, 9.0, 3.0, 4.0, 3, 4);
+  Gesture wheelmouse_ne2(kGestureMouseWheel, 1.0, 2.0, 9.0, 4.0, 3, 4);
+  Gesture wheelmouse_ne3(kGestureMouseWheel, 1.0, 2.0, 3.0, 9.0, 3, 4);
+  Gesture wheelmouse_ne4(kGestureMouseWheel, 1.0, 2.0, 3.0, 4.0, 9, 4);
+  Gesture wheelmouse_ne5(kGestureMouseWheel, 1.0, 2.0, 3.0, 4.0, 3, 9);
+  EXPECT_TRUE(wheelmouse == wheelmouse2);
+  EXPECT_FALSE(wheelmouse == wheelmouse_ne0);
+  EXPECT_FALSE(wheelmouse == wheelmouse_ne1);
+  EXPECT_FALSE(wheelmouse == wheelmouse_ne2);
+  EXPECT_FALSE(wheelmouse == wheelmouse_ne3);
+  EXPECT_FALSE(wheelmouse == wheelmouse_ne4);
+  EXPECT_FALSE(wheelmouse == wheelmouse_ne5);
+  EXPECT_FALSE(wheelmouse != wheelmouse2);
+  EXPECT_TRUE(wheelmouse != wheelmouse_ne0);
+  EXPECT_TRUE(wheelmouse != wheelmouse_ne1);
+  EXPECT_TRUE(wheelmouse != wheelmouse_ne2);
+  EXPECT_TRUE(wheelmouse != wheelmouse_ne3);
+  EXPECT_TRUE(wheelmouse != wheelmouse_ne4);
+  EXPECT_TRUE(wheelmouse != wheelmouse_ne5);
+
+  Gesture pinch(kGesturePinch, 1.0, 2.0, 3.0, 4.0);
+  Gesture pinch2(kGesturePinch, 1.0, 2.0, 3.0, 4.0);
+  Gesture pinch_ne0(kGesturePinch, 9.0, 2.0, 3.0, 4.0);
+  Gesture pinch_ne1(kGesturePinch, 1.0, 9.0, 3.0, 4.0);
+  Gesture pinch_ne2(kGesturePinch, 1.0, 2.0, 9.0, 4.0);
+  EXPECT_TRUE(pinch == pinch2);
+  EXPECT_FALSE(pinch == pinch_ne0);
+  EXPECT_FALSE(pinch == pinch_ne1);
+  EXPECT_FALSE(pinch == pinch_ne2);
+  EXPECT_FALSE(pinch != pinch2);
+  EXPECT_TRUE(pinch != pinch_ne0);
+  EXPECT_TRUE(pinch != pinch_ne1);
+  EXPECT_TRUE(pinch != pinch_ne2);
+
+  Gesture swipe(kGestureSwipe, 1.0, 2.0, 3.0, 4.0);
+  Gesture swipe2(kGestureSwipe, 1.0, 2.0, 3.0, 4.0);
+  Gesture swipe_ne0(kGestureSwipe, 9.0, 2.0, 3.0, 4.0);
+  Gesture swipe_ne1(kGestureSwipe, 1.0, 9.0, 3.0, 4.0);
+  Gesture swipe_ne2(kGestureSwipe, 1.0, 2.0, 9.0, 4.0);
+  EXPECT_TRUE(swipe == swipe2);
+  EXPECT_FALSE(swipe == swipe_ne0);
+  EXPECT_FALSE(swipe == swipe_ne1);
+  EXPECT_FALSE(swipe == swipe_ne2);
+  EXPECT_FALSE(swipe != swipe2);
+  EXPECT_TRUE(swipe != swipe_ne0);
+  EXPECT_TRUE(swipe != swipe_ne1);
+  EXPECT_TRUE(swipe != swipe_ne2);
+
+  Gesture swipelift(kGestureSwipeLift, 1.0, 2.0);
+  Gesture swipelift2(kGestureSwipeLift, 1.0, 2.0);
+  Gesture swipelift_ne0(kGestureSwipeLift, 9.0, 2.0);
+  Gesture swipelift_ne1(kGestureSwipeLift, 1.0, 9.0);
+  EXPECT_TRUE(swipelift == swipelift2);
+  EXPECT_FALSE(swipelift == swipelift_ne0);
+  EXPECT_FALSE(swipelift == swipelift_ne1);
+  EXPECT_FALSE(swipelift != swipelift2);
+  EXPECT_TRUE(swipelift != swipelift_ne0);
+  EXPECT_TRUE(swipelift != swipelift_ne1);
+
+  Gesture swipe4f(kGestureFourFingerSwipe, 1.0, 2.0, 3.0, 4.0);
+  Gesture swipe4f2(kGestureFourFingerSwipe, 1.0, 2.0, 3.0, 4.0);
+  Gesture swipe4f_ne0(kGestureFourFingerSwipe, 9.0, 2.0, 3.0, 4.0);
+  Gesture swipe4f_ne1(kGestureFourFingerSwipe, 1.0, 9.0, 3.0, 4.0);
+  Gesture swipe4f_ne2(kGestureFourFingerSwipe, 1.0, 2.0, 9.0, 4.0);
+  EXPECT_TRUE(swipe4f == swipe4f2);
+  EXPECT_FALSE(swipe4f == swipe4f_ne0);
+  EXPECT_FALSE(swipe4f == swipe4f_ne1);
+  EXPECT_FALSE(swipe4f == swipe4f_ne2);
+  EXPECT_FALSE(swipe4f != swipe4f2);
+  EXPECT_TRUE(swipe4f != swipe4f_ne0);
+  EXPECT_TRUE(swipe4f != swipe4f_ne1);
+  EXPECT_TRUE(swipe4f != swipe4f_ne2);
+
+  Gesture swipe4flift(kGestureFourFingerSwipeLift, 1.0, 2.0);
+  Gesture swipe4flift2(kGestureFourFingerSwipeLift, 1.0, 2.0);
+  Gesture swipe4flift_ne0(kGestureFourFingerSwipeLift, 9.0, 2.0);
+  Gesture swipe4flift_ne1(kGestureFourFingerSwipeLift, 1.0, 9.0);
+  EXPECT_TRUE(swipe4flift == swipe4flift2);
+  EXPECT_FALSE(swipe4flift == swipe4flift_ne0);
+  EXPECT_FALSE(swipe4flift == swipe4flift_ne1);
+  EXPECT_FALSE(swipe4flift != swipe4flift2);
+  EXPECT_TRUE(swipe4flift != swipe4flift_ne0);
+  EXPECT_TRUE(swipe4flift != swipe4flift_ne1);
+
+  Gesture metrics(kGestureMetrics, 1.0, 2.0,
+                  kGestureMetricsTypeMouseMovement, 3.0, 4.0);
+  Gesture metrics2(kGestureMetrics, 1.0, 2.0,
+                  kGestureMetricsTypeMouseMovement, 3.0, 4.0);
+  Gesture metrics_ne0(kGestureMetrics, 9.0, 2.0,
+                  kGestureMetricsTypeMouseMovement, 3.0, 4.0);
+  Gesture metrics_ne1(kGestureMetrics, 1.0, 9.0,
+                  kGestureMetricsTypeMouseMovement, 3.0, 4.0);
+  Gesture metrics_ne2(kGestureMetrics, 1.0, 2.0,
+                  kGestureMetricsTypeNoisyGround, 3.0, 4.0);
+  Gesture metrics_ne3(kGestureMetrics, 1.0, 2.0,
+                  kGestureMetricsTypeMouseMovement, 9.0, 4.0);
+  Gesture metrics_ne4(kGestureMetrics, 1.0, 2.0,
+                  kGestureMetricsTypeMouseMovement, 3.0, 9.0);
+  EXPECT_TRUE(metrics == metrics2);
+  EXPECT_FALSE(metrics == metrics_ne0);
+  EXPECT_FALSE(metrics == metrics_ne1);
+  EXPECT_FALSE(metrics == metrics_ne2);
+  EXPECT_FALSE(metrics == metrics_ne3);
+  EXPECT_FALSE(metrics == metrics_ne4);
+  EXPECT_FALSE(metrics != metrics2);
+  EXPECT_TRUE(metrics != metrics_ne0);
+  EXPECT_TRUE(metrics != metrics_ne1);
+  EXPECT_TRUE(metrics != metrics_ne2);
+  EXPECT_TRUE(metrics != metrics_ne3);
+  EXPECT_TRUE(metrics != metrics_ne4);
+
   // Compare different types, should all fail to equate
   Gesture* gs[] = { &null, &move, &scroll, &buttons, &contact_initiated };
   for (size_t i = 0; i < arraysize(gs); ++i) {
@@ -165,6 +316,40 @@ TEST(GesturesTest, SimpleTest) {
   std::unique_ptr<GestureInterpreter> gs(NewGestureInterpreter());
   EXPECT_NE(static_cast<GestureInterpreter*>(NULL), gs.get());
   EXPECT_EQ(static_cast<Interpreter*>(NULL), gs.get()->interpreter());
+
+  GestureInterpreter* gs_version_under = NewGestureInterpreterImpl(0);
+  EXPECT_EQ(nullptr, gs_version_under);
+  GestureInterpreter* gs_version_over = NewGestureInterpreterImpl(1000);
+  EXPECT_EQ(nullptr, gs_version_over);
+
+  GestureInterpreter* gs_ptr = NewGestureInterpreter();
+  EXPECT_NE(nullptr, gs_ptr);
+  gs_ptr->Initialize(GESTURES_DEVCLASS_TOUCHPAD);
+  DeleteGestureInterpreter(gs_ptr);
+
+  gs_ptr = NewGestureInterpreter();
+  EXPECT_NE(nullptr, gs_ptr);
+  gs_ptr->Initialize(GESTURES_DEVCLASS_TOUCHSCREEN);
+  DeleteGestureInterpreter(gs_ptr);
+
+  gs_ptr = NewGestureInterpreter();
+  EXPECT_NE(nullptr, gs_ptr);
+  gs_ptr->Initialize(GESTURES_DEVCLASS_MOUSE);
+  DeleteGestureInterpreter(gs_ptr);
+
+  gs_ptr = NewGestureInterpreter();
+  EXPECT_NE(nullptr, gs_ptr);
+  gs_ptr->Initialize(GESTURES_DEVCLASS_POINTING_STICK);
+  DeleteGestureInterpreter(gs_ptr);
+
+  gs_ptr = NewGestureInterpreter();
+  EXPECT_NE(nullptr, gs_ptr);
+  gs_ptr->Initialize(GESTURES_DEVCLASS_MULTITOUCH_MOUSE);
+  std::string activity = gs_ptr->EncodeActivityLog();
+  EXPECT_NE(activity.size(), 0);
+  DeleteGestureInterpreter(gs_ptr);
+
+  EXPECT_EQ("1073741824", FingerState::FlagsString(1 << 30));
 }
 
 TEST(GesturesTest, CtorTest) {
