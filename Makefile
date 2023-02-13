@@ -51,6 +51,7 @@ TEST_OBJECTS=\
 	$(OBJDIR)/click_wiggle_filter_interpreter_unittest.o \
 	$(OBJDIR)/command_line.o \
 	$(OBJDIR)/filter_interpreter_unittest.o \
+	$(OBJDIR)/finger_merge_filter_interpreter_unittest.o \
 	$(OBJDIR)/finger_metrics_unittest.o \
 	$(OBJDIR)/fling_stop_filter_interpreter_unittest.o \
 	$(OBJDIR)/gestures_unittest.o \
@@ -63,6 +64,7 @@ TEST_OBJECTS=\
 	$(OBJDIR)/logging_filter_interpreter_unittest.o \
 	$(OBJDIR)/lookahead_filter_interpreter_unittest.o \
 	$(OBJDIR)/non_linearity_filter_interpreter_unittest.o \
+	$(OBJDIR)/metrics_filter_interpreter_unittest.o \
 	$(OBJDIR)/mouse_interpreter_unittest.o \
 	$(OBJDIR)/multitouch_mouse_interpreter_unittest.o \
 	$(OBJDIR)/palm_classifying_filter_interpreter_unittest.o \
@@ -70,12 +72,14 @@ TEST_OBJECTS=\
 	$(OBJDIR)/scaling_filter_interpreter_unittest.o \
 	$(OBJDIR)/sensor_jump_filter_interpreter_unittest.o \
 	$(OBJDIR)/split_correcting_filter_interpreter_unittest.o \
+	$(OBJDIR)/stationary_wiggle_filter_interpreter_unittest.o \
 	$(OBJDIR)/string_util_unittest.o \
 	$(OBJDIR)/stuck_button_inhibitor_filter_interpreter_unittest.o \
 	$(OBJDIR)/t5r2_correcting_filter_interpreter_unittest.o \
 	$(OBJDIR)/timestamp_filter_interpreter_unittest.o \
 	$(OBJDIR)/trace_marker_unittest.o \
 	$(OBJDIR)/tracer_unittest.o \
+	$(OBJDIR)/trend_classifying_filter_interpreter_unittest.o \
 	$(OBJDIR)/unittest_util.o \
 	$(OBJDIR)/util_unittest.o \
 	$(OBJDIR)/vector_unittest.o

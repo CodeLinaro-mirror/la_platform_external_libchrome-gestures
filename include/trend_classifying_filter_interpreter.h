@@ -78,6 +78,7 @@ namespace gestures {
 // thumbs.
 
 class TrendClassifyingFilterInterpreter: public FilterInterpreter {
+  FRIEND_TEST(TrendClassifyingFilterInterpreterTest, SimpleTest);
 
 public:
   TrendClassifyingFilterInterpreter(PropRegistry* prop_reg, Interpreter* next,

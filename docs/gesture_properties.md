@@ -18,9 +18,12 @@ such as "Scroll Accel Curve", "Mouse Reverse Scrolling", or "Palm Pressure".
 
 Each property has a type (integer, double, boolean, or string), and a size,
 which is the number of values of that type that it stores. (For strings, the
-size is always 1.) Some properties are read-only, which normally means that
-modifying them wouldn't make sense (for example, the "Device Vendor ID"
-property, which reflects a hardware ID).
+size is always 1.)
+
+Chromium creates some read-only properties, which normally means that modifying
+them wouldn't make sense (for example, the "Device Vendor ID" property, which
+reflects a hardware ID). However, the Gestures library itself does not do this,
+so other clients don't need to support them.
 
 ## Changing properties without recompiling
 

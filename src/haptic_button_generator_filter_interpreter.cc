@@ -10,6 +10,7 @@
 #include "include/interpreter.h"
 #include "include/logging.h"
 #include "include/tracer.h"
+#include "include/util.h"
 
 namespace gestures {
 
@@ -59,6 +60,7 @@ void HapticButtonGeneratorFilterInterpreter::SyncInterpretImpl(
   HandleHardwareState(hwstate);
   stime_t next_timeout = NO_DEADLINE;
   next_->SyncInterpret(hwstate, &next_timeout);
+  UpdatePalmState(hwstate);
   *timeout = SetNextDeadlineAndReturnTimeoutVal(
       hwstate->timestamp, active_gesture_deadline_, next_timeout);
 }
@@ -90,10 +92,13 @@ void HapticButtonGeneratorFilterInterpreter::HandleHardwareState(
 
   up_threshold *= release_suppress_factor_;
 
-  // Determine total force on touchpad in grams
+  // Determine maximum force on touchpad in grams
   double force = 0.0;
   for (short i = 0; i < hwstate->finger_cnt; i++) {
-    force = fmax(force, hwstate->fingers[i].pressure);
+    FingerState* fs = &hwstate->fingers[i];
+    if (!SetContainsValue(palms_, fs->tracking_id)) {
+      force = fmax(force, fs->pressure);
+    }
   }
   force *= force_scale_.val_;
   force += force_translate_.val_;
@@ -142,6 +147,18 @@ void HapticButtonGeneratorFilterInterpreter::HandleHardwareState(
   }
   release_suppress_factor_ = 1.0;
 }
+
+void HapticButtonGeneratorFilterInterpreter::UpdatePalmState(
+    HardwareState* hwstate) {
+  RemoveMissingIdsFromSet(&palms_, *hwstate);
+  for (short i = 0; i < hwstate->finger_cnt; i++) {
+    FingerState* fs = &hwstate->fingers[i];
+    if (fs->flags & GESTURES_FINGER_LARGE_PALM) {
+      palms_.insert(fs->tracking_id);
+    }
+  }
+}
+
 
 void HapticButtonGeneratorFilterInterpreter::HandleTimerImpl(
     stime_t now, stime_t *timeout) {
