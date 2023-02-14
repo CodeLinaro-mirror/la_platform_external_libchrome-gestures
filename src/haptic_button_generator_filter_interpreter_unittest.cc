@@ -339,4 +339,69 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, DynamicThresholdTest) {
   }
 }
 
+TEST(HapticButtonGeneratorFilterInterpreterTest, PalmTest) {
+  HapticButtonGeneratorFilterInterpreterTestInterpreter* base_interpreter =
+      new HapticButtonGeneratorFilterInterpreterTestInterpreter;
+  HapticButtonGeneratorFilterInterpreter interpreter(
+      NULL, base_interpreter, NULL);
+  HardwareProperties hwprops = {
+    0, 0, 100, 100,  // left, top, right, bottom
+    10,  // x res (pixels/mm)
+    10,  // y res (pixels/mm)
+    133, 133,  // scrn DPI X, Y
+    -1,  // orientation minimum
+    2,   // orientation maximum
+    2, 5,  // max fingers, max_touch
+    0, 0, 0,  // t5r2, semi, button pad
+    0, 0,  // has wheel, vertical wheel is high resolution
+    1,  // haptic pad
+  };
+  TestInterpreterWrapper wrapper(&interpreter, &hwprops);
+
+  interpreter.enabled_.val_ = true;
+
+  FingerState fs[] = {
+    // TM, Tm, WM, Wm, pr, orient, x, y, id, flag
+    { 0, 0, 0, 0, 50, 0, 10, 1, 1, GESTURES_FINGER_LARGE_PALM },
+    { 0, 0, 0, 0, 160, 0, 10, 1, 1, GESTURES_FINGER_LARGE_PALM },
+    { 0, 0, 0, 0, 50, 0, 10, 1, 1, GESTURES_FINGER_LARGE_PALM },
+
+    { 0, 0, 0, 0, 50, 0, 10, 1, 1, GESTURES_FINGER_LARGE_PALM },
+    { 0, 0, 0, 0, 50, 0, 10, 1, 2, 0 },
+    { 0, 0, 0, 0, 160, 0, 10, 1, 1, GESTURES_FINGER_LARGE_PALM },
+    { 0, 0, 0, 0, 80, 0, 10, 1, 2, 0 },
+
+    { 0, 0, 0, 0, 160, 0, 10, 1, 1, GESTURES_FINGER_LARGE_PALM },
+    { 0, 0, 0, 0, 160, 0, 10, 1, 2, 0 },
+  };
+  HardwareState hs[] = {
+    // Expect not to set button down when a lone palm goes above 'down force
+    // threshold'
+    make_hwstate(2.01, 0, 1, 1, &fs[0]),
+    make_hwstate(2.03, 0, 1, 1, &fs[1]),
+    make_hwstate(2.05, 0, 1, 1, &fs[2]),
+
+    // Expect not to set button down when there are multiple fingers and only a
+    // palm goes above 'down force threshold'
+    make_hwstate(4.01, 0, 2, 2, &fs[3]),
+    make_hwstate(4.03, 0, 2, 2, &fs[5]),
+
+    // Expect to set button down when there are multiple fingers and a non-palm
+    // goes above 'down force threshold'
+    make_hwstate(4.05, 0, 2, 2, &fs[7]),
+  };
+
+  stime_t expected_buttons[] = {
+    0, 0, 0,
+    0, 0,
+    GESTURES_BUTTON_LEFT,
+  };
+
+  for (size_t i = 0; i < arraysize(hs); i++) {
+    stime_t timeout = NO_DEADLINE;
+    wrapper.SyncInterpret(&hs[i], &timeout);
+    EXPECT_EQ(hs[i].buttons_down, expected_buttons[i]);
+  }
+}
+
 }  // namespace gestures

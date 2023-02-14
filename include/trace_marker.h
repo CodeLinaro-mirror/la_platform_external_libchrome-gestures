@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <gtest/gtest.h>  // for FRIEND_TEST
 #include <linux/limits.h>
 
 #include "include/macros.h"
@@ -21,6 +22,8 @@ namespace gestures {
 // debugfs/tracing/trace
 
 class TraceMarker {
+  FRIEND_TEST(TraceMarkerTest, DeleteTraceMarkerTest);
+
  public:
   static void CreateTraceMarker();
   static void DeleteTraceMarker();

@@ -86,6 +86,14 @@ void LookaheadFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
                        interpreter_due_ : interpreter_due_ + hwstate->timestamp,
                        hwstate->timestamp, timeout);
   HandleTimerImpl(hwstate->timestamp, timeout);
+
+  // Copy finger flags for upstream filters.
+  QState* q_node = queue_.Head();
+  if (q_node->state_.SameFingersAs(*hwstate)) {
+    for (size_t i = 0; i < hwstate->finger_cnt; i++) {
+      hwstate->fingers[i].flags = q_node->state_.fingers[i].flags;
+   }
+  }
 }
 
 // Interpolates the two hardware states into out.
@@ -124,8 +132,13 @@ void LookaheadFilterInterpreter::AssignTrackingIds() {
   // For semi-mt devices, drumrolls and quick moves are handled in
   // SemiMtCorrectingFilterInterpreter already. We need to bypass the detection
   // and tracking id reassignment here to make fast-scroll working correctly.
-  if (hwprops_->support_semi_mt || !drumroll_suppression_enable_.val_)
+  // For haptic touchpads, we need to bypass tracking id reassignment so the
+  // haptic button filter can have the same tracking ids.
+  if (hwprops_->support_semi_mt ||
+      hwprops_->is_haptic_pad ||
+      !drumroll_suppression_enable_.val_) {
     return;
+  }
   if (queue_.size() < 2) {
     // Always reassign trackingID on the very first hwstate so that
     // the next hwstate can inherit the trackingID mapping.
@@ -464,6 +477,11 @@ void LookaheadFilterInterpreter::HandleTimerImpl(stime_t now,
       // Mark current node completed. This should be the only completed
       // node in the queue.
       node->completed_ = true;
+
+      // Copy finger flags for upstream filters.
+      for (size_t i = 0; i < node->state_.finger_cnt; i++) {
+        node->state_.fingers[i].flags = hs_copy.fingers[i].flags;
+      }
     }
     UpdateInterpreterDue(next_timeout, now, timeout);
   }

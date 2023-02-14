@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <map>
+#include <gtest/gtest.h>  // for FRIEND_TEST
 
 #include "include/filter_interpreter.h"
 #include "include/finger_metrics.h"
@@ -122,6 +123,8 @@ class FingerEnergyHistory {
 };
 
 class StationaryWiggleFilterInterpreter : public FilterInterpreter {
+  FRIEND_TEST(StationaryWiggleFilterInterpreterTest, SimpleTest);
+
  public:
   // Takes ownership of |next|:
   StationaryWiggleFilterInterpreter(PropRegistry* prop_reg,
