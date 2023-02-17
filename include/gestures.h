@@ -160,6 +160,7 @@ struct HardwareProperties {
 // skip the flag so that we can have the option to use the not-that-accurate
 // positions.
 #define GESTURES_FINGER_WARP_TELEPORTATION (1 << 19)
+#define GESTURES_FINGER_LARGE_PALM (1 << 20)
 
 #define GESTURES_FINGER_WARP_X    (GESTURES_FINGER_WARP_X_NON_MOVE | \
                                    GESTURES_FINGER_WARP_X_MOVE)
@@ -260,13 +261,23 @@ struct HardwareState {
 // the ordinal_* fields.
 
 typedef struct {
-  float dx, dy;
+  // The movement in the X axis. Positive values indicate motion to the right.
+  float dx;
+  // The movement in the Y axis. Positive values indicate downwards motion.
+  float dy;
   float ordinal_dx, ordinal_dy;
 } GestureMove;
 
 // Represents scroll gestures on a touch device.
 typedef struct{
-  float dx, dy;
+  // The scroll movement in the X axis. Unlike with move gestures, *negative*
+  // values indicate the fingers moving to the right, unless the "Australian
+  // Scrolling" or "Invert Scrolling" properties are set.
+  float dx;
+  // The scroll movement in the Y axis. Unlike with move gestures, *negative*
+  // values indicate the fingers moving downwards, unless the "Australian
+  // Scrolling" or "Invert Scrolling" properties are set.
+  float dy;
   float ordinal_dx, ordinal_dy;
   // If set, stop_fling means that this scroll should stop flinging, thus
   // if an interpreter suppresses it for any reason (e.g., rounds the size
@@ -292,19 +303,39 @@ typedef struct {
 } GestureButtonsChange;
 
 typedef struct {
-  // fling velocity (valid when fling_state is GESTURES_FLING_START):
-  float vx, vy;
+  // The fling velocity in the X axis, only valid when fling_state is
+  // GESTURES_FLING_START. Unlike with move gestures, *negative* values indicate
+  // the fingers moving to the right, unless the "Australian Scrolling" or
+  // "Invert Scrolling" properties are set.
+  float vx;
+  // The fling velocity in the Y axis, only valid when fling_state is
+  // GESTURES_FLING_START. Unlike with move gestures, *negative* values indicate
+  // the fingers moving downwards, unless the "Australian Scrolling" or "Invert
+  // Scrolling" properties are set.
+  float vy;
   float ordinal_vx, ordinal_vy;
   unsigned fling_state:1;  // GESTURES_FLING_START or GESTURES_FLING_TAP_DOWN
 } GestureFling;
 
 typedef struct {
-  float dx, dy;
+  // The swipe movement in the X axis. Positive values indicate motion to the
+  // right.
+  float dx;
+  // The swipe movement in the Y axis. Unlike with move gestures, *negative*
+  // values indicate downwards motion, unless the "Australian Scrolling"
+  // property is set.
+  float dy;
   float ordinal_dx, ordinal_dy;
 } GestureSwipe;
 
 typedef struct {
-  float dx, dy;
+  // The swipe movement in the X axis. Positive values indicate motion to the
+  // right.
+  float dx;
+  // The swipe movement in the Y axis. Unlike with move gestures, *negative*
+  // values indicate downwards motion, unless the "Australian Scrolling"
+  // property is set.
+  float dy;
   float ordinal_dx, ordinal_dy;
 } GestureFourFingerSwipe;
 
@@ -343,21 +374,38 @@ typedef struct {
   float data[2];
 } GestureMetrics;
 
+// Describes the type of gesture that is being reported.
 enum GestureType {
 #ifdef GESTURES_INTERNAL
   kGestureTypeNull = -1,  // internal to Gestures library only
 #endif  // GESTURES_INTERNAL
+  // No longer used.
   kGestureTypeContactInitiated = 0,
+  // For touchpads, a movement of a single finger on the pad. For mice, a
+  // movement of the whole mouse.
   kGestureTypeMove,
+  // A two-finger scroll gesture on a touchpad. (See kGestureTypeMouseWheel for
+  // the mouse equivalent.)
   kGestureTypeScroll,
+  // A change in the buttons that are currently pressed on the device.
   kGestureTypeButtonsChange,
+  // The start or end of a fling motion, where scrolling should continue after
+  // the user's fingers have left the touchpad.
   kGestureTypeFling,
+  // A movement of three fingers on a touchpad.
   kGestureTypeSwipe,
+  // A movement of two fingers on a touchpad that are primarily moving closer to
+  // or further from each other.
   kGestureTypePinch,
+  // The end of a movement of three fingers on a touchpad.
   kGestureTypeSwipeLift,
+  // Used to report metrics to the client.
   kGestureTypeMetrics,
+  // A movement of four fingers on a touchpad.
   kGestureTypeFourFingerSwipe,
+  // The end of a movement of four fingers on a touchpad.
   kGestureTypeFourFingerSwipeLift,
+  // The movement of a scroll wheel on a mouse.
   kGestureTypeMouseWheel,
 };
 
@@ -522,8 +570,10 @@ typedef unsigned char GesturesPropBool;
 
 // These functions create a named property of given type.
 //   data - data used by PropProvider
-//   loc - location of a variable to be updated by PropProvider.
-//         Set to NULL to create a ReadOnly property
+//   loc - location of a variable to be updated by PropProvider
+//         (Chromium calls its own GesturesPropCreate... functions with loc set
+//         to null to create read-only properties, but the Gestures library
+//         itself doesn't, so other clients don't need to support them.)
 //   init - initial value for the property.
 //          If the PropProvider has an alternate configuration source, it may
 //          override this initial value, in which case *loc returns the
@@ -532,9 +582,9 @@ typedef GesturesProp* (*GesturesPropCreateInt)(void* data, const char* name,
                                                int* loc, size_t count,
                                                const int* init);
 
-typedef GesturesProp* (*GesturesPropCreateShort)(void* data, const char* name,
-                                                 short* loc, size_t count,
-                                                 const short* init);
+// Deprecated: the gestures library no longer uses short gesture properties.
+typedef GesturesProp* (*GesturesPropCreateShort_Deprecated)(
+    void*, const char*, short*, size_t, const short*);
 
 typedef GesturesProp* (*GesturesPropCreateBool)(void* data, const char* name,
                                                 GesturesPropBool* loc,
@@ -558,12 +608,17 @@ typedef GesturesPropBool (*GesturesPropGetHandler)(void* handler_data);
 // |handler_data| is a local context pointer that can be used by the handler.
 typedef void (*GesturesPropSetHandler)(void* handler_data);
 
-// Register handlers to be called when a GesturesProp is accessed.
-// The get handler, if not NULL, is called immediately before the property's
-// value is to be read.  This gives the library a chance to update its value.
-// The set handler, if not NULL, is called immediately after the property's
-// value is updated.  This can be used to create a property that is used to
-// trigger an action, or to force an update to multiple properties atomically.
+// Register handlers for the client to call when a GesturesProp is accessed.
+//
+// The get handler, if not NULL, should be called immediately before the
+// property's value is to be read. This gives the library a chance to update its
+// value.
+//
+// The set handler, if not NULL, should be called immediately after the
+// property's value is updated. This can be used to create a property that is
+// used to trigger an action, or to force an update to multiple properties
+// atomically.
+//
 // Note: the handlers are called from non-signal/interrupt context
 typedef void (*GesturesPropRegisterHandlers)(void* data, GesturesProp* prop,
                                              void* handler_data,
@@ -575,7 +630,9 @@ typedef void (*GesturesPropFree)(void* data, GesturesProp* prop);
 
 typedef struct GesturesPropProvider {
   GesturesPropCreateInt create_int_fn;
-  GesturesPropCreateShort create_short_fn;
+  // Deprecated: the library no longer uses short gesture properties, so this
+  // function pointer should be null.
+  GesturesPropCreateShort_Deprecated create_short_fn;
   GesturesPropCreateBool create_bool_fn;
   GesturesPropCreateString create_string_fn;
   GesturesPropCreateReal create_real_fn;

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <gtest/gtest.h>  // for FRIEND_TEST
+#include <set>
 
 #include "include/filter_interpreter.h"
 #include "include/gestures.h"
@@ -24,6 +25,7 @@ class HapticButtonGeneratorFilterInterpreter : public FilterInterpreter {
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest,
               GesturePreventsButtonDownTest);
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, DynamicThresholdTest);
+  FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, PalmTest);
  public:
   // Takes ownership of |next|:
   explicit HapticButtonGeneratorFilterInterpreter(PropRegistry* prop_reg,
@@ -42,6 +44,7 @@ class HapticButtonGeneratorFilterInterpreter : public FilterInterpreter {
   void ConsumeGesture(const Gesture& gesture) override;
   void HandleHardwareState(HardwareState* hwstate);
   virtual void HandleTimerImpl(stime_t now, stime_t *timeout) override;
+  void UpdatePalmState(HardwareState* hwstate);
 
   static const size_t kMaxSensitivitySettings = 5;
 
@@ -50,6 +53,8 @@ class HapticButtonGeneratorFilterInterpreter : public FilterInterpreter {
       {90.0, 110.0, 130.0, 145.0, 160.0};
   const double up_thresholds_[kMaxSensitivitySettings] =
       {80.0, 95.0, 105.0, 120.0, 135.0};
+
+  std::set<short> palms_;
 
   // Scaling factor for release force [0.0-1.0]
   double release_suppress_factor_;

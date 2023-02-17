@@ -24,6 +24,7 @@ namespace gestures {
 // merging/merged finger(s).
 
 class FingerMergeFilterInterpreter : public FilterInterpreter {
+  FRIEND_TEST(FingerMergeFilterInterpreterTest, SimpleTest);
 
  public:
   FingerMergeFilterInterpreter(PropRegistry* prop_reg, Interpreter* next,

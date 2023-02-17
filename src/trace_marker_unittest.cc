@@ -16,7 +16,14 @@ TEST(TraceMarkerTest, DeleteTraceMarkerTest) {
     EXPECT_EQ(NULL, TraceMarker::GetTraceMarker());
     TraceMarker::CreateTraceMarker();
     EXPECT_TRUE(NULL != TraceMarker::GetTraceMarker());
+    TraceMarker::StaticTraceWrite("Test");
+    EXPECT_EQ(-1, TraceMarker::GetTraceMarker()->fd_);
+    EXPECT_EQ(1, TraceMarker::trace_marker_count_);
     TraceMarker::DeleteTraceMarker();
     EXPECT_EQ(NULL, TraceMarker::GetTraceMarker());
+    TraceMarker::StaticTraceWrite("Test");
+    EXPECT_EQ(0, TraceMarker::trace_marker_count_);
+    TraceMarker::DeleteTraceMarker();
+    EXPECT_EQ(0, TraceMarker::trace_marker_count_);
 };
 }  // namespace gestures

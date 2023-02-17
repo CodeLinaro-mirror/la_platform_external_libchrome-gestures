@@ -97,6 +97,9 @@ class PalmClassifyingFilterInterpreter : public FilterInterpreter {
   // Same fingers state. This state is accumulated as fingers remain the same
   // and it's reset when fingers change.
   std::set<short> palm_;  // tracking ids of known palms
+  // These contacts are a subset of palms_ which are marked as palms because
+  // they have a large contact size.
+  std::set<short> large_palm_;
   // These contacts have moved significantly and shouldn't be considered
   // stationary palms:
   std::set<short> non_stationary_palm_;
