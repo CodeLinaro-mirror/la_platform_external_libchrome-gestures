@@ -2985,7 +2985,7 @@ TEST(ImmediateInterpreterTest, PinchTests) {
     {make_hwstate(2.01, 0, 2, 2, &finger_states[22]), kAny},
     {make_hwstate(2.02, 0, 2, 2, &finger_states[26]), kAny},
     {make_hwstate(2.03, 0, 2, 2, &finger_states[30]), kAny},
-    {make_hwstate(2.04, 0, 2, 2, &finger_states[32]), kNoPinch},
+    {make_hwstate(2.04, 0, 2, 2, &finger_states[30]), kNoPinch},
     {make_hwstate(2.05, 0, 0, 0, NULL), kAny},
 
 

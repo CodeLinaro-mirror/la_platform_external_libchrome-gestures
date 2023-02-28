@@ -261,13 +261,23 @@ struct HardwareState {
 // the ordinal_* fields.
 
 typedef struct {
-  float dx, dy;
+  // The movement in the X axis. Positive values indicate motion to the right.
+  float dx;
+  // The movement in the Y axis. Positive values indicate downwards motion.
+  float dy;
   float ordinal_dx, ordinal_dy;
 } GestureMove;
 
 // Represents scroll gestures on a touch device.
 typedef struct{
-  float dx, dy;
+  // The scroll movement in the X axis. Unlike with move gestures, *negative*
+  // values indicate the fingers moving to the right, unless the "Australian
+  // Scrolling" or "Invert Scrolling" properties are set.
+  float dx;
+  // The scroll movement in the Y axis. Unlike with move gestures, *negative*
+  // values indicate the fingers moving downwards, unless the "Australian
+  // Scrolling" or "Invert Scrolling" properties are set.
+  float dy;
   float ordinal_dx, ordinal_dy;
   // If set, stop_fling means that this scroll should stop flinging, thus
   // if an interpreter suppresses it for any reason (e.g., rounds the size
@@ -293,19 +303,39 @@ typedef struct {
 } GestureButtonsChange;
 
 typedef struct {
-  // fling velocity (valid when fling_state is GESTURES_FLING_START):
-  float vx, vy;
+  // The fling velocity in the X axis, only valid when fling_state is
+  // GESTURES_FLING_START. Unlike with move gestures, *negative* values indicate
+  // the fingers moving to the right, unless the "Australian Scrolling" or
+  // "Invert Scrolling" properties are set.
+  float vx;
+  // The fling velocity in the Y axis, only valid when fling_state is
+  // GESTURES_FLING_START. Unlike with move gestures, *negative* values indicate
+  // the fingers moving downwards, unless the "Australian Scrolling" or "Invert
+  // Scrolling" properties are set.
+  float vy;
   float ordinal_vx, ordinal_vy;
   unsigned fling_state:1;  // GESTURES_FLING_START or GESTURES_FLING_TAP_DOWN
 } GestureFling;
 
 typedef struct {
-  float dx, dy;
+  // The swipe movement in the X axis. Positive values indicate motion to the
+  // right.
+  float dx;
+  // The swipe movement in the Y axis. Unlike with move gestures, *negative*
+  // values indicate downwards motion, unless the "Australian Scrolling"
+  // property is set.
+  float dy;
   float ordinal_dx, ordinal_dy;
 } GestureSwipe;
 
 typedef struct {
-  float dx, dy;
+  // The swipe movement in the X axis. Positive values indicate motion to the
+  // right.
+  float dx;
+  // The swipe movement in the Y axis. Unlike with move gestures, *negative*
+  // values indicate downwards motion, unless the "Australian Scrolling"
+  // property is set.
+  float dy;
   float ordinal_dx, ordinal_dy;
 } GestureFourFingerSwipe;
 
