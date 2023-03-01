@@ -81,8 +81,11 @@ class ScalingFilterInterpreter : public FilterInterpreter {
 
   HardwareProperties friendly_props_;
 
-  // True if scrolling should be inverted
-  BoolProperty australian_scrolling_;
+  // When set to true, scroll and swipe gesture directions are inverted.
+  BoolProperty invert_scrolling_and_swiping_;
+
+  // When set to true, only scroll gesture directions are inverted.
+  BoolProperty invert_scrolling_only_;
 
   // Output surface area (sq. mm) =
   // if surface_area_from_pressure_

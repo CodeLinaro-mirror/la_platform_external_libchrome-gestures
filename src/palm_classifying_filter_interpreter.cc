@@ -164,6 +164,7 @@ bool PalmClassifyingFilterInterpreter::FingerInBottomArea(
 void PalmClassifyingFilterInterpreter::UpdatePalmState(
     const HardwareState& hwstate) {
   RemoveMissingIdsFromSet(&palm_, hwstate);
+  RemoveMissingIdsFromSet(&large_palm_, hwstate);
   RemoveMissingIdsFromMap(&pointing_, hwstate);
   RemoveMissingIdsFromSet(&non_stationary_palm_, hwstate);
   RemoveMissingIdsFromSet(&fingers_not_in_edge_, hwstate);
@@ -180,6 +181,7 @@ void PalmClassifyingFilterInterpreter::UpdatePalmState(
     // Mark anything over the palm thresh as a palm
     if (fs.pressure >= palm_pressure_.val_ ||
         fs.touch_major >= multi_palm_width_.val_) {
+      large_palm_.insert(fs.tracking_id);
       palm_.insert(fs.tracking_id);
       pointing_.erase(fs.tracking_id);
       continue;
@@ -188,6 +190,7 @@ void PalmClassifyingFilterInterpreter::UpdatePalmState(
 
   if (hwstate.finger_cnt == 1 &&
       hwstate.fingers[0].touch_major >= palm_width_.val_) {
+    large_palm_.insert(hwstate.fingers[0].tracking_id);
     palm_.insert(hwstate.fingers[0].tracking_id);
     pointing_.erase(hwstate.fingers[0].tracking_id);
   }
@@ -214,6 +217,7 @@ void PalmClassifyingFilterInterpreter::UpdatePalmState(
       if (max_pressure_[fs.tracking_id] <= kFatFingerMaxPressure &&
           max_width_[fs.tracking_id] <= kFatFingerMaxWidth &&
           dist_sq > kFatFingerMinDistSq) {
+        large_palm_.erase(fs.tracking_id);
         palm_.erase(fs.tracking_id);
       } else {
         // Lock onto palm
@@ -288,6 +292,9 @@ void PalmClassifyingFilterInterpreter::UpdatePalmState(
 void PalmClassifyingFilterInterpreter::UpdatePalmFlags(HardwareState* hwstate) {
   for (short i = 0; i < hwstate->finger_cnt; i++) {
     FingerState* fs = &hwstate->fingers[i];
+    if (SetContainsValue(large_palm_, fs->tracking_id)) {
+      fs->flags |= GESTURES_FINGER_LARGE_PALM;
+    }
     if (SetContainsValue(palm_, fs->tracking_id)) {
       fs->flags |= GESTURES_FINGER_PALM;
     } else if (!MapContainsKey(pointing_, fs->tracking_id) &&

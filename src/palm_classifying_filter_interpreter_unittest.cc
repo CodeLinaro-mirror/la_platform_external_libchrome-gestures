@@ -286,13 +286,16 @@ TEST(PalmClassifyingFilterInterpreterTest, PalmAtEdgeTest) {
         break;
       case 0:  // fallthrough
       case 1:
-      case 4:
-      case 5:
       case 8:
       case 9:
       case 10:
       case 12:
         base_interpreter->expected_flags_ = GESTURES_FINGER_PALM;
+        break;
+      case 4:
+      case 5:
+        base_interpreter->expected_flags_ =
+            (GESTURES_FINGER_PALM | GESTURES_FINGER_LARGE_PALM);
         break;
       default:
         ADD_FAILURE() << "Should be unreached.";
@@ -659,7 +662,8 @@ TEST(PalmClassifyingFilterInterpreterTest, LargeTouchMajorTest) {
       input.touch_major_, 0, 0, 0, input.pressure_, 0, input.x_, input.y_, 1, 0
     };
     HardwareState hs = make_hwstate(input.now_, 0, 1, 1, &fs);
-    base_interpreter->expected_flags_ = GESTURES_FINGER_PALM;
+    base_interpreter->expected_flags_ =
+        (GESTURES_FINGER_PALM | GESTURES_FINGER_LARGE_PALM);
     wrapper.SyncInterpret(&hs, NULL);
   }
 }

@@ -2879,7 +2879,8 @@ TEST(ImmediateInterpreterTest, ChangeTimeoutTest) {
 enum PinchTestExpectedResult {
   kPinch,
   kNoPinch,
-  kAny
+  kAny,
+  kNull
 };
 
 struct PinchTestInput {
@@ -2887,7 +2888,7 @@ struct PinchTestInput {
   PinchTestExpectedResult expected_result;
 };
 
-TEST(ImmediateInterpreterTest, DISABLED_PinchTests) {
+TEST(ImmediateInterpreterTest, PinchTests) {
   ImmediateInterpreter ii(NULL, NULL);
   ii.pinch_enable_.val_ = 1;
   HardwareProperties hwprops = {
@@ -2976,8 +2977,8 @@ TEST(ImmediateInterpreterTest, DISABLED_PinchTests) {
     {make_hwstate(1.08, 0, 2, 2, &finger_states[6]), kAny},
     {make_hwstate(1.09, 0, 2, 2, &finger_states[8]), kAny},
     {make_hwstate(1.10, 0, 2, 2, &finger_states[8]), kAny},
-    {make_hwstate(1.11, 0, 2, 2, &finger_states[10]), kAny},
-    {make_hwstate(1.12, 0, 2, 2, &finger_states[10]), kPinch},
+    {make_hwstate(1.11, 0, 2, 2, &finger_states[10]), kPinch},
+    {make_hwstate(1.12, 0, 2, 2, &finger_states[10]), kNull},
     {make_hwstate(1.13, 0, 0, 0, NULL), kAny},
 
     // single finger pinch
@@ -3018,6 +3019,10 @@ TEST(ImmediateInterpreterTest, DISABLED_PinchTests) {
       if (gs != NULL) {
         EXPECT_NE(kGestureTypePinch, gs->type);
       }
+    }
+    // assert if NULL is not given back
+    if (input_states[idx].expected_result == kNull) {
+      ASSERT_EQ(reinterpret_cast<Gesture*>(NULL), gs);
     }
   }
 }

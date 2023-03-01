@@ -25,7 +25,8 @@ ScalingFilterInterpreter::ScalingFilterInterpreter(
       screen_x_scale_(1.0),
       screen_y_scale_(1.0),
       orientation_scale_(1.0),
-      australian_scrolling_(prop_reg, "Australian Scrolling", false),
+      invert_scrolling_and_swiping_(prop_reg, "Australian Scrolling", false),
+      invert_scrolling_only_(prop_reg, "Invert Scrolling", false),
       surface_area_from_pressure_(prop_reg,
                                   "Compute Surface Area from Pressure", true),
       use_touch_size_for_haptic_pad_(
@@ -255,7 +256,8 @@ void ScalingFilterInterpreter::ConsumeGesture(const Gesture& gs) {
         copy.details.scroll.ordinal_dx *= screen_x_scale_;
         copy.details.scroll.ordinal_dy *= screen_y_scale_;
       }
-      if (!australian_scrolling_.val_) {
+      if (!(invert_scrolling_and_swiping_.val_ ||
+            invert_scrolling_only_.val_)) {
         copy.details.scroll.dx *= -1;
         copy.details.scroll.dy *= -1;
         copy.details.scroll.ordinal_dx *= -1;
@@ -263,7 +265,8 @@ void ScalingFilterInterpreter::ConsumeGesture(const Gesture& gs) {
       }
       break;
     case kGestureTypeMouseWheel:
-      if (!australian_scrolling_.val_) {
+      if (!(invert_scrolling_and_swiping_.val_ ||
+            invert_scrolling_only_.val_)) {
         copy.details.wheel.dx *= -1;
         copy.details.wheel.dy *= -1;
         copy.details.wheel.tick_120ths_dx *= -1;
@@ -275,7 +278,8 @@ void ScalingFilterInterpreter::ConsumeGesture(const Gesture& gs) {
       copy.details.fling.vy *= screen_y_scale_;
       copy.details.fling.ordinal_vx *= screen_x_scale_;
       copy.details.fling.ordinal_vy *= screen_y_scale_;
-      if (!australian_scrolling_.val_) {
+      if (!(invert_scrolling_and_swiping_.val_ ||
+            invert_scrolling_only_.val_)) {
         copy.details.fling.vx *= -1;
         copy.details.fling.vy *= -1;
         copy.details.fling.ordinal_vx *= -1;
@@ -288,7 +292,7 @@ void ScalingFilterInterpreter::ConsumeGesture(const Gesture& gs) {
       copy.details.swipe.dy *= screen_y_scale_;
       copy.details.swipe.ordinal_dx *= screen_x_scale_;
       copy.details.swipe.ordinal_dy *= screen_y_scale_;
-      if (!australian_scrolling_.val_) {
+      if (!invert_scrolling_and_swiping_.val_) {
         copy.details.swipe.dy *= -1;
         copy.details.swipe.ordinal_dy *= -1;
       }
@@ -299,7 +303,7 @@ void ScalingFilterInterpreter::ConsumeGesture(const Gesture& gs) {
       copy.details.four_finger_swipe.dy *= screen_y_scale_;
       copy.details.four_finger_swipe.ordinal_dx *= screen_x_scale_;
       copy.details.four_finger_swipe.ordinal_dy *= screen_y_scale_;
-      if (!australian_scrolling_.val_) {
+      if (!invert_scrolling_and_swiping_.val_) {
         copy.details.four_finger_swipe.dy *= -1;
         copy.details.four_finger_swipe.ordinal_dy *= -1;
       }

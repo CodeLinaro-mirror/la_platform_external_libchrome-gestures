@@ -24,6 +24,10 @@ namespace gestures {
 // metrics lib here because it might introduce the deadlock problem.
 
 class MetricsFilterInterpreter : public FilterInterpreter {
+  FRIEND_TEST(MetricsFilterInterpreterTest, SimpleTestMultitouchMouse);
+  FRIEND_TEST(MetricsFilterInterpreterTest, SimpleTestPointingStick);
+  FRIEND_TEST(MetricsFilterInterpreterTest, SimpleTestTouchpad);
+
  public:
   // Takes ownership of |next|:
   MetricsFilterInterpreter(PropRegistry* prop_reg,
