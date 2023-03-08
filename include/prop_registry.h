@@ -46,9 +46,8 @@ class PropertyDelegate;
 
 class Property {
  public:
-  Property(PropRegistry* parent, const char* name)
-      : gprop_(NULL), parent_(parent), delegate_(NULL), name_(name) {}
-  Property(PropRegistry* parent, const char* name, PropertyDelegate* delegate)
+  Property(PropRegistry* parent, const char* name,
+           PropertyDelegate* delegate)
       : gprop_(NULL), parent_(parent), delegate_(delegate), name_(name) {}
 
   virtual ~Property() {
@@ -59,6 +58,19 @@ class Property {
   void CreateProp();
   virtual void CreatePropImpl() = 0;
   void DestroyProp();
+
+  // b/253585974
+  // delegate used to get passed as a constructor parameter but that
+  // led to a chance that the delegate was 'this' and setting the
+  // delegate to 'this' in the initializer list allowed the property
+  // creation to use 'this' before it was initialized.  This could
+  // lead to unexpected behavior and if you were lucky to a crash.
+  //
+  // Now the delegate is always NULL on initilization of the property
+  // instance and after the delegate and property are completely
+  // created the user should set the delegate in the constructor
+  // body. This will allow access to this in a safe manner.
+  void SetDelegate(PropertyDelegate* delegate);
 
   const char* name() { return name_; }
   // Returns a newly allocated Value object
@@ -89,13 +101,8 @@ class Property {
 
 class BoolProperty : public Property {
  public:
-  BoolProperty(PropRegistry* reg, const char* name, GesturesPropBool val)
-      : Property(reg, name), val_(val) {
-    if (parent_)
-      parent_->Register(this);
-  }
   BoolProperty(PropRegistry* reg, const char* name, GesturesPropBool val,
-               PropertyDelegate* delegate)
+               PropertyDelegate* delegate = NULL)
       : Property(reg, name, delegate), val_(val) {
     if (parent_)
       parent_->Register(this);
@@ -111,13 +118,7 @@ class BoolProperty : public Property {
 class BoolArrayProperty : public Property {
  public:
   BoolArrayProperty(PropRegistry* reg, const char* name, GesturesPropBool* vals,
-                    size_t count)
-      : Property(reg, name), vals_(vals), count_(count) {
-    if (parent_)
-      parent_->Register(this);
-  }
-  BoolArrayProperty(PropRegistry* reg, const char* name, GesturesPropBool* vals,
-                    size_t count, PropertyDelegate* delegate)
+                    size_t count, PropertyDelegate* delegate = NULL)
       : Property(reg, name, delegate), vals_(vals), count_(count) {
     if (parent_)
       parent_->Register(this);
@@ -133,13 +134,8 @@ class BoolArrayProperty : public Property {
 
 class DoubleProperty : public Property {
  public:
-  DoubleProperty(PropRegistry* reg, const char* name, double val)
-      : Property(reg, name), val_(val) {
-    if (parent_)
-      parent_->Register(this);
-  }
   DoubleProperty(PropRegistry* reg, const char* name, double val,
-                 PropertyDelegate* delegate)
+                 PropertyDelegate* delegate = NULL)
       : Property(reg, name, delegate), val_(val) {
     if (parent_)
       parent_->Register(this);
@@ -155,13 +151,7 @@ class DoubleProperty : public Property {
 class DoubleArrayProperty : public Property {
  public:
   DoubleArrayProperty(PropRegistry* reg, const char* name, double* vals,
-                      size_t count)
-      : Property(reg, name), vals_(vals), count_(count) {
-    if (parent_)
-      parent_->Register(this);
-  }
-  DoubleArrayProperty(PropRegistry* reg, const char* name, double* vals,
-                      size_t count, PropertyDelegate* delegate)
+                      size_t count, PropertyDelegate* delegate = NULL)
       : Property(reg, name, delegate), vals_(vals), count_(count) {
     if (parent_)
       parent_->Register(this);
@@ -177,13 +167,8 @@ class DoubleArrayProperty : public Property {
 
 class IntProperty : public Property {
  public:
-  IntProperty(PropRegistry* reg, const char* name, int val)
-      : Property(reg, name), val_(val) {
-    if (parent_)
-      parent_->Register(this);
-  }
   IntProperty(PropRegistry* reg, const char* name, int val,
-              PropertyDelegate* delegate)
+              PropertyDelegate* delegate = NULL)
       : Property(reg, name, delegate), val_(val) {
     if (parent_)
       parent_->Register(this);
@@ -198,13 +183,8 @@ class IntProperty : public Property {
 
 class IntArrayProperty : public Property {
  public:
-  IntArrayProperty(PropRegistry* reg, const char* name, int* vals, size_t count)
-      : Property(reg, name), vals_(vals), count_(count) {
-    if (parent_)
-      parent_->Register(this);
-  }
   IntArrayProperty(PropRegistry* reg, const char* name, int* vals, size_t count,
-                   PropertyDelegate* delegate)
+                   PropertyDelegate* delegate = NULL)
       : Property(reg, name, delegate), vals_(vals), count_(count) {
     if (parent_)
       parent_->Register(this);
@@ -220,13 +200,8 @@ class IntArrayProperty : public Property {
 
 class StringProperty : public Property {
  public:
-  StringProperty(PropRegistry* reg, const char* name, const char* val)
-      : Property(reg, name), val_(val) {
-    if (parent_)
-      parent_->Register(this);
-  }
   StringProperty(PropRegistry* reg, const char* name, const char* val,
-                 PropertyDelegate* delegate)
+                 PropertyDelegate* delegate = NULL)
       : Property(reg, name, delegate), val_(val) {
     if (parent_)
       parent_->Register(this);

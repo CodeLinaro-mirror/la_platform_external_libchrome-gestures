@@ -470,7 +470,7 @@ void GestureInterpreter::PushHardwareState(HardwareState* hwstate) {
       Log("Setting timer for %f s out.", timeout);
     }
   } else {
-    Err("No timer!");
+    ErrOnce("No timer provider has been set, so some features won't work.");
   }
 }
 
