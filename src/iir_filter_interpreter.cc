@@ -33,14 +33,21 @@ IirFilterInterpreter::IirFilterInterpreter(PropRegistry* prop_reg,
                                            Tracer* tracer)
     : FilterInterpreter(NULL, next, tracer, false),
       using_iir_(true),
-      b0_(prop_reg, "IIR b0", 0.0674552738890719, this),
-      b1_(prop_reg, "IIR b1", 0.134910547778144, this),
-      b2_(prop_reg, "IIR b2", 0.0674552738890719, this),
-      b3_(prop_reg, "IIR b3", 0.0, this),
-      a1_(prop_reg, "IIR a1", -1.1429805025399, this),
-      a2_(prop_reg, "IIR a2", 0.412801598096189, this),
-      iir_dist_thresh_(prop_reg, "IIR Distance Threshold", 10, this),
+      b0_(prop_reg, "IIR b0", 0.0674552738890719),
+      b1_(prop_reg, "IIR b1", 0.134910547778144),
+      b2_(prop_reg, "IIR b2", 0.0674552738890719),
+      b3_(prop_reg, "IIR b3", 0.0),
+      a1_(prop_reg, "IIR a1", -1.1429805025399),
+      a2_(prop_reg, "IIR a2", 0.412801598096189),
+      iir_dist_thresh_(prop_reg, "IIR Distance Threshold", 10),
       adjust_iir_on_warp_(prop_reg, "Adjust IIR History On Warp", false) {
+  b0_.SetDelegate(this);
+  b1_.SetDelegate(this);
+  b2_.SetDelegate(this);
+  b3_.SetDelegate(this);
+  a1_.SetDelegate(this);
+  a2_.SetDelegate(this);
+  iir_dist_thresh_.SetDelegate(this);
   InitName();
 }
 

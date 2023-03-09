@@ -49,7 +49,7 @@ class List {
 
   virtual void DeleteAll() {
     while (!Empty())
-      PopFront();
+      delete PopFront();
   }
 
   Elt* Head() const { return sentinel_.next_; }

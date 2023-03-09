@@ -70,6 +70,18 @@ void Property::DestroyProp() {
   gprop_ = NULL;
 }
 
+void Property::SetDelegate(PropertyDelegate* delegate) {
+  bool delegate_was_late_set = !delegate_ && delegate;
+  delegate_ = delegate;
+  // In the normal path of creation of a property with a parent, the
+  // delegate is set late and the CreatePropImpl will not call the
+  // WasWritten method.  So catch the transition from NULL to not
+  // NULL in this condition and make sure to call the initial
+  // WasWritten to mimick the original code.
+  if (delegate_was_late_set && parent_ && parent_->PropProvider())
+    HandleGesturesPropWritten();
+}
+
 void BoolProperty::CreatePropImpl() {
   GesturesPropBool orig_val = val_;
   gprop_ = parent_->PropProvider()->create_bool_fn(
