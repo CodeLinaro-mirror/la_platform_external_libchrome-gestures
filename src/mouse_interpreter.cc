@@ -29,8 +29,7 @@ MouseInterpreter::MouseInterpreter(PropRegistry* prop_reg, Tracer* tracer)
           scroll_accel_curve_, sizeof(scroll_accel_curve_) / sizeof(double)),
       scroll_max_allowed_input_speed_(prop_reg,
                                       "Mouse Scroll Max Input Speed",
-                                      177.0,
-                                      this),
+                                      177.0),
       force_scroll_wheel_emulation_(prop_reg,
                                      "Force Scroll Wheel Emulation",
                                      false),
@@ -53,6 +52,7 @@ MouseInterpreter::MouseInterpreter(PropRegistry* prop_reg, Tracer* tracer)
   scroll_accel_curve_[2] = 2.5737e-02;
   scroll_accel_curve_[3] = 8.0428e-05;
   scroll_accel_curve_[4] = -9.1149e-07;
+  scroll_max_allowed_input_speed_.SetDelegate(this);
 }
 
 void MouseInterpreter::SyncInterpretImpl(HardwareState* hwstate,

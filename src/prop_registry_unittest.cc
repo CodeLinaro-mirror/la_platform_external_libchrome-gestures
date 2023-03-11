@@ -48,7 +48,8 @@ TEST(PropRegistryTest, SimpleTest) {
   PropRegistryTestDelegate delegate;
 
   int expected_call_cnt = 0;
-  BoolProperty bp1(&reg, "hi", false, &delegate);
+  BoolProperty bp1(&reg, "hi", false);
+  bp1.SetDelegate(&delegate);
   EXPECT_TRUE(strstr(ValueForProperty(bp1).c_str(), "false"));
   bp1.HandleGesturesPropWritten();
   EXPECT_EQ(++expected_call_cnt, delegate.call_cnt_);
@@ -58,7 +59,8 @@ TEST(PropRegistryTest, SimpleTest) {
   bp2.HandleGesturesPropWritten();
   EXPECT_EQ(expected_call_cnt, delegate.call_cnt_);
 
-  DoubleProperty dp1(&reg, "hi", 2721.0, &delegate);
+  DoubleProperty dp1(&reg, "hi", 2721.0);
+  dp1.SetDelegate(&delegate);
   EXPECT_TRUE(strstr(ValueForProperty(dp1).c_str(), "2721"));
   dp1.HandleGesturesPropWritten();
   EXPECT_EQ(++expected_call_cnt, delegate.call_cnt_);
@@ -68,7 +70,8 @@ TEST(PropRegistryTest, SimpleTest) {
   dp2.HandleGesturesPropWritten();
   EXPECT_EQ(expected_call_cnt, delegate.call_cnt_);
 
-  IntProperty ip1(&reg, "hi", 567, &delegate);
+  IntProperty ip1(&reg, "hi", 567);
+  ip1.SetDelegate(&delegate);
   EXPECT_TRUE(strstr(ValueForProperty(ip1).c_str(), "567"));
   ip1.HandleGesturesPropWritten();
   EXPECT_EQ(++expected_call_cnt, delegate.call_cnt_);
@@ -78,7 +81,8 @@ TEST(PropRegistryTest, SimpleTest) {
   ip2.HandleGesturesPropWritten();
   EXPECT_EQ(expected_call_cnt, delegate.call_cnt_);
 
-  StringProperty stp1(&reg, "hi", "foo", &delegate);
+  StringProperty stp1(&reg, "hi", "foo");
+  stp1.SetDelegate(&delegate);
   EXPECT_TRUE(strstr(ValueForProperty(stp1).c_str(), "foo"));
   stp1.HandleGesturesPropWritten();
   EXPECT_EQ(++expected_call_cnt, delegate.call_cnt_);
@@ -194,29 +198,31 @@ TEST(PropRegistryTest, SetAtCreateShouldNotifyTest) {
 
   PropRegistry reg;
   PropRegistryTestDelegate delegate;
-  BoolProperty my_bool(&reg, "MyBool", 0, &delegate);
-  DoubleProperty my_double(&reg, "MyDouble", 0.0, &delegate);
-  IntProperty my_int(&reg, "MyInt", 0, &delegate);
-  IntProperty my_int_no_change(&reg, "MyIntNoChange", 1, &delegate);
-  StringProperty my_string(&reg, "MyString", "mine", &delegate);
+  BoolProperty my_bool(&reg, "MyBool", 0);
+  my_bool.SetDelegate(&delegate);
+  DoubleProperty my_double(&reg, "MyDouble", 0.0);
+  my_double.SetDelegate(&delegate);
+  IntProperty my_int(&reg, "MyInt", 0);
+  my_int.SetDelegate(&delegate);
+  IntProperty my_int_no_change(&reg, "MyIntNoChange", 1);
+  my_int_no_change.SetDelegate(&delegate);
+  StringProperty my_string(&reg, "MyString", "mine");
+  my_string.SetDelegate(&delegate);
 
   EXPECT_EQ(0, delegate.call_cnt_);
   reg.SetPropProvider(&mock_gestures_props_provider, NULL);
   EXPECT_EQ(4, delegate.call_cnt_);
-
-  BoolProperty my_bool2(&reg, "MyBool2", 1);
-  EXPECT_EQ(4, delegate.call_cnt_);
-  my_bool2.SetDelegate(&delegate);
-  EXPECT_EQ(5, delegate.call_cnt_);
 }
 
 TEST(PropRegistryTest, DoublePromoteIntTest) {
   PropRegistry reg;
   PropRegistryTestDelegate delegate;
 
-  DoubleProperty my_double(&reg, "MyDouble", 1234.5, &delegate);
+  DoubleProperty my_double(&reg, "MyDouble", 1234.5);
+  my_double.SetDelegate(&delegate);
   EXPECT_TRUE(strstr(ValueForProperty(my_double).c_str(), "1234.5"));
-  IntProperty my_int(&reg, "MyInt", 321, &delegate);
+  IntProperty my_int(&reg, "MyInt", 321);
+  my_int.SetDelegate(&delegate);
   Json::Value my_int_val = my_int.NewValue();
   EXPECT_TRUE(my_double.SetValue(my_int_val));
   EXPECT_TRUE(strstr(ValueForProperty(my_double).c_str(), "321"));
@@ -229,15 +235,18 @@ TEST(PropRegistryTest, BoolArrayTest) {
 
   GesturesPropBool vals[] = { false, true };
   BoolArrayProperty my_bool_array_w_delegate(
-    &reg, "MyBoolArray", vals, 2, &delegate);
+    &reg, "MyBoolArray", vals, 2);
+  my_bool_array_w_delegate.SetDelegate(&delegate);
   EXPECT_EQ(0, delegate.call_cnt_);
   my_bool_array_w_delegate.HandleGesturesPropWritten();
   EXPECT_EQ(1, delegate.call_cnt_);
   delegate.BoolArrayWasWritten(&my_bool_array_w_delegate);
   EXPECT_EQ(2, delegate.call_cnt_);
 
-  IntProperty ip1(&reg, "hi", 567, &delegate);
-  StringProperty stp1(&reg, "hi", "foo", &delegate);
+  IntProperty ip1(&reg, "hi", 567);
+  ip1.SetDelegate(&delegate);
+  StringProperty stp1(&reg, "hi", "foo");
+  stp1.SetDelegate(&delegate);
   Json::Value my_bool_array_val = my_bool_array_w_delegate.NewValue();
   Json::Value my_int_val = ip1.NewValue();
   Json::Value my_str_val = stp1.NewValue();
@@ -261,15 +270,18 @@ TEST(PropRegistryTest, DoubleArrayTest) {
 
   double vals[] = { 0.0, 1.0 };
   DoubleArrayProperty my_double_array_w_delegate(
-    &reg, "MyDoubleArray", vals, 2, &delegate);
+    &reg, "MyDoubleArray", vals, 2);
+  my_double_array_w_delegate.SetDelegate(&delegate);
   EXPECT_EQ(0, delegate.call_cnt_);
   my_double_array_w_delegate.HandleGesturesPropWritten();
   EXPECT_EQ(1, delegate.call_cnt_);
   delegate.DoubleArrayWasWritten(&my_double_array_w_delegate);
   EXPECT_EQ(2, delegate.call_cnt_);
 
-  IntProperty ip1(&reg, "hi", 567, &delegate);
-  StringProperty stp1(&reg, "hi", "foo", &delegate);
+  IntProperty ip1(&reg, "hi", 567);
+  ip1.SetDelegate(&delegate);
+  StringProperty stp1(&reg, "hi", "foo");
+  stp1.SetDelegate(&delegate);
   Json::Value my_double_array_val = my_double_array_w_delegate.NewValue();
   Json::Value my_int_val = ip1.NewValue();
   Json::Value my_str_val = stp1.NewValue();
@@ -293,15 +305,18 @@ TEST(PropRegistryTest, IntArrayTest) {
 
   int vals[] = { 0, 1 };
   IntArrayProperty my_int_array_w_delegate(
-    &reg, "MyIntArray", vals, 2, &delegate);
+    &reg, "MyIntArray", vals, 2);
+  my_int_array_w_delegate.SetDelegate(&delegate);
   EXPECT_EQ(0, delegate.call_cnt_);
   my_int_array_w_delegate.HandleGesturesPropWritten();
   EXPECT_EQ(1, delegate.call_cnt_);
   delegate.IntArrayWasWritten(&my_int_array_w_delegate);
   EXPECT_EQ(2, delegate.call_cnt_);
 
-  IntProperty ip1(&reg, "hi", 567, &delegate);
-  StringProperty stp1(&reg, "hi", "foo", &delegate);
+  IntProperty ip1(&reg, "hi", 567);
+  ip1.SetDelegate(&delegate);
+  StringProperty stp1(&reg, "hi", "foo");
+  stp1.SetDelegate(&delegate);
   Json::Value my_int_array_val = my_int_array_w_delegate.NewValue();
   Json::Value my_int_val = ip1.NewValue();
   Json::Value my_str_val = stp1.NewValue();

@@ -41,6 +41,7 @@ IirFilterInterpreter::IirFilterInterpreter(PropRegistry* prop_reg,
       a2_(prop_reg, "IIR a2", 0.412801598096189),
       iir_dist_thresh_(prop_reg, "IIR Distance Threshold", 10),
       adjust_iir_on_warp_(prop_reg, "Adjust IIR History On Warp", false) {
+  InitName();
   b0_.SetDelegate(this);
   b1_.SetDelegate(this);
   b2_.SetDelegate(this);
@@ -48,7 +49,6 @@ IirFilterInterpreter::IirFilterInterpreter(PropRegistry* prop_reg,
   a1_.SetDelegate(this);
   a2_.SetDelegate(this);
   iir_dist_thresh_.SetDelegate(this);
-  InitName();
 }
 
 void IirFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,

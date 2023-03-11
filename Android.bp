@@ -132,7 +132,6 @@ cc_test {
         "src/immediate_interpreter_unittest.cc",
         "src/integral_gesture_filter_interpreter_unittest.cc",
         "src/interpreter_unittest.cc",
-        "src/list_unittest.cc",
         "src/logging_filter_interpreter_unittest.cc",
         "src/lookahead_filter_interpreter_unittest.cc",
         "src/mouse_interpreter_unittest.cc",
