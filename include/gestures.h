@@ -55,7 +55,8 @@ struct HardwareProperties {
   float right;
   // The maximum Y coordinate that the device can report.
   float bottom;
-  // The resolutions of the X and Y axes, in units per mm.
+  // The resolutions of the X and Y axes, in units per mm. Set to 0 if the
+  // resolution is unknown.
   float res_x;
   float res_y;
 

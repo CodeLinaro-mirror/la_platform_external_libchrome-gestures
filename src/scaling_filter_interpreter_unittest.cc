@@ -68,7 +68,7 @@ class ScalingFilterInterpreterTestInterpreter : public Interpreter {
       EXPECT_FLOAT_EQ(expected_pressures_.front(),
                       hwstate->fingers[0].pressure);
       expected_pressures_.pop_front();
-    } else {
+    } else if (!expected_finger_cnt_.empty() && !expected_touch_cnt_.empty()) {
       // Test if the low pressure event is dropped
       EXPECT_EQ(expected_finger_cnt_.front(), hwstate->finger_cnt);
       expected_finger_cnt_.pop_front();
@@ -270,6 +270,47 @@ TEST(ScalingFilterInterpreterTest, SimpleTest) {
   base_interpreter->expected_finger_cnt_.push_back(0);
   base_interpreter->expected_touch_cnt_.push_back(0);
   out = wrapper.SyncInterpret(&hs2[2], NULL);
+}
+
+TEST(ScalingFilterInterpreterTest, ResolutionFallback) {
+  ScalingFilterInterpreterTestInterpreter* base_interpreter =
+      new ScalingFilterInterpreterTestInterpreter;
+  ScalingFilterInterpreter interpreter(NULL, base_interpreter, NULL,
+                                       GESTURES_DEVCLASS_TOUCHPAD);
+  HardwareProperties initial_hwprops = {
+    0, 0, 2000, 1000,  // left, top, right, bottom
+    0, 0,  // X/Y resolutions (pixels/mm)
+    0, 0,  // screen DPI X, Y (deprecated)
+    -1,  // orientation minimum
+    2,   // orientation maximum
+    2, 5,  // max fingers, max_touch
+    0, 0, 0,  // t5r2, semi, button pad
+    0, 0,  // has wheel, vertical wheel is high resolution
+    0,  // haptic pad
+  };
+  HardwareProperties expected_hwprops = {
+    0, 0, 2000 / 32.0, 1000 / 32.0,  // left, top, right, bottom
+    1, 1,  // X/Y resolutions (pixels/mm)
+    25.4, 25.4, // x DPI, y DPI
+    -M_PI_4,  // orientation minimum (1 tick above X-axis)
+    M_PI_2,   // orientation maximum
+    2, 5, 0, 0, 0,  // max_fingers, max_touch, t5r2, semi_mt, is button pad
+    0, 0,  // has wheel, vertical wheel is high resolution
+    0,  // is haptic pad
+  };
+  base_interpreter->expected_hwprops_ = expected_hwprops;
+
+  TestInterpreterWrapper wrapper(&interpreter, &initial_hwprops);
+  EXPECT_TRUE(base_interpreter->initialize_called_);
+
+  FingerState fs = { 1, 0, 0, 0, 1, 0, 1000, 500, 1, 0 };
+  HardwareState hs = make_hwstate(10000, 0, 1, 1, &fs);
+
+  base_interpreter->expected_coordinates_.push_back(
+      std::vector<pair<float, float>>(1, make_pair(
+          static_cast<float>(1000 / 32.0), static_cast<float>(500 / 32.0))));
+
+  wrapper.SyncInterpret(&hs, NULL);
 }
 
 static void RunTouchMajorAndMinorTest(
