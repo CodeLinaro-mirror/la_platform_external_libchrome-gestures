@@ -142,7 +142,7 @@ void MetricsFilterInterpreter::UpdateFingerState(
   RemoveMissingIdsFromMap(&histories_, hwstate, &removed);
   for (FingerHistoryMap::const_iterator it =
        removed.begin(); it != removed.end(); ++it) {
-    it->second->DeleteAll();
+    it->second->clear();
     history_mm_.Free(it->second);
 }
 
@@ -171,14 +171,15 @@ void MetricsFilterInterpreter::UpdateFingerState(
 
 bool MetricsFilterInterpreter::DetectNoisyGround(
     const FingerHistory* history) {
-  MState* current = history->Tail();
+  auto iter = history->end();
+  MState* current = *(--iter);
   size_t n_samples = history->size();
   // Noise pattern takes 3 samples
   if (n_samples < 3)
     return false;
 
-  MState* past_1 = current->prev_;
-  MState* past_2 = past_1->prev_;
+  MState* past_1 = *(--iter);
+  MState* past_2 = *(--iter);
   // Noise pattern needs to happen in a short period of time
   if(current->timestamp - past_2->timestamp >
       noisy_ground_time_threshold_.val_) {

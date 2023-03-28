@@ -78,7 +78,7 @@ void TrendClassifyingFilterInterpreter::AddNewStateToBuffer(
     history->DeleteFront();
 
   // Push the new finger state to the back of buffer
-  KState* previous_end = history->Tail();
+  KState* previous_end = history->back();
   KState* current = history->PushNewEltBack();
   if (!current) {
     Err("KState buffer out of space");
@@ -94,10 +94,10 @@ void TrendClassifyingFilterInterpreter::AddNewStateToBuffer(
   // variance along the way. Complexity is O(|buffer|) per finger.
   int tie_n2[KState::n_axes_] = { 0, 0, 0, 0, 0, 0 };
   int tie_n3[KState::n_axes_] = { 0, 0, 0, 0, 0, 0 };
-  for (KState* it = history->Begin(); it != history->Tail(); it = it->next_)
+  for (auto it = history->begin(); it != history->end(); ++it)
     for (size_t i = 0; i < KState::n_axes_; i++)
-      if(it != history->Begin() || !KState::IsDelta(i)) {
-        UpdateKTValuePair(&it->axes_[i], &current->axes_[i],
+      if (it != history->begin() || !KState::IsDelta(i)) {
+        UpdateKTValuePair(&(*it)->axes_[i], &current->axes_[i],
             &tie_n2[i], &tie_n3[i]);
       }
   size_t n_samples = history->size();
@@ -136,7 +136,7 @@ void TrendClassifyingFilterInterpreter::UpdateFingerState(
   RemoveMissingIdsFromMap(&histories_, hwstate, &removed);
   for (FingerHistoryMap::const_iterator it =
        removed.begin(); it != removed.end(); ++it) {
-    it->second->DeleteAll();
+    it->second->clear();
     history_mm_.Free(it->second);
   }
 
@@ -159,7 +159,7 @@ void TrendClassifyingFilterInterpreter::UpdateFingerState(
 
     // Check if the score demonstrates statistical significance
     AddNewStateToBuffer(hp, fs[i]);
-    KState* current = hp->Tail();
+    KState* current = hp->back();
     size_t n_samples = hp->size();
     for (size_t idx = 0; idx < KState::n_axes_; idx++)
       if (second_order_enable_.val_ || !KState::IsDelta(idx)) {

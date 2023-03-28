@@ -318,8 +318,13 @@ void ScalingFilterInterpreter::Initialize(const HardwareProperties* hwprops,
                                           Metrics* metrics,
                                           MetricsProperties* mprops,
                                           GestureConsumer* consumer) {
-  tp_x_scale_ = 1.0 / hwprops->res_x;
-  tp_y_scale_ = 1.0 / hwprops->res_y;
+  // If the touchpad doesn't specify its resolution in one or both axes, use a
+  // reasonable default instead.
+  float res_x = hwprops->res_x != 0 ? hwprops->res_x : 32;
+  float res_y = hwprops->res_y != 0 ? hwprops->res_y : 32;
+
+  tp_x_scale_ = 1.0 / res_x;
+  tp_y_scale_ = 1.0 / res_y;
   tp_x_translate_ = -1.0 * (hwprops->left * tp_x_scale_);
   tp_y_translate_ = -1.0 * (hwprops->top * tp_y_scale_);
 

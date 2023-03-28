@@ -60,7 +60,6 @@ TEST_OBJECTS=\
 	$(OBJDIR)/immediate_interpreter_unittest.o \
 	$(OBJDIR)/integral_gesture_filter_interpreter_unittest.o \
 	$(OBJDIR)/interpreter_unittest.o \
-	$(OBJDIR)/list_unittest.o \
 	$(OBJDIR)/logging_filter_interpreter_unittest.o \
 	$(OBJDIR)/lookahead_filter_interpreter_unittest.o \
 	$(OBJDIR)/non_linearity_filter_interpreter_unittest.o \
@@ -112,7 +111,7 @@ DESTDIR = .
 
 CXXFLAGS+=\
 	-g \
-	-std=gnu++11 \
+	-std=gnu++17 \
 	-fno-exceptions \
 	-fno-strict-aliasing \
 	-fPIC \

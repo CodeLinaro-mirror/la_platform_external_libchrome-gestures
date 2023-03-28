@@ -1095,7 +1095,7 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
       keyboard_touched_timeval_high_(prop_reg, "Keyboard Touched Timeval High",
                                      0),
       keyboard_touched_timeval_low_(prop_reg, "Keyboard Touched Timeval Low",
-                                    0, this),
+                                    0),
       keyboard_palm_prevent_timeout_(prop_reg, "Keyboard Palm Prevent Timeout",
                                      0.5),
       motion_tap_prevent_timeout_(prop_reg, "Motion Tap Prevent Timeout",
@@ -1136,6 +1136,7 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
       quick_acceleration_factor_(prop_reg, "Quick Acceleration Factor", 0.0) {
   InitName();
   requires_metrics_ = true;
+  keyboard_touched_timeval_low_.SetDelegate(this);
 }
 
 void ImmediateInterpreter::SyncInterpretImpl(HardwareState* hwstate,
