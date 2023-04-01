@@ -79,9 +79,11 @@ class IirFilterInterpreter : public FilterInterpreter, public PropertyDelegate {
   virtual void DoubleWasWritten(DoubleProperty* prop);
 
  private:
-  // Whether IIR filter should be used. Put as a member varible for
+  // Whether IIR filter should be used. Put as a member variable for
   // unittest purpose.
   bool using_iir_;
+
+  // Sync state history information
   std::map<short, IoHistory> histories_;
 
   // y[0] = b[0]*x[0] + b[1]*x[1] + b[2]*x[2] + b[3]*x[3]
