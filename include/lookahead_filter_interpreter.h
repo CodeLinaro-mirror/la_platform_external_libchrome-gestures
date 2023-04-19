@@ -3,15 +3,16 @@
 // found in the LICENSE file.
 
 #include <algorithm>
+#include <list>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include <gtest/gtest.h>  // For FRIEND_TEST
 
 #include "include/filter_interpreter.h"
 #include "include/finger_metrics.h"
 #include "include/gestures.h"
-#include "include/list.h"
 #include "include/prop_registry.h"
 #include "include/tracer.h"
 
@@ -33,6 +34,8 @@ class LookaheadFilterInterpreter : public FilterInterpreter {
   FRIEND_TEST(LookaheadFilterInterpreterTest, SimpleTest);
   FRIEND_TEST(LookaheadFilterInterpreterTest, SpuriousCallbackTest);
   FRIEND_TEST(LookaheadFilterInterpreterTest, VariableDelayTest);
+  FRIEND_TEST(LookaheadFilterInterpreterTest, QStateListTest);
+
  public:
   LookaheadFilterInterpreter(PropRegistry* prop_reg, Interpreter* next,
                              Tracer* tracer);
@@ -108,8 +111,12 @@ class LookaheadFilterInterpreter : public FilterInterpreter {
 
   stime_t ExtraVariableDelay() const;
 
-  List<QState> queue_;
-  List<QState> free_list_;
+  class QStateList : public std::list<QState*> {
+  public:
+    QState* at(int offset);
+  } queue_;
+
+  std::vector<QState*> free_list_;
 
   // The last id assigned to a contact (part of drumroll suppression)
   short last_id_;

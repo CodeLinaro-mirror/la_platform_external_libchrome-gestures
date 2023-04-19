@@ -17,15 +17,19 @@ LoggingFilterInterpreter::LoggingFilterInterpreter(PropRegistry* prop_reg,
                                                    Interpreter* next,
                                                    Tracer* tracer)
     : FilterInterpreter(prop_reg, next, tracer, true),
-      event_logging_enable_(prop_reg, "Event Logging Enable", false, this),
-      logging_notify_(prop_reg, "Logging Notify", 0, this),
-      logging_reset_(prop_reg, "Logging Reset", 0, this),
+      event_logging_enable_(prop_reg, "Event Logging Enable", false),
+      logging_notify_(prop_reg, "Logging Notify", 0),
+      logging_reset_(prop_reg, "Logging Reset", 0),
       log_location_(prop_reg, "Log Path",
                     "/var/log/xorg/touchpad_activity_log.txt"),
       integrated_touchpad_(prop_reg, "Integrated Touchpad", false) {
   InitName();
   if (prop_reg && log_.get())
     prop_reg->set_activity_log(log_.get());
+  event_logging_enable_.SetDelegate(this);
+  BoolWasWritten(&event_logging_enable_);
+  logging_notify_.SetDelegate(this);
+  logging_reset_.SetDelegate(this);
 }
 
 void LoggingFilterInterpreter::IntWasWritten(IntProperty* prop) {
