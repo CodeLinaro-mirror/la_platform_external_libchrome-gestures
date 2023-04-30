@@ -30,8 +30,6 @@ namespace gestures {
 TrendClassifyingFilterInterpreter::TrendClassifyingFilterInterpreter(
     PropRegistry* prop_reg, Interpreter* next, Tracer* tracer)
     : FilterInterpreter(NULL, next, tracer, false),
-      kstate_mm_(kMaxFingers * kNumOfSamples),
-      history_mm_(kMaxFingers),
       trend_classifying_filter_enable_(
           prop_reg, "Trend Classifying Filter Enabled", true),
       second_order_enable_(
@@ -72,37 +70,32 @@ void TrendClassifyingFilterInterpreter::InterpretTestResult(
 }
 
 void TrendClassifyingFilterInterpreter::AddNewStateToBuffer(
-    FingerHistory* history, const FingerState& fs) {
+    FingerHistory& history, const FingerState& fs) {
   // The history buffer is already full, pop one
-  if (history->size() == static_cast<size_t>(num_of_samples_.val_))
-    history->DeleteFront();
+  if (history.size() == static_cast<size_t>(num_of_samples_.val_))
+    history.pop_front();
 
   // Push the new finger state to the back of buffer
-  KState* previous_end = history->back();
-  KState* current = history->PushNewEltBack();
-  if (!current) {
-    Err("KState buffer out of space");
+  auto& current = history.emplace_back(fs);
+  if (history.size() == 1)
     return;
-  }
-  current->Init(fs);
-  if (history->size() == 1)
-    return;
+  auto& previous_end = history.at(-2);
 
-  current->DxAxis()->val = current->XAxis()->val - previous_end->XAxis()->val;
-  current->DyAxis()->val = current->YAxis()->val - previous_end->YAxis()->val;
+  current.DxAxis()->val = current.XAxis()->val - previous_end.XAxis()->val;
+  current.DyAxis()->val = current.YAxis()->val - previous_end.YAxis()->val;
   // Update the nodes already in the buffer and compute the Kendall score/
   // variance along the way. Complexity is O(|buffer|) per finger.
   int tie_n2[KState::n_axes_] = { 0, 0, 0, 0, 0, 0 };
   int tie_n3[KState::n_axes_] = { 0, 0, 0, 0, 0, 0 };
-  for (auto it = history->begin(); it != history->end(); ++it)
+  for (auto it = history.begin(); it != history.end(); ++it)
     for (size_t i = 0; i < KState::n_axes_; i++)
-      if (it != history->begin() || !KState::IsDelta(i)) {
-        UpdateKTValuePair(&(*it)->axes_[i], &current->axes_[i],
+      if (it != history.begin() || !KState::IsDelta(i)) {
+        UpdateKTValuePair(&it->axes_[i], &current.axes_[i],
             &tie_n2[i], &tie_n3[i]);
       }
-  size_t n_samples = history->size();
+  size_t n_samples = history.size();
   for (size_t i = 0; i < KState::n_axes_; i++) {
-    current->axes_[i].var = ComputeKTVariance(tie_n2[i], tie_n3[i],
+    current.axes_[i].var = ComputeKTVariance(tie_n2[i], tie_n3[i],
         KState::IsDelta(i) ? n_samples - 1 : n_samples);
   }
 }
@@ -132,38 +125,23 @@ TrendClassifyingFilterInterpreter::RunKTTest(const KState::KAxis* current,
 
 void TrendClassifyingFilterInterpreter::UpdateFingerState(
     const HardwareState& hwstate) {
-  FingerHistoryMap removed;
-  RemoveMissingIdsFromMap(&histories_, hwstate, &removed);
-  for (FingerHistoryMap::const_iterator it =
-       removed.begin(); it != removed.end(); ++it) {
-    it->second->clear();
-    history_mm_.Free(it->second);
-  }
+  RemoveMissingIdsFromMap(&histories_, hwstate);
 
-  FingerState *fs = hwstate.fingers;
+  FingerState* fs = hwstate.fingers;
   for (short i = 0; i < hwstate.finger_cnt; i++) {
-    FingerHistory* hp;
-
     // Update the map if the contact is new
     if (!MapContainsKey(histories_, fs[i].tracking_id)) {
-      hp = history_mm_.Allocate();
-      if (!hp) {
-        Err("FingerHistory out of space");
-        continue;
-      }
-      hp->Init(&kstate_mm_);
-      histories_[fs[i].tracking_id] = hp;
-    } else {
-      hp = histories_[fs[i].tracking_id];
+      histories_[fs[i].tracking_id] = FingerHistory{};
     }
+    auto& history = histories_[fs[i].tracking_id];
 
     // Check if the score demonstrates statistical significance
-    AddNewStateToBuffer(hp, fs[i]);
-    KState* current = hp->back();
-    size_t n_samples = hp->size();
+    AddNewStateToBuffer(history, fs[i]);
+    const auto& current = history.back();
+    const size_t n_samples = history.size();
     for (size_t idx = 0; idx < KState::n_axes_; idx++)
       if (second_order_enable_.val_ || !KState::IsDelta(idx)) {
-        TrendType result = RunKTTest(&current->axes_[idx],
+        TrendType result = RunKTTest(&current.axes_[idx],
             KState::IsDelta(idx) ? n_samples - 1 : n_samples);
         InterpretTestResult(result, KState::IncFlag(idx),
             KState::DecFlag(idx), &(fs[i].flags));

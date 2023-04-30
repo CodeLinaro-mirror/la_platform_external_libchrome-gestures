@@ -2,17 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <map>
-#include <set>
 #include <gtest/gtest.h>  // for FRIEND_TEST
+#include <map>
 
 #include "include/filter_interpreter.h"
 #include "include/finger_metrics.h"
 #include "include/gestures.h"
-#include "include/list.h"
-#include "include/memory_manager.h"
 #include "include/prop_registry.h"
 #include "include/tracer.h"
+#include "include/util.h"
 
 #ifndef GESTURES_TREND_CLASSIFYING_FILTER_INTERPRETER_H_
 #define GESTURES_TREND_CLASSIFYING_FILTER_INTERPRETER_H_
@@ -151,12 +149,9 @@ private:
           GESTURES_FINGER_TREND_DEC_TOUCH_MAJOR };
       return flags[idx];
     }
-
-    KState* next_;
-    KState* prev_;
   };
 
-  typedef MemoryManagedList<KState> FingerHistory;
+  typedef List<KState> FingerHistory;
 
   // Trend types for internal use
   enum TrendType {
@@ -169,7 +164,7 @@ private:
   void UpdateFingerState(const HardwareState& hwstate);
 
   // Push new finger data into the buffer and update values
-  void AddNewStateToBuffer(FingerHistory* history, const FingerState& fs);
+  void AddNewStateToBuffer(FingerHistory& history, const FingerState& fs);
 
   // Assess statistical significance with a classic two-tail hypothesis test
   TrendType RunKTTest(const KState::KAxis* current, const size_t n_samples);
@@ -220,13 +215,9 @@ private:
                            const unsigned flag_decreasing,
                            unsigned* flags);
 
-  // memory managers to prevent malloc during interrupt calls
-  MemoryManager<KState> kstate_mm_;
-  MemoryManager<FingerHistory> history_mm_;
-
   // A map to store each finger's past coordinates and calculation
   // intermediates
-  typedef std::map<short, FingerHistory*> FingerHistoryMap;
+  typedef std::map<short, FingerHistory> FingerHistoryMap;
   FingerHistoryMap histories_;
 
   // Flag to turn on/off the trend classifying filter

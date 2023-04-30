@@ -2,16 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <map>
 #include <gtest/gtest.h>  // for FRIEND_TEST
+#include <map>
 
 #include "include/filter_interpreter.h"
 #include "include/finger_metrics.h"
 #include "include/gestures.h"
-#include "include/list.h"
-#include "include/memory_manager.h"
 #include "include/prop_registry.h"
 #include "include/tracer.h"
+#include "include/util.h"
 
 #ifndef GESTURES_METRICS_FILTER_INTERPRETER_H_
 #define GESTURES_METRICS_FILTER_INTERPRETER_H_
@@ -43,31 +42,22 @@ class MetricsFilterInterpreter : public FilterInterpreter {
   template <class DataType, size_t kHistorySize>
   struct State {
     State() {}
-    State(const DataType& fs, const HardwareState& hwstate) {
-      Init(fs, hwstate);
-    }
-
-    void Init(const DataType& fs, const HardwareState& hwstate) {
-      timestamp = hwstate.timestamp;
-      data = fs;
-    }
+    State(const DataType& fs, const HardwareState& hwstate)
+      : timestamp(hwstate.timestamp), data(fs) {}
 
     static size_t MaxHistorySize() { return kHistorySize; }
 
     stime_t timestamp;
     DataType data;
-    State<DataType, kHistorySize>* next_;
-    State<DataType, kHistorySize>* prev_;
   };
 
   // struct for one finger's data of one frame.
   typedef State<FingerState, 3> MState;
-  typedef MemoryManagedList<MState> FingerHistory;
+  typedef List<MState> FingerHistory;
 
   // Push the new data into the buffer.
-  template <class StateType, class DataType>
-  void AddNewStateToBuffer(MemoryManagedList<StateType>* history,
-                           const DataType& data,
+  void AddNewStateToBuffer(FingerHistory& history,
+                           const FingerState& data,
                            const HardwareState& hwstate);
 
   // Update the class with new finger data, check if there is any interesting
@@ -75,7 +65,7 @@ class MetricsFilterInterpreter : public FilterInterpreter {
   void UpdateFingerState(const HardwareState& hwstate);
 
   // Detect the noisy ground pattern and send GestureMetrics
-  bool DetectNoisyGround(const FingerHistory* history);
+  bool DetectNoisyGround(FingerHistory& history);
 
   // Update the class with new mouse movement data.
   void UpdateMouseMovementState(const HardwareState& hwstate);
@@ -83,12 +73,8 @@ class MetricsFilterInterpreter : public FilterInterpreter {
   // Compute interested statistics for the mouse history, send GestureMetrics.
   void ReportMouseStatistics();
 
-  // memory managers to prevent malloc during interrupt calls
-  MemoryManager<MState> mstate_mm_;
-  MemoryManager<FingerHistory> history_mm_;
-
   // A map to store each finger's past data
-  typedef std::map<short, FingerHistory*> FingerHistoryMap;
+  typedef std::map<short, FingerHistory> FingerHistoryMap;
   FingerHistoryMap histories_;
 
   // Device class (e.g. touchpad, mouse).

@@ -8,9 +8,9 @@
 
 
 import getopt
+import json
 import logging
 import os
-import simplejson as json
 import sys
 
 from operator import ge, lt

@@ -3,10 +3,8 @@
 // found in the LICENSE file.
 
 #include <algorithm>
-#include <list>
 #include <map>
 #include <memory>
-#include <vector>
 
 #include <gtest/gtest.h>  // For FRIEND_TEST
 
@@ -15,6 +13,7 @@
 #include "include/gestures.h"
 #include "include/prop_registry.h"
 #include "include/tracer.h"
+#include "include/util.h"
 
 #ifndef GESTURES_LOOKAHEAD_FILTER_INTERPRETER_H_
 #define GESTURES_LOOKAHEAD_FILTER_INTERPRETER_H_
@@ -34,7 +33,6 @@ class LookaheadFilterInterpreter : public FilterInterpreter {
   FRIEND_TEST(LookaheadFilterInterpreterTest, SimpleTest);
   FRIEND_TEST(LookaheadFilterInterpreterTest, SpuriousCallbackTest);
   FRIEND_TEST(LookaheadFilterInterpreterTest, VariableDelayTest);
-  FRIEND_TEST(LookaheadFilterInterpreterTest, QStateListTest);
 
  public:
   LookaheadFilterInterpreter(PropRegistry* prop_reg, Interpreter* next,
@@ -65,10 +63,7 @@ class LookaheadFilterInterpreter : public FilterInterpreter {
     std::map<short, short> output_ids_;  // input tracking ids -> output
 
     stime_t due_;
-    bool completed_;
-
-    QState* next_;
-    QState* prev_;
+    bool completed_ = false;
   };
 
   void LogVectors();
@@ -111,12 +106,7 @@ class LookaheadFilterInterpreter : public FilterInterpreter {
 
   stime_t ExtraVariableDelay() const;
 
-  class QStateList : public std::list<QState*> {
-  public:
-    QState* at(int offset);
-  } queue_;
-
-  std::vector<QState*> free_list_;
+  List<QState> queue_;
 
   // The last id assigned to a contact (part of drumroll suppression)
   short last_id_;
