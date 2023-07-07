@@ -175,7 +175,7 @@ TEST(LookaheadFilterInterpreterTest, SimpleTest) {
       if (newtimeout < 0.0)
         EXPECT_DOUBLE_EQ(NO_DEADLINE, newtimeout);
       if (i == 5) {
-        EXPECT_EQ(reinterpret_cast<Gesture*>(NULL), out);
+        EXPECT_EQ(nullptr, out);
       } else {
         // Expect movement
         ASSERT_TRUE(out);
@@ -389,19 +389,19 @@ TEST(LookaheadFilterInterpreterTest, SpuriousCallbackTest) {
 
   stime_t timeout = NO_DEADLINE;
   Gesture* out = wrapper.SyncInterpret(&hs, &timeout);
-  EXPECT_EQ(reinterpret_cast<Gesture*>(NULL), out);
+  EXPECT_EQ(nullptr, out);
   EXPECT_FLOAT_EQ(interpreter->min_delay_.val_, timeout);
 
   out = wrapper.HandleTimer(hs.timestamp + interpreter->min_delay_.val_,
                                  &timeout);
-  EXPECT_EQ(reinterpret_cast<Gesture*>(NULL), out);
+  EXPECT_EQ(nullptr, out);
   EXPECT_FLOAT_EQ(1.0, timeout);
 
 
   out = wrapper.HandleTimer(hs.timestamp + interpreter->min_delay_.val_ +
                                  0.25,
                                  &timeout);
-  EXPECT_EQ(reinterpret_cast<Gesture*>(NULL), out);
+  EXPECT_EQ(nullptr, out);
   EXPECT_FLOAT_EQ(0.75, timeout);
 }
 
@@ -640,20 +640,20 @@ TEST(LookaheadFilterInterpreterTest, InterpolationOverdueTest) {
 
   stime_t timeout = NO_DEADLINE;
   Gesture* out = wrapper.SyncInterpret(&hs[0], &timeout);
-  EXPECT_EQ(reinterpret_cast<Gesture*>(NULL), out);
+  EXPECT_EQ(nullptr, out);
   EXPECT_FLOAT_EQ(timeout, interpreter->min_delay_.val_);
 
   stime_t now = hs[0].timestamp + timeout;
   timeout = NO_DEADLINE;
   out = wrapper.HandleTimer(now, &timeout);
-  ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out);
+  ASSERT_NE(nullptr, out);
   EXPECT_EQ(kGestureTypeMove, out->type);
   EXPECT_EQ(1, out->details.move.dy);
   EXPECT_DOUBLE_EQ(timeout, 0.700);
 
   timeout = NO_DEADLINE;
   out = wrapper.SyncInterpret(&hs[1], &timeout);
-  ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out);
+  ASSERT_NE(nullptr, out);
   EXPECT_EQ(kGestureTypeMove, out->type);
   EXPECT_EQ(2, out->details.move.dy);
   EXPECT_GE(timeout, 0.0);
@@ -793,17 +793,17 @@ TEST(LookaheadFilterInterpreterTest, QuickMoveTest) {
   // Pushing the first event
   wrapper.SyncInterpret(&hs[0], &timeout);
   EXPECT_EQ(queue.size(), 1);
-  EXPECT_EQ(queue.back()->fs_[0].tracking_id, 1);
+  EXPECT_EQ(queue.back().fs_[0].tracking_id, 1);
 
   // Expecting Drumroll detected and ID reassigned 1 -> 2.
   wrapper.SyncInterpret(&hs[1], &timeout);
   EXPECT_EQ(queue.size(), 2);
-  EXPECT_EQ(queue.back()->fs_[0].tracking_id, 2);
+  EXPECT_EQ(queue.back().fs_[0].tracking_id, 2);
 
   // Expecting Drumroll detected and ID reassigned 1 -> 3.
   wrapper.SyncInterpret(&hs[2], &timeout);
   EXPECT_EQ(queue.size(), 3);
-  EXPECT_EQ(queue.back()->fs_[0].tracking_id, 3);
+  EXPECT_EQ(queue.back().fs_[0].tracking_id, 3);
 
   // Removing the touch.
   wrapper.SyncInterpret(&hs[3], &timeout);
@@ -813,17 +813,17 @@ TEST(LookaheadFilterInterpreterTest, QuickMoveTest) {
   // New finger tracking ID assigned 2 - > 4.
   wrapper.SyncInterpret(&hs[4], &timeout);
   EXPECT_EQ(queue.size(), 2);
-  EXPECT_EQ(queue.back()->fs_[0].tracking_id, 4);
+  EXPECT_EQ(queue.back().fs_[0].tracking_id, 4);
 
   // Expecting Drumroll detected and ID reassigned 2 -> 5.
   wrapper.SyncInterpret(&hs[5], &timeout);
-  EXPECT_EQ(queue.back()->fs_[0].tracking_id, 5);
+  EXPECT_EQ(queue.back().fs_[0].tracking_id, 5);
 
   // Expecting Quick movement detected and ID correction 5 -> 4.
   wrapper.SyncInterpret(&hs[6], &timeout);
-  EXPECT_EQ(interpreter->queue_.at(-1)->fs_[0].tracking_id, 4);
-  EXPECT_EQ(interpreter->queue_.at(-2)->fs_[0].tracking_id, 4);
-  EXPECT_EQ(interpreter->queue_.at(-3)->fs_[0].tracking_id, 4);
+  EXPECT_EQ(interpreter->queue_.at(-1).fs_[0].tracking_id, 4);
+  EXPECT_EQ(interpreter->queue_.at(-2).fs_[0].tracking_id, 4);
+  EXPECT_EQ(interpreter->queue_.at(-3).fs_[0].tracking_id, 4);
 }
 
 struct QuickSwipeTestInputs {
@@ -1266,76 +1266,14 @@ TEST(LookaheadFilterInterpreterTest, SemiMtNoTrackingIdAssignmentTest) {
   const auto& queue = interpreter->queue_;
 
   wrapper.SyncInterpret(&hs[0], &timeout);
-  EXPECT_EQ(queue.back()->fs_[0].tracking_id, 20);
+  EXPECT_EQ(queue.back().fs_[0].tracking_id, 20);
 
   // Test if the fingers in queue have the same tracking ids from input.
   for (size_t i = 1; i < arraysize(hs); i++) {
     wrapper.SyncInterpret(&hs[i], &timeout);
-    EXPECT_EQ(queue.back()->fs_[0].tracking_id, 20);  // the same input id
-    EXPECT_EQ(queue.back()->fs_[1].tracking_id, 21);
+    EXPECT_EQ(queue.back().fs_[0].tracking_id, 20);  // the same input id
+    EXPECT_EQ(queue.back().fs_[1].tracking_id, 21);
   }
 }
 
-TEST(LookaheadFilterInterpreterTest, QStateListTest) {
-  LookaheadFilterInterpreterTestInterpreter* base_interpreter = NULL;
-  std::unique_ptr<LookaheadFilterInterpreter> interpreter;
-
-  HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1,  // x res (pixels/mm)
-    1,  // y res (pixels/mm)
-    25, 25,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 1, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
-  };
-  TestInterpreterWrapper wrapper(interpreter.get(), &hwprops);
-
-  base_interpreter = new LookaheadFilterInterpreterTestInterpreter;
-  interpreter.reset(new LookaheadFilterInterpreter(
-      NULL, base_interpreter, NULL));
-  wrapper.Reset(interpreter.get());
-
-  auto& queue = interpreter->queue_;
-  auto& free_list = interpreter->free_list_;
-
-  // Release all of the QStates
-  while (!queue.empty()) {
-    free_list.push_back(queue.front());
-    queue.pop_front();
-  }
-  EXPECT_EQ(queue.size(), 0);
-  EXPECT_EQ(free_list.size(), 16);
-
-  EXPECT_EQ(queue.at(-1), nullptr);
-  EXPECT_EQ(queue.at(queue.size()), nullptr);
-
-  // fill up the QStates
-  while (!free_list.empty()) {
-    queue.push_front(free_list.back());
-    free_list.pop_back();
-  }
-  EXPECT_EQ(queue.size(), 16);
-  EXPECT_EQ(free_list.size(), 0);
-
-  EXPECT_NE(queue.at(-1), nullptr);
-  EXPECT_EQ(queue.at(-1), queue.at(queue.size() - 1));
-
-  EXPECT_EQ(queue.at(queue.size()), nullptr);
-
-  for (int i = 0; i < 16; ++i) {
-    for (int j = 0; j < 16; ++j) {
-      if (i == j) {
-        EXPECT_EQ(queue.at(i), queue.at(j));
-      } else {
-        EXPECT_NE(queue.at(i), queue.at(j));
-      }
-    }
-  }
-
-  LookaheadFilterInterpreter::QState qs;
-}
 }  // namespace gestures

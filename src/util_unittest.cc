@@ -21,4 +21,51 @@ TEST(UtilTest, DistSqTest) {
   EXPECT_FLOAT_EQ(DistSqXY(fs[0], 4, 6), 25);
 }
 
+TEST(UtilTest, ListAtTest) {
+  const int kMaxElements = 3;
+  struct element {
+    int x;
+  };
+
+  List<element> list;
+
+  for (auto i = 0; i < kMaxElements; ++i) {
+    auto& elem = list.emplace_back();
+    elem.x = i;
+  }
+  EXPECT_EQ(list.at(-1).x, list.at(list.size() - 1).x);
+
+  for (auto i = 0; i < kMaxElements; ++i) {
+    for (auto j = 0; j < kMaxElements; ++j) {
+      if (i == j) {
+        EXPECT_EQ(list.at(i).x, list.at(j).x);
+        EXPECT_EQ(&(list.at(i)), &(list.at(j)));
+      } else {
+        EXPECT_NE(list.at(i).x, list.at(j).x);
+        EXPECT_NE(&(list.at(i)), &(list.at(j)));
+      }
+    }
+  }
+}
+
+TEST(UtilTest, ListAtDeathForwardTest) {
+  List<int> list;
+  const int kMaxElements = 3;
+
+  for (auto i = 0; i < kMaxElements; ++i) {
+    list.emplace_back(i);
+  }
+  EXPECT_DEATH(list.at(kMaxElements+1), "");
+}
+
+TEST(UtilTest, ListAtDeathBackwardTest) {
+  List<int> list;
+  const int kMaxElements = 3;
+
+  for (auto i = 0; i < kMaxElements; ++i) {
+    list.emplace_back(i);
+  }
+  EXPECT_DEATH(list.at(-(kMaxElements+1)), "");
+}
+
 }  // namespace gestures
