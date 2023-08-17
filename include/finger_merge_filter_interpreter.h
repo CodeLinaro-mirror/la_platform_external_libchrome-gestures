@@ -32,7 +32,7 @@ class FingerMergeFilterInterpreter : public FilterInterpreter {
   virtual ~FingerMergeFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   // Detects finger merge and appends GESTURE_FINGER_MERGE flag for a merged

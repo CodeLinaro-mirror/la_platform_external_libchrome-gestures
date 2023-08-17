@@ -84,7 +84,7 @@ public:
   virtual ~TrendClassifyingFilterInterpreter() {}
 
 protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
 private:
   struct KState {

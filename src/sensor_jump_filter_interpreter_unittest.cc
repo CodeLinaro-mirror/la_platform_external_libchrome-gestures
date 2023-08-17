@@ -25,15 +25,14 @@ class SensorJumpFilterInterpreterTest : public ::testing::Test {};
 class SensorJumpFilterInterpreterTestInterpreter : public Interpreter {
  public:
   SensorJumpFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false),
+      : Interpreter(nullptr, nullptr, false),
         handle_timer_called_(false),
         expected_finger_cnt_(-1) {}
 
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {
     if (expected_finger_cnt_ >= 0) {
-      EXPECT_NE(static_cast<HardwareState*>(NULL), hwstate);
-      EXPECT_EQ(1, hwstate->finger_cnt);
-      prev_ = hwstate->fingers[0];
+      EXPECT_EQ(1, hwstate.finger_cnt);
+      prev_ = hwstate.fingers[0];
     }
   }
 
@@ -54,7 +53,7 @@ struct InputAndExpectedWarp {
 TEST(SensorJumpFilterInterpreterTest, SimpleTest) {
   SensorJumpFilterInterpreterTestInterpreter* base_interpreter =
       new SensorJumpFilterInterpreterTestInterpreter;
-  SensorJumpFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  SensorJumpFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
 
   base_interpreter->expected_finger_cnt_ = 1;
   interpreter.enabled_.val_ = 1;
@@ -73,7 +72,7 @@ TEST(SensorJumpFilterInterpreterTest, SimpleTest) {
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
   EXPECT_FALSE(base_interpreter->handle_timer_called_);
-  wrapper.HandleTimer(0.0, NULL);
+  wrapper.HandleTimer(0.0, nullptr);
   EXPECT_TRUE(base_interpreter->handle_timer_called_);
 
   FingerState fs = { 0, 0, 0, 0, 1, 0, 3.0, 0.0, 1, 0 };
@@ -98,7 +97,7 @@ TEST(SensorJumpFilterInterpreterTest, SimpleTest) {
     hs.timestamp = now;
     fs.flags = 0;
     fs.position_y = data[i].val;
-    wrapper.SyncInterpret(&hs, NULL);
+    wrapper.SyncInterpret(hs, nullptr);
     const unsigned kFlags = GESTURES_FINGER_WARP_Y |
         GESTURES_FINGER_WARP_Y_TAP_MOVE |
         GESTURES_FINGER_WARP_TELEPORTATION;
@@ -118,7 +117,7 @@ struct ActualLogInputs {
 TEST(SensorJumpFilterInterpreterTest, ActualLogTest) {
   SensorJumpFilterInterpreterTestInterpreter* base_interpreter =
       new SensorJumpFilterInterpreterTestInterpreter;
-  SensorJumpFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  SensorJumpFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
 
   interpreter.enabled_.val_ = 1;
 
@@ -248,7 +247,7 @@ TEST(SensorJumpFilterInterpreterTest, ActualLogTest) {
     fs[1].position_y = input.y1;
     fs[1].pressure = input.p1;
     fs[1].tracking_id = input.id1;
-    wrapper.SyncInterpret(&hs, NULL);
+    wrapper.SyncInterpret(hs, nullptr);
     if (i != 0) {  // can't do deltas with the first input
       float dy[] = { fs[0].position_y - prev_y_out[0],
                      fs[1].position_y - prev_y_out[1] };

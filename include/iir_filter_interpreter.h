@@ -73,7 +73,7 @@ class IirFilterInterpreter : public FilterInterpreter, public PropertyDelegate {
   virtual ~IirFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  public:
   virtual void DoubleWasWritten(DoubleProperty* prop);

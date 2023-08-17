@@ -26,13 +26,12 @@ class BoxFilterInterpreterTest : public ::testing::Test {};
 class BoxFilterInterpreterTestInterpreter : public Interpreter {
  public:
   BoxFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false),
+      : Interpreter(nullptr, nullptr, false),
         handle_timer_called_(false) {}
 
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {
-    EXPECT_NE(static_cast<HardwareState*>(NULL), hwstate);
-    EXPECT_EQ(1, hwstate->finger_cnt);
-    prev_ = hwstate->fingers[0];
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {
+    EXPECT_EQ(1, hwstate.finger_cnt);
+    prev_ = hwstate.fingers[0];
   }
 
   virtual void HandleTimer(stime_t now, stime_t* timeout) {
@@ -51,7 +50,7 @@ struct InputAndExpectedOutput {
 TEST(BoxFilterInterpreterTest, SimpleTest) {
   BoxFilterInterpreterTestInterpreter* base_interpreter =
       new BoxFilterInterpreterTestInterpreter;
-  BoxFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  BoxFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
 
   interpreter.box_width_.val_ = 1.0;
   interpreter.box_height_.val_ = 1.0;
@@ -70,7 +69,7 @@ TEST(BoxFilterInterpreterTest, SimpleTest) {
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
   EXPECT_FALSE(base_interpreter->handle_timer_called_);
-  wrapper.HandleTimer(0.0, NULL);
+  wrapper.HandleTimer(0.0, nullptr);
   EXPECT_TRUE(base_interpreter->handle_timer_called_);
 
   FingerState fs = { 0, 0, 0, 0, 1, 0, 3.0, 0.0, 1, 0 };
@@ -93,7 +92,7 @@ TEST(BoxFilterInterpreterTest, SimpleTest) {
     now += kTimeDelta;
     hs.timestamp = now;
     fs.position_y = data[i].in;
-    wrapper.SyncInterpret(&hs, NULL);
+    wrapper.SyncInterpret(hs, nullptr);
     EXPECT_FLOAT_EQ(data[i].out, fs.position_y) << "i=" << i;
   }
 }

@@ -16,7 +16,7 @@ namespace gestures {
 // Takes ownership of |next|:
 IntegralGestureFilterInterpreter::IntegralGestureFilterInterpreter(
     Interpreter* next, Tracer* tracer)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       hscroll_remainder_(0.0),
       vscroll_remainder_(0.0),
       hscroll_ordinal_remainder_(0.0),
@@ -26,28 +26,25 @@ IntegralGestureFilterInterpreter::IntegralGestureFilterInterpreter(
 }
 
 void IntegralGestureFilterInterpreter::SyncInterpretImpl(
-    HardwareState* hwstate, stime_t* timeout) {
-  can_clear_remainders_ = hwstate->finger_cnt == 0 && hwstate->touch_cnt == 0;
+    HardwareState& hwstate, stime_t* timeout) {
+  can_clear_remainders_ = hwstate.finger_cnt == 0 && hwstate.touch_cnt == 0;
   stime_t next_timeout = NO_DEADLINE;
   next_->SyncInterpret(hwstate, &next_timeout);
   *timeout = SetNextDeadlineAndReturnTimeoutVal(
-      hwstate->timestamp, remainder_reset_deadline_, next_timeout);
+      hwstate.timestamp, remainder_reset_deadline_, next_timeout);
 }
 
 void IntegralGestureFilterInterpreter::HandleTimerImpl(
     stime_t now, stime_t *timeout) {
+  stime_t next_timeout;
   if (ShouldCallNextTimer(remainder_reset_deadline_)) {
     if (next_timer_deadline_ > now) {
       Err("Spurious callback. now: %f, next deadline: %f",
           now, next_timer_deadline_);
       return;
     }
-
-    stime_t next_timeout = NO_DEADLINE;
+    next_timeout = NO_DEADLINE;
     next_->HandleTimer(now, &next_timeout);
-    *timeout = SetNextDeadlineAndReturnTimeoutVal(now,
-                                                  remainder_reset_deadline_,
-                                                  next_timeout);
   } else {
     if (remainder_reset_deadline_ > now) {
       Err("Spurious callback. now: %f, remainder reset deadline: %f",
@@ -59,13 +56,14 @@ void IntegralGestureFilterInterpreter::HandleTimerImpl(
           hscroll_remainder_ = vscroll_remainder_ = 0.0;
 
     remainder_reset_deadline_ = NO_DEADLINE;
-    stime_t next_timeout =
-      next_timer_deadline_ == NO_DEADLINE || next_timer_deadline_ <= now ?
-      NO_DEADLINE : next_timer_deadline_ - now;
-    *timeout = SetNextDeadlineAndReturnTimeoutVal(now,
-                                                  remainder_reset_deadline_,
-                                                  next_timeout);
+    next_timeout = next_timer_deadline_ == NO_DEADLINE ||
+                   next_timer_deadline_ <= now
+                      ? NO_DEADLINE
+                      : next_timer_deadline_ - now;
   }
+  *timeout = SetNextDeadlineAndReturnTimeoutVal(now,
+                                                remainder_reset_deadline_,
+                                                next_timeout);
 }
 
 namespace {

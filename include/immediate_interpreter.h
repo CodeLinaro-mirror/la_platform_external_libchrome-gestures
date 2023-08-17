@@ -381,7 +381,7 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   virtual ~ImmediateInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
   virtual void HandleTimerImpl(stime_t now, stime_t* timeout);
 
@@ -641,7 +641,7 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   bool sent_button_down_;
 
   // If we haven't sent a button down by this time, send one
-  stime_t button_down_timeout_;
+  stime_t button_down_deadline_;
 
   // When fingers change, we record the time
   stime_t changed_time_;

@@ -43,7 +43,7 @@ class FilterInterpreter : public Interpreter, public GestureConsumer {
   virtual void ConsumeGesture(const Gesture& gesture);
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
   virtual void HandleTimerImpl(stime_t now, stime_t* timeout);
 
   // When we need to call HandlerTimer on next_, or NO_DEADLINE if there's no

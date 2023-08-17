@@ -137,6 +137,11 @@ TEST(PropRegistryTest, PropChangeTest) {
   EXPECT_EQ(0, log.size());
   dp.HandleGesturesPropWritten();
   EXPECT_EQ(1, log.size());
+
+  BoolProperty bp(&reg, "there", true);
+  EXPECT_EQ(1, log.size());
+  bp.HandleGesturesPropWritten();
+  EXPECT_EQ(2, log.size());
 }
 
 // Mock GesturesPropProvider
@@ -188,7 +193,7 @@ void MockGesturesPropFree(void* data, GesturesProp* prop) {
 TEST(PropRegistryTest, SetAtCreateShouldNotifyTest) {
   GesturesPropProvider mock_gestures_props_provider = {
     MockGesturesPropCreateInt,
-    NULL,
+    nullptr,
     MockGesturesPropCreateBool,
     MockGesturesPropCreateString,
     MockGesturesPropCreateReal,
@@ -210,7 +215,7 @@ TEST(PropRegistryTest, SetAtCreateShouldNotifyTest) {
   my_string.SetDelegate(&delegate);
 
   EXPECT_EQ(0, delegate.call_cnt_);
-  reg.SetPropProvider(&mock_gestures_props_provider, NULL);
+  reg.SetPropProvider(&mock_gestures_props_provider, nullptr);
   EXPECT_EQ(4, delegate.call_cnt_);
 }
 

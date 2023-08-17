@@ -550,7 +550,7 @@ typedef struct GesturesTimer GesturesTimer;
 // should be called again after that amount of delay.
 typedef stime_t (*GesturesTimerCallback)(stime_t now,
                                          void* callback_data);
-// Allocate and return a new timer, or NULL if error.
+// Allocate and return a new timer, or nullptr if error.
 typedef GesturesTimer* (*GesturesTimerCreate)(void* data);
 // Set a timer:
 typedef void (*GesturesTimerSet)(void* data,
@@ -618,11 +618,11 @@ typedef void (*GesturesPropSetHandler)(void* handler_data);
 
 // Register handlers for the client to call when a GesturesProp is accessed.
 //
-// The get handler, if not NULL, should be called immediately before the
+// The get handler, if not nullptr, should be called immediately before the
 // property's value is to be read. This gives the library a chance to update its
 // value.
 //
-// The set handler, if not NULL, should be called immediately after the
+// The set handler, if not nullptr, should be called immediately after the
 // property's value is updated. This can be used to create a property that is
 // used to trigger an action, or to force an update to multiple properties
 // atomically.
@@ -659,8 +659,6 @@ class LoggingFilterInterpreter;
 class Tracer;
 class GestureInterpreterConsumer;
 class MetricsProperties;
-
-#if __cplusplus >= 201103L
 
 struct GestureInterpreter {
  public:
@@ -715,14 +713,6 @@ struct GestureInterpreter {
   void operator=(const GestureInterpreter&);
 };
 
-#else  // __cplusplus >= 201103L
-
-// Must be opaque under C++03 builds, since it has unique_ptr members.
-struct GestureInterpreter;
-
-#endif  // __cplusplus >= 201103L
-
-
 }  // namespace gestures
 
 typedef gestures::GestureInterpreter GestureInterpreter;
@@ -747,7 +737,7 @@ void GestureInterpreterSetCallback(GestureInterpreter*,
                                    GestureReadyFunction,
                                    void*);
 
-// Gestures will hold a reference to passed provider. Pass NULL to tell
+// Gestures will hold a reference to passed provider. Pass nullptr to tell
 // Gestures to stop holding a reference.
 void GestureInterpreterSetTimerProvider(GestureInterpreter*,
                                         GesturesTimerProvider*,

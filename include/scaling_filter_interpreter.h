@@ -58,15 +58,15 @@ class ScalingFilterInterpreter : public FilterInterpreter {
                           Metrics* metrics, MetricsProperties* mprops,
                           GestureConsumer* consumer);
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
-  void ScaleHardwareState(HardwareState* hwstate);
-  void ScaleMouseHardwareState(HardwareState* hwstate);
-  void ScaleTouchpadHardwareState(HardwareState* hwstate);
+  void ScaleHardwareState(HardwareState& hwstate);
+  void ScaleMouseHardwareState(HardwareState& hwstate);
+  void ScaleTouchpadHardwareState(HardwareState& hwstate);
   void ConsumeGesture(const Gesture& gs);
-  void FilterLowPressure(HardwareState* hwstate);
-  void FilterZeroArea(HardwareState* hwstate);
+  void FilterLowPressure(HardwareState& hwstate);
+  void FilterZeroArea(HardwareState& hwstate);
   bool IsMouseDevice(GestureInterpreterDeviceClass devclass);
   bool IsPointingStick(GestureInterpreterDeviceClass devclass);
   bool IsTouchpadDevice(GestureInterpreterDeviceClass devclass);

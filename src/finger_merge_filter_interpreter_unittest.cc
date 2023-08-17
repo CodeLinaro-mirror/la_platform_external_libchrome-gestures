@@ -14,13 +14,12 @@ class FingerMergeFilterInterpreterTest : public ::testing::Test {};
 class FingerMergeFilterInterpreterTestInterpreter : public Interpreter {
  public:
   FingerMergeFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false),
+      : Interpreter(nullptr, nullptr, false),
         handle_timer_called_(false) {}
 
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {
-    EXPECT_NE(static_cast<HardwareState*>(NULL), hwstate);
-    EXPECT_EQ(2, hwstate->finger_cnt);
-    prev_ = hwstate->fingers[0];
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {
+    EXPECT_EQ(2, hwstate.finger_cnt);
+    prev_ = hwstate.fingers[0];
   }
 
   virtual void HandleTimer(stime_t now, stime_t* timeout) {
@@ -47,7 +46,7 @@ TEST(FingerMergeFilterInterpreterTest, SimpleTest) {
 
   FingerMergeFilterInterpreterTestInterpreter* base_interpreter =
       new FingerMergeFilterInterpreterTestInterpreter;
-  FingerMergeFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  FingerMergeFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
 
   EXPECT_FALSE(interpreter.finger_merge_filter_enable_.val_);
   interpreter.finger_merge_filter_enable_.val_ = true;
@@ -66,7 +65,7 @@ TEST(FingerMergeFilterInterpreterTest, SimpleTest) {
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
   EXPECT_FALSE(base_interpreter->handle_timer_called_);
-  wrapper.HandleTimer(0.0, NULL);
+  wrapper.HandleTimer(0.0, nullptr);
   EXPECT_TRUE(base_interpreter->handle_timer_called_);
 
   FingerState finger_states[] = {
@@ -110,10 +109,10 @@ TEST(FingerMergeFilterInterpreterTest, SimpleTest) {
   };
 
   for (size_t i = 0; i < arraysize(hardware_states); i++) {
-    HardwareState *hwstate = &hardware_states[i];
-    wrapper.SyncInterpret(hwstate, NULL);
-    for (short j = 0; j < hwstate->finger_cnt; j++) {
-      FingerState *fs = hwstate->fingers;
+    HardwareState& hwstate = hardware_states[i];
+    wrapper.SyncInterpret(hwstate, nullptr);
+    for (short j = 0; j < hwstate.finger_cnt; j++) {
+      FingerState *fs = hwstate.fingers;
       EXPECT_TRUE(fs[j].flags & GESTURES_FINGER_MERGE);
     }
   }

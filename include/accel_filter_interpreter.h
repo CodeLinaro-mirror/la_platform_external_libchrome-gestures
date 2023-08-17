@@ -27,9 +27,13 @@ class AccelFilterInterpreter : public FilterInterpreter {
   FRIEND_TEST(AccelFilterInterpreterTest, CustomAccelTest);
   FRIEND_TEST(AccelFilterInterpreterTest, SimpleTest);
   FRIEND_TEST(AccelFilterInterpreterTest, TimingTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, NotSmoothingTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, SmoothingTest);
   FRIEND_TEST(AccelFilterInterpreterTest, TinyMoveTest);
   FRIEND_TEST(AccelFilterInterpreterTest, UnacceleratedMouseTest);
   FRIEND_TEST(AccelFilterInterpreterTest, UnacceleratedTouchpadTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, TouchpadPointAccelCurveTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, TouchpadScrollAccelCurveTest);
  public:
   // Takes ownership of |next|:
   AccelFilterInterpreter(PropRegistry* prop_reg, Interpreter* next,
@@ -53,8 +57,82 @@ class AccelFilterInterpreter : public FilterInterpreter {
     double int_;  // Intercept of line
   };
 
+  //**************************************************************************
+  // Worker Funnctions that are used internal to this class as well
+  // as giving internal information for testing/research purposes.
+
+  // Calculate the Delta Time for a given gesture.
+  //    in:     gs, provided Gesture
+  //    ret:    delta time
+  float get_dt(const Gesture& gs);
+
+  // Calculate the Delta Time and adjust the value if the calculation gives
+  // an out of bounds value.
+  //    in:     gs, provided Gesture
+  //    ret:    Reasonable Delta Time
+  float get_adjusted_dt(const Gesture& gs);
+
+  // The calculations in the ConsumeGestures is generic but works on
+  // different fields based on what the gesture is.  This worker will
+  // gather the correct values for the ConsumeGestures process.
+  //    in:     gs, provided Gesture
+  //    out:    dx, address of delta X
+  //    out:    dy, address of delta Y
+  //    out:    x_scale, value of X scaling factor
+  //    out:    y_scale, value of Y scaling factor
+  //    out:    scale_out_x, address of X value to adjust
+  //    out:    scale_out_y, address of Y value to adjust
+  //    out:    scale_out_x_ordinal, address of X orginal value to adjust
+  //    out:    scale_out_y_ordinal, address of Y orginal value to adjust
+  //    out:    segs, address of CurveSegment array to use
+  //    out:    max_segs, number of array entries of segs
+  //    ret:    true, acceleration expected
+  //            false, acceleration not expected
+  bool get_accel_parameters(
+      Gesture& gs,
+      float*& dx, float*& dy,
+      float& x_scale, float& y_scale,
+      float*& scale_out_x, float*& scale_out_y,
+      float*& scale_out_x_ordinal, float*& scale_out_y_ordinal,
+      CurveSegment*& segs, size_t& max_segs);
+
+  // Given a dx/dy/dt (non-fling motion) or, if dx and dy are nullptr,
+  // vx/vy (fling velocity) calculate the speed.
+  //    in:     dx, address of delta X
+  //    in:     dy, address of delta Y
+  //    in:     vx, value of X velocity (only valid if dx/dy are nullptr)
+  //    in:     vy, value of Y velocity (only valid if dx/dy are nullptr)
+  //    in:     dt, value of delta time (assumed 1 if dx/dy are nullptr)
+  //    out:    speed, actual distance/delta time
+  //    ret:    true, acceleration expected
+  //            false, acceleration not expected
+  bool get_actual_speed(
+      float* dx, float* dy,
+      float vx, float vy,
+      float dt,
+      float& speed);
+
+  // Speed smoothing, this is currently disabled but can be enabled by
+  // means of the smooth_accel_ Property.
+  //    in:     gs, provided Gesture
+  //    inout:  speed, actual speed on input and smoothed on output
+  void smooth_speed(Gesture& gs, float& speed);
+
+  // Map a speed on a given CurveSegment array to a ratio multiplier.
+  //    in:     segs, address of CurveSegment array being used
+  //    in:     max_segs, number of array entries in segs
+  //    in:     speed, actual distance/delta time value
+  //    ret:    determined gain to apply
+  float RatioFromAccelCurve(CurveSegment const * segs,
+                            size_t const max_segs,
+                            float const speed);
+
+  //**************************************************************************
+
   static const size_t kMaxCurveSegs = 3;
   static const size_t kMaxCustomCurveSegs = 20;
+  static const size_t kMaxUnaccelCurveSegs = 1;
+
   static const size_t kMaxAccelCurves = 5;
 
   // curves for sensitivity 1..5
@@ -76,12 +154,13 @@ class AccelFilterInterpreter : public FilterInterpreter {
   // handled in the MouseInterpreter class.
 
   // See max* and min_reasonable_dt_ properties
-  stime_t last_reasonable_dt_;
+  stime_t last_reasonable_dt_ = 0.05;
 
   // These are used to calculate acceleration, see smooth_accel_
-  stime_t last_end_time_;
-  float last_mags_[2];
-  size_t last_mags_size_;
+  stime_t last_end_time_ = -1.0;
+
+  std::vector<float> last_mags_;
+  static const size_t kMaxLastMagsSize = 2;
 
   // These properties expose the custom curves (just above) to the
   // property system.
@@ -101,6 +180,7 @@ class AccelFilterInterpreter : public FilterInterpreter {
   DoubleProperty point_y_out_scale_;
   DoubleProperty scroll_x_out_scale_;
   DoubleProperty scroll_y_out_scale_;
+
   // These properties are automatically set on mice-like devices:
   BoolProperty use_mouse_point_curves_;  // set on {touch,nontouch} mice
   BoolProperty use_mouse_scroll_curves_;  // set on nontouch mice
@@ -110,7 +190,7 @@ class AccelFilterInterpreter : public FilterInterpreter {
   // Flag for disabling mouse/touchpad acceleration.
   BoolProperty pointer_acceleration_;
 
-  // Sometimes on wireless hardware (e.g. Bluetooth), patckets need to be
+  // Sometimes on wireless hardware (e.g. Bluetooth), packets need to be
   // resent. This can lead to a time between packets that very large followed
   // by a very small one. Very small periods especially cause problems b/c they
   // make the velocity seem very fast, which leads to an exaggeration of

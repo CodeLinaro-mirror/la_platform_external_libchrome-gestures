@@ -25,7 +25,7 @@ Interpreter::Interpreter(PropRegistry* prop_reg,
                          bool force_log_creation)
     : requires_metrics_(false),
       initialized_(false),
-      name_(NULL),
+      name_(nullptr),
       tracer_(tracer) {
 #ifdef DEEP_LOGS
   bool logging_enabled = true;
@@ -46,21 +46,21 @@ void Interpreter::Trace(const char* message, const char* name) {
     tracer_->Trace(message, name);
 }
 
-void Interpreter::SyncInterpret(HardwareState* hwstate,
+void Interpreter::SyncInterpret(HardwareState& hwstate,
                                     stime_t* timeout) {
   AssertWithReturn(initialized_);
-  if (enable_event_logging_ && log_.get() && hwstate) {
+  if (enable_event_logging_ && log_.get()) {
     Trace("log: start: ", "LogHardwareState");
-    log_->LogHardwareState(*hwstate);
+    log_->LogHardwareState(hwstate);
     Trace("log: end: ", "LogHardwareState");
   }
   if (own_metrics_)
-    own_metrics_->Update(*hwstate);
+    own_metrics_->Update(hwstate);
 
   Trace("SyncInterpret: start: ", name());
   SyncInterpretImpl(hwstate, timeout);
   Trace("SyncInterpret: end: ", name());
-  LogOutputs(NULL, timeout, "SyncLogOutputs");
+  LogOutputs(nullptr, timeout, "SyncLogOutputs");
 }
 
 void Interpreter::HandleTimer(stime_t now, stime_t* timeout) {
@@ -73,12 +73,12 @@ void Interpreter::HandleTimer(stime_t now, stime_t* timeout) {
   Trace("HandleTimer: start: ", name());
   HandleTimerImpl(now, timeout);
   Trace("HandleTimer: end: ", name());
-  LogOutputs(NULL, timeout, "TimerLogOutputs");
+  LogOutputs(nullptr, timeout, "TimerLogOutputs");
 }
 
 void Interpreter::ProduceGesture(const Gesture& gesture) {
   AssertWithReturn(initialized_);
-  LogOutputs(&gesture, NULL, "ProduceGesture");
+  LogOutputs(&gesture, nullptr, "ProduceGesture");
   consumer_->ConsumeGesture(gesture);
 }
 
@@ -93,7 +93,7 @@ void Interpreter::Initialize(const HardwareProperties* hwprops,
   }
 
   metrics_ = metrics;
-  if (requires_metrics_ && metrics == NULL) {
+  if (requires_metrics_ && metrics == nullptr) {
     own_metrics_.reset(new Metrics(mprops));
     metrics_ = own_metrics_.get();
   }
@@ -123,7 +123,7 @@ void Interpreter::InitName() {
   if (!name_) {
     int status;
     char* full_name = abi::__cxa_demangle(typeid(*this).name(), 0, 0, &status);
-    if (full_name == NULL) {
+    if (full_name == nullptr) {
       if (status == -1)
         Err("Memory allocation failed");
       else if (status == -2)

@@ -79,7 +79,7 @@ const FingerMetrics* Metrics::GetFinger(short tracking_id) const {
   if (iter != fingers_.end())
     return iter;
   else
-    return NULL;
+    return nullptr;
 }
 
 const FingerMetrics* Metrics::GetFinger(const FingerState& state) const {

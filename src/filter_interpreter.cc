@@ -8,7 +8,7 @@
 
 namespace gestures {
 
-void FilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void FilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                           stime_t* timeout) {
   next_->SyncInterpret(hwstate, timeout);
 }
@@ -46,13 +46,13 @@ void FilterInterpreter::Clear() {
 
 stime_t FilterInterpreter::SetNextDeadlineAndReturnTimeoutVal(
     stime_t now, stime_t local_deadline, stime_t next_timeout) {
-  next_timer_deadline_ = next_timeout > 0.0 ? now + next_timeout : NO_DEADLINE;
-  stime_t local_timeout =
-    local_deadline == NO_DEADLINE || local_deadline <= now ? NO_DEADLINE :
-    local_deadline - now;
-
-  if (next_timeout == NO_DEADLINE && local_timeout == NO_DEADLINE)
-    return NO_DEADLINE;
+  next_timer_deadline_ = next_timeout > 0.0
+                            ? now + next_timeout
+                            : NO_DEADLINE;
+  stime_t local_timeout = local_deadline == NO_DEADLINE ||
+                          local_deadline <= now
+                            ? NO_DEADLINE
+                            : local_deadline - now;
   if (next_timeout == NO_DEADLINE)
     return local_timeout;
   if (local_timeout == NO_DEADLINE)

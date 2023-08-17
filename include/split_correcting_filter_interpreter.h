@@ -55,7 +55,7 @@ class SplitCorrectingFilterInterpreter : public FilterInterpreter {
   void Enable() { enabled_.val_ = 1; }
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   void RemoveMissingUnmergedContacts(const HardwareState& hwstate);
@@ -71,7 +71,7 @@ class SplitCorrectingFilterInterpreter : public FilterInterpreter {
                                      float point_x, float point_y);
 
   // Based on merged_ and unmeged_, updates the current hwstate.
-  void UpdateHwState(HardwareState* hwstate) const;
+  void UpdateHwState(HardwareState& hwstate) const;
   // Tests to see if new_contact, when paired w/ existing_contact
   // are a good match for the unmerged contact, merge_recipient.
   // new_contact is the current state of the finger in merge_recipient.
@@ -91,7 +91,7 @@ class SplitCorrectingFilterInterpreter : public FilterInterpreter {
 
   static void JoinFingerState(FingerState* in_out,
                               const FingerState& newfinger);
-  static void RemoveFingerStateFromHardwareState(HardwareState* hs,
+  static void RemoveFingerStateFromHardwareState(HardwareState& hs,
                                                  FingerState* fs);
 
   // Sets last_tracking_ids_ to the ids in the passed hwstate.

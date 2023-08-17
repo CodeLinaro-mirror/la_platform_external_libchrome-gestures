@@ -17,7 +17,7 @@ namespace gestures {
 
 class FilterInterpreterTest : public ::testing::Test {
  public:
-  FilterInterpreterTest() : interpreter(NULL, NULL, NULL, false) {}
+  FilterInterpreterTest() : interpreter(nullptr, nullptr, nullptr, false) {}
 
  protected:
   FilterInterpreter interpreter;

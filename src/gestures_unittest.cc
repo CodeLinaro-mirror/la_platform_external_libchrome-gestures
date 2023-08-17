@@ -314,8 +314,8 @@ TEST(GesturesTest, GestureEqTest) {
 TEST(GesturesTest, SimpleTest) {
   // Simple allocate/free test
   std::unique_ptr<GestureInterpreter> gs(NewGestureInterpreter());
-  EXPECT_NE(static_cast<GestureInterpreter*>(NULL), gs.get());
-  EXPECT_EQ(static_cast<Interpreter*>(NULL), gs.get()->interpreter());
+  EXPECT_NE(nullptr, gs.get());
+  EXPECT_EQ(nullptr, gs.get()->interpreter());
 
   GestureInterpreter* gs_version_under = NewGestureInterpreterImpl(0);
   EXPECT_EQ(nullptr, gs_version_under);
@@ -421,13 +421,13 @@ TEST(GesturesTest, HardwareStateGetFingerStateTest) {
   EXPECT_EQ(&fs[0], hs.GetFingerState(4));
   EXPECT_EQ(&fs[1], hs.GetFingerState(2));
   EXPECT_EQ(&fs[2], hs.GetFingerState(7));
-  EXPECT_EQ(reinterpret_cast<FingerState*>(NULL), hs.GetFingerState(8));
+  EXPECT_EQ(nullptr, hs.GetFingerState(8));
 
   const HardwareState& const_hs = hs;
   EXPECT_EQ(&fs[0], const_hs.GetFingerState(4));
   EXPECT_EQ(&fs[1], const_hs.GetFingerState(2));
   EXPECT_EQ(&fs[2], const_hs.GetFingerState(7));
-  EXPECT_EQ(reinterpret_cast<const FingerState*>(NULL), hs.GetFingerState(8));
+  EXPECT_EQ(nullptr, hs.GetFingerState(8));
 }
 
 TEST(GesturesTest, HardwarePropertiesToStringTest) {
@@ -463,7 +463,7 @@ TEST(GesturesTest, HardwarePropertiesToStringTest) {
   };
   const char* last_found = str.c_str();
   for (size_t i = 0; i < arraysize(expected); i++) {
-    ASSERT_NE(static_cast<const char*>(NULL), last_found);
+    ASSERT_NE(nullptr, last_found);
     const char* found = strstr(last_found, expected[i]);
     EXPECT_GE(found, last_found) << "i=" << i;
     last_found = found;
@@ -480,7 +480,7 @@ TEST(GesturesTest, HardwareStateToStringTest) {
 
   HardwareState hs[] = {
     make_hwstate(1.123, 1, 2, 2, fs),
-    make_hwstate(2.123, 0, 0, 0, NULL)
+    make_hwstate(2.123, 0, 0, 0, nullptr)
   };
 
   const char* expected[] = {
@@ -517,11 +517,10 @@ TEST(GesturesTest, HardwareStateToStringTest) {
   string short_str = hs[1].String();
 
   for (size_t i = 0; i < arraysize(expected); i++)
-    EXPECT_NE(static_cast<char*>(NULL), strstr(long_str.c_str(), expected[i]))
+    EXPECT_NE(nullptr, strstr(long_str.c_str(), expected[i]))
         << " str: " << expected[i];
   for (size_t i = 0; i < arraysize(short_expected); i++)
-    EXPECT_NE(static_cast<char*>(NULL),
-              strstr(short_str.c_str(), short_expected[i]))
+    EXPECT_NE(nullptr, strstr(short_str.c_str(), short_expected[i]))
         << " str: " << short_expected[i];
 
   return;

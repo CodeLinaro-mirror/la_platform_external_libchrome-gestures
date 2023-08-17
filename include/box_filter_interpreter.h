@@ -42,7 +42,7 @@ class BoxFilterInterpreter : public FilterInterpreter, public PropertyDelegate {
   virtual ~BoxFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   std::map<short, FingerState> previous_output_;

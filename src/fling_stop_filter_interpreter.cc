@@ -11,7 +11,7 @@ namespace gestures {
 FlingStopFilterInterpreter::FlingStopFilterInterpreter(
     PropRegistry* prop_reg, Interpreter* next, Tracer* tracer,
     GestureInterpreterDeviceClass devclass)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       already_extended_(false),
       prev_touch_cnt_(0),
       prev_gesture_type_(kGestureTypeNull),
@@ -23,31 +23,32 @@ FlingStopFilterInterpreter::FlingStopFilterInterpreter(
   InitName();
 }
 
-void FlingStopFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void FlingStopFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                    stime_t* timeout) {
   fingers_of_last_hwstate_.clear();
-  for (int i = 0; i < hwstate->finger_cnt; i++)
-    fingers_of_last_hwstate_.insert(hwstate->fingers[i].tracking_id);
+  for (int i = 0; i < hwstate.finger_cnt; i++)
+    fingers_of_last_hwstate_.insert(hwstate.fingers[i].tracking_id);
 
-  UpdateFlingStopDeadline(*hwstate);
-
-  stime_t next_timeout = NO_DEADLINE;
+  UpdateFlingStopDeadline(hwstate);
   if (fling_stop_deadline_ != NO_DEADLINE) {
-    if (!already_extended_ && NeedsExtraTime(*hwstate)) {
+    if (!already_extended_ && NeedsExtraTime(hwstate)) {
       fling_stop_deadline_ += fling_stop_extra_delay_.val_;
       already_extended_ = true;
     }
-    if (hwstate->timestamp > fling_stop_deadline_) {
+    if (hwstate.timestamp > fling_stop_deadline_) {
       // sub in a fling before processing other interpreters
       ProduceGesture(Gesture(kGestureFling, prev_timestamp_,
-                             hwstate->timestamp, 0.0, 0.0,
+                             hwstate.timestamp, 0.0, 0.0,
                              GESTURES_FLING_TAP_DOWN));
       fling_stop_already_sent_ = true;
       fling_stop_deadline_ = NO_DEADLINE;
     }
   }
+
+  stime_t next_timeout = NO_DEADLINE;
   next_->SyncInterpret(hwstate, &next_timeout);
-  *timeout = SetNextDeadlineAndReturnTimeoutVal(hwstate->timestamp,
+
+  *timeout = SetNextDeadlineAndReturnTimeoutVal(hwstate.timestamp,
                                                 fling_stop_deadline_,
                                                 next_timeout);
 }
@@ -115,8 +116,17 @@ void FlingStopFilterInterpreter::UpdateFlingStopDeadline(
 }
 
 void FlingStopFilterInterpreter::HandleTimerImpl(stime_t now,
-                                                     stime_t* timeout) {
-  if (!ShouldCallNextTimer(fling_stop_deadline_)) {
+                                                 stime_t* timeout) {
+  stime_t next_timeout;
+  if (ShouldCallNextTimer(fling_stop_deadline_)) {
+    if (next_timer_deadline_ > now) {
+      Err("Spurious callback. now: %f, fs deadline: %f, next deadline: %f",
+          now, fling_stop_deadline_, next_timer_deadline_);
+      return;
+    }
+    next_timeout = NO_DEADLINE;
+    next_->HandleTimer(now, &next_timeout);
+  } else {
     if (fling_stop_deadline_ > now) {
       Err("Spurious callback. now: %f, fs deadline: %f, next deadline: %f",
           now, fling_stop_deadline_, next_timer_deadline_);
@@ -127,21 +137,11 @@ void FlingStopFilterInterpreter::HandleTimerImpl(stime_t now,
                            now, 0.0, 0.0,
                            GESTURES_FLING_TAP_DOWN));
     fling_stop_already_sent_ = true;
-    stime_t next_timeout =
-      next_timer_deadline_ == NO_DEADLINE || next_timer_deadline_ <= now ?
-      NO_DEADLINE : next_timer_deadline_ - now;
-    *timeout = SetNextDeadlineAndReturnTimeoutVal(now, fling_stop_deadline_,
-                                                  next_timeout);
-    return;
+    next_timeout = next_timer_deadline_ == NO_DEADLINE ||
+                   next_timer_deadline_ <= now
+                      ? NO_DEADLINE
+                      : next_timer_deadline_ - now;
   }
-  // Call next_
-  if (next_timer_deadline_ > now) {
-    Err("Spurious callback. now: %f, fs deadline: %f, next deadline: %f",
-        now, fling_stop_deadline_, next_timer_deadline_);
-    return;
-  }
-  stime_t next_timeout = NO_DEADLINE;
-  next_->HandleTimer(now, &next_timeout);
   *timeout = SetNextDeadlineAndReturnTimeoutVal(now, fling_stop_deadline_,
                                                 next_timeout);
 }

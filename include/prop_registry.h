@@ -20,7 +20,7 @@ class Property;
 
 class PropRegistry {
  public:
-  PropRegistry() : prop_provider_(NULL), activity_log_(NULL) {}
+  PropRegistry() : prop_provider_(nullptr), activity_log_(nullptr) {}
 
   void Register(Property* prop);
   void Unregister(Property* prop);
@@ -81,9 +81,9 @@ class Property {
   virtual void HandleGesturesPropWritten() = 0;
 
  protected:
-  GesturesProp* gprop_ = NULL;
+  GesturesProp* gprop_ = nullptr;
   PropRegistry* parent_;
-  PropertyDelegate* delegate_ = NULL;
+  PropertyDelegate* delegate_ = nullptr;
 
  private:
   const char* name_;

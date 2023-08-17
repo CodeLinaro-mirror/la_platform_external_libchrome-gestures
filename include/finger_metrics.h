@@ -132,7 +132,7 @@ class Metrics {
   vector<FingerMetrics, kMaxFingers>& fingers() { return fingers_; }
 
   // Find a FingerMetrics instance by it's tracking id.
-  // Returns NULL if not found.
+  // Returns nullptr if not found.
   FingerMetrics* GetFinger(short tracking_id) {
       return const_cast<FingerMetrics*>(
           const_cast<const Metrics*>(this)->GetFinger(tracking_id));

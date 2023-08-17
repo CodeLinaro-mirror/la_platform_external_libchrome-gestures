@@ -12,7 +12,7 @@ namespace gestures {
 SensorJumpFilterInterpreter::SensorJumpFilterInterpreter(PropRegistry* prop_reg,
                                                          Interpreter* next,
                                                          Tracer* tracer)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       enabled_(prop_reg, "Sensor Jump Filter Enable", false),
       min_warp_dist_non_move_(prop_reg, "Sensor Jump Min Dist Non-Move", 0.9),
       max_warp_dist_non_move_(prop_reg, "Sensor Jump Max Dist Non-Move", 7.5),
@@ -30,32 +30,32 @@ SensorJumpFilterInterpreter::SensorJumpFilterInterpreter(PropRegistry* prop_reg,
   InitName();
 }
 
-void SensorJumpFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void SensorJumpFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                         stime_t* timeout) {
   if (!enabled_.val_) {
     next_->SyncInterpret(hwstate, timeout);
     return;
   }
 
-  RemoveMissingIdsFromMap(&previous_input_[0], *hwstate);
-  RemoveMissingIdsFromMap(&previous_input_[1], *hwstate);
-  RemoveMissingIdsFromSet(&first_flag_[0], *hwstate);
-  RemoveMissingIdsFromSet(&first_flag_[1], *hwstate);
-  RemoveMissingIdsFromSet(&first_flag_[2], *hwstate);
-  RemoveMissingIdsFromSet(&first_flag_[3], *hwstate);
+  RemoveMissingIdsFromMap(&previous_input_[0], hwstate);
+  RemoveMissingIdsFromMap(&previous_input_[1], hwstate);
+  RemoveMissingIdsFromSet(&first_flag_[0], hwstate);
+  RemoveMissingIdsFromSet(&first_flag_[1], hwstate);
+  RemoveMissingIdsFromSet(&first_flag_[2], hwstate);
+  RemoveMissingIdsFromSet(&first_flag_[3], hwstate);
 
   std::map<short, FingerState> current_input;
 
-  for (size_t i = 0; i < hwstate->finger_cnt; i++)
-    current_input[hwstate->fingers[i].tracking_id] = hwstate->fingers[i];
+  for (size_t i = 0; i < hwstate.finger_cnt; i++)
+    current_input[hwstate.fingers[i].tracking_id] = hwstate.fingers[i];
 
-  for (size_t i = 0; i < hwstate->finger_cnt; i++) {
-    short tracking_id = hwstate->fingers[i].tracking_id;
+  for (size_t i = 0; i < hwstate.finger_cnt; i++) {
+    short tracking_id = hwstate.fingers[i].tracking_id;
     if (!MapContainsKey(previous_input_[1], tracking_id) ||
         !MapContainsKey(previous_input_[0], tracking_id))
       continue;
     FingerState* fs[] = {
-      &hwstate->fingers[i],  // newest
+      &hwstate.fingers[i],  // newest
       &previous_input_[0][tracking_id],
       &previous_input_[1][tracking_id],  // oldest
     };

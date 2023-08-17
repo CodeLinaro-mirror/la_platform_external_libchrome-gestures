@@ -26,53 +26,53 @@ class ScalingFilterInterpreterTest : public ::testing::Test {};
 class ScalingFilterInterpreterTestInterpreter : public Interpreter {
  public:
   ScalingFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false), initialize_called_(false) {}
+      : Interpreter(nullptr, nullptr, false), initialize_called_(false) {}
 
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {
     if (!expected_coordinates_.empty()) {
       std::vector<pair<float, float> >& expected =
           expected_coordinates_.front();
-      for (unsigned short i = 0; i < hwstate->finger_cnt; i++) {
-        EXPECT_FLOAT_EQ(expected[i].first, hwstate->fingers[i].position_x)
+      for (unsigned short i = 0; i < hwstate.finger_cnt; i++) {
+        EXPECT_FLOAT_EQ(expected[i].first, hwstate.fingers[i].position_x)
             << "i = " << i;
-        EXPECT_FLOAT_EQ(expected[i].second, hwstate->fingers[i].position_y)
+        EXPECT_FLOAT_EQ(expected[i].second, hwstate.fingers[i].position_y)
             << "i = " << i;
       }
       expected_coordinates_.pop_front();
     }
     if (!expected_orientation_.empty()) {
       const std::vector<float>& expected = expected_orientation_.front();
-      EXPECT_EQ(expected.size(), hwstate->finger_cnt);
-      for (size_t i = 0; i < hwstate->finger_cnt; i++)
-        EXPECT_FLOAT_EQ(expected[i], hwstate->fingers[i].orientation)
+      EXPECT_EQ(expected.size(), hwstate.finger_cnt);
+      for (size_t i = 0; i < hwstate.finger_cnt; i++)
+        EXPECT_FLOAT_EQ(expected[i], hwstate.fingers[i].orientation)
             << "i=" << i;
       expected_orientation_.pop_front();
     }
     if (!expected_touch_major_.empty()) {
       const std::vector<float>& expected = expected_touch_major_.front();
-      EXPECT_EQ(expected.size(), hwstate->finger_cnt);
-      for (size_t i = 0; i < hwstate->finger_cnt; i++)
-        EXPECT_FLOAT_EQ(expected[i], hwstate->fingers[i].touch_major)
+      EXPECT_EQ(expected.size(), hwstate.finger_cnt);
+      for (size_t i = 0; i < hwstate.finger_cnt; i++)
+        EXPECT_FLOAT_EQ(expected[i], hwstate.fingers[i].touch_major)
             << "i=" << i;
       expected_touch_major_.pop_front();
     }
     if (!expected_touch_minor_.empty()) {
       const std::vector<float>& expected = expected_touch_minor_.front();
-      EXPECT_EQ(expected.size(), hwstate->finger_cnt);
-      for (size_t i = 0; i < hwstate->finger_cnt; i++)
-        EXPECT_FLOAT_EQ(expected[i], hwstate->fingers[i].touch_minor)
+      EXPECT_EQ(expected.size(), hwstate.finger_cnt);
+      for (size_t i = 0; i < hwstate.finger_cnt; i++)
+        EXPECT_FLOAT_EQ(expected[i], hwstate.fingers[i].touch_minor)
             << "i=" << i;
       expected_touch_minor_.pop_front();
     }
-    if (!expected_pressures_.empty() && hwstate->finger_cnt > 0) {
+    if (!expected_pressures_.empty() && hwstate.finger_cnt > 0) {
       EXPECT_FLOAT_EQ(expected_pressures_.front(),
-                      hwstate->fingers[0].pressure);
+                      hwstate.fingers[0].pressure);
       expected_pressures_.pop_front();
     } else if (!expected_finger_cnt_.empty() && !expected_touch_cnt_.empty()) {
       // Test if the low pressure event is dropped
-      EXPECT_EQ(expected_finger_cnt_.front(), hwstate->finger_cnt);
+      EXPECT_EQ(expected_finger_cnt_.front(), hwstate.finger_cnt);
       expected_finger_cnt_.pop_front();
-      EXPECT_EQ(expected_touch_cnt_.front(), hwstate->touch_cnt);
+      EXPECT_EQ(expected_touch_cnt_.front(), hwstate.touch_cnt);
       expected_touch_cnt_.pop_front();
     }
     if (return_values_.empty())
@@ -129,7 +129,7 @@ class ScalingFilterInterpreterTestInterpreter : public Interpreter {
 TEST(ScalingFilterInterpreterTest, SimpleTest) {
   ScalingFilterInterpreterTestInterpreter* base_interpreter =
       new ScalingFilterInterpreterTestInterpreter;
-  ScalingFilterInterpreter interpreter(NULL, base_interpreter, NULL,
+  ScalingFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
                                        GESTURES_DEVCLASS_TOUCHPAD);
   HardwareProperties initial_hwprops = {
     133, 728, 10279, 5822,  // left, top, right, bottom
@@ -228,20 +228,20 @@ TEST(ScalingFilterInterpreterTest, SimpleTest) {
                                                      GESTURES_FLING_START));
   base_interpreter->return_values_.push_back(Gesture());  // Null type
 
-  Gesture* out = wrapper.SyncInterpret(&hs[0], NULL);
-  ASSERT_EQ(reinterpret_cast<Gesture*>(NULL), out);
-  out = wrapper.SyncInterpret(&hs[1], NULL);
-  ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out);
+  Gesture* out = wrapper.SyncInterpret(hs[0], nullptr);
+  ASSERT_EQ(nullptr, out);
+  out = wrapper.SyncInterpret(hs[1], nullptr);
+  ASSERT_NE(nullptr, out);
   EXPECT_EQ(kGestureTypeMove, out->type);
   EXPECT_FLOAT_EQ(-4.0 * 133.0 / 25.4, out->details.move.dx);
   EXPECT_FLOAT_EQ(2.8 * 133.0 / 25.4, out->details.move.dy);
-  out = wrapper.SyncInterpret(&hs[2], NULL);
-  ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out);
+  out = wrapper.SyncInterpret(hs[2], nullptr);
+  ASSERT_NE(nullptr, out);
   EXPECT_EQ(kGestureTypeScroll, out->type);
   EXPECT_FLOAT_EQ(-4.1 * 133.0 / 25.4, out->details.scroll.dx);
   EXPECT_FLOAT_EQ(10.3 * 133.0 / 25.4, out->details.scroll.dy);
-  out = wrapper.SyncInterpret(&hs[3], NULL);
-  ASSERT_NE(reinterpret_cast<Gesture*>(NULL), out);
+  out = wrapper.SyncInterpret(hs[3], nullptr);
+  ASSERT_NE(nullptr, out);
   EXPECT_EQ(kGestureTypeFling, out->type);
   EXPECT_FLOAT_EQ(-201.8 * 133.0 / 25.4, out->details.fling.vx);
   EXPECT_FLOAT_EQ(112.4 * 133.0 / 25.4, out->details.fling.vy);
@@ -261,21 +261,21 @@ TEST(ScalingFilterInterpreterTest, SimpleTest) {
   interpreter.pressure_threshold_.val_ = kPressureThreshold;
   base_interpreter->expected_finger_cnt_.push_back(0);
   base_interpreter->expected_touch_cnt_.push_back(1);
-  out = wrapper.SyncInterpret(&hs2[0], NULL);
+  out = wrapper.SyncInterpret(hs2[0], nullptr);
 
   base_interpreter->expected_pressures_.push_back(
       fs2[1].pressure * kPressureScale + kPressureTranslate);
-  out = wrapper.SyncInterpret(&hs2[1], NULL);
+  out = wrapper.SyncInterpret(hs2[1], nullptr);
 
   base_interpreter->expected_finger_cnt_.push_back(0);
   base_interpreter->expected_touch_cnt_.push_back(0);
-  out = wrapper.SyncInterpret(&hs2[2], NULL);
+  out = wrapper.SyncInterpret(hs2[2], nullptr);
 }
 
 TEST(ScalingFilterInterpreterTest, ResolutionFallback) {
   ScalingFilterInterpreterTestInterpreter* base_interpreter =
       new ScalingFilterInterpreterTestInterpreter;
-  ScalingFilterInterpreter interpreter(NULL, base_interpreter, NULL,
+  ScalingFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
                                        GESTURES_DEVCLASS_TOUCHPAD);
   HardwareProperties initial_hwprops = {
     0, 0, 2000, 1000,  // left, top, right, bottom
@@ -310,7 +310,7 @@ TEST(ScalingFilterInterpreterTest, ResolutionFallback) {
       std::vector<pair<float, float>>(1, make_pair(
           static_cast<float>(1000 / 32.0), static_cast<float>(500 / 32.0))));
 
-  wrapper.SyncInterpret(&hs, NULL);
+  wrapper.SyncInterpret(hs, nullptr);
 }
 
 static void RunTouchMajorAndMinorTest(
@@ -391,7 +391,7 @@ static void RunTouchMajorAndMinorTest(
   }
 
   base_interpreter->expected_hwprops_ = *expected_hwprops;
-  interpreter->Initialize(hwprops, NULL, NULL, NULL);
+  interpreter->Initialize(hwprops, nullptr, nullptr, nullptr);
   EXPECT_TRUE(base_interpreter->initialize_called_);
 
   for (size_t i = 0; i < n_fs; i++) {
@@ -406,7 +406,7 @@ static void RunTouchMajorAndMinorTest(
       hs.touch_cnt = 1;
     }
     hs.fingers = fs + i;
-    interpreter->SyncInterpret(&hs, NULL);
+    interpreter->SyncInterpret(hs, nullptr);
   }
 
   // Tear down state
@@ -416,7 +416,7 @@ static void RunTouchMajorAndMinorTest(
 TEST(ScalingFilterInterpreterTest, TouchMajorAndMinorTest) {
   ScalingFilterInterpreterTestInterpreter* base_interpreter =
       new ScalingFilterInterpreterTestInterpreter;
-  ScalingFilterInterpreter interpreter(NULL, base_interpreter, NULL,
+  ScalingFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
                                        GESTURES_DEVCLASS_TOUCHPAD);
 
   const float e_x = 17;

@@ -166,7 +166,7 @@ const FingerState* HardwareState::GetFingerState(short tracking_id) const {
     if (fingers[i].tracking_id == tracking_id)
       return &fingers[i];
   }
-  return NULL;
+  return nullptr;
 }
 
 string HardwareState::String() const {
@@ -347,14 +347,14 @@ GestureInterpreter* NewGestureInterpreterImpl(int version) {
         ", but library has min supported version %d",
         version,
         kMinSupportedVersion);
-    return NULL;
+    return nullptr;
   }
   if (version > kMaxSupportedVersion) {
     Err("Client too new. It's using version %d"
         ", but library has max supported version %d",
         version,
         kMaxSupportedVersion);
-    return NULL;
+    return nullptr;
   }
   return new gestures::GestureInterpreter(version);
 }
@@ -424,20 +424,20 @@ class GestureInterpreterConsumer : public GestureConsumer {
 }
 
 GestureInterpreter::GestureInterpreter(int version)
-    : callback_(NULL),
-      callback_data_(NULL),
-      timer_provider_(NULL),
-      timer_provider_data_(NULL),
-      interpret_timer_(NULL),
-      loggingFilter_(NULL) {
+    : callback_(nullptr),
+      callback_data_(nullptr),
+      timer_provider_(nullptr),
+      timer_provider_data_(nullptr),
+      interpret_timer_(nullptr),
+      loggingFilter_(nullptr) {
   prop_reg_.reset(new PropRegistry);
   tracer_.reset(new Tracer(prop_reg_.get(), TraceMarker::StaticTraceWrite));
   TraceMarker::CreateTraceMarker();
 }
 
 GestureInterpreter::~GestureInterpreter() {
-  SetTimerProvider(NULL, NULL);
-  SetPropProvider(NULL, NULL);
+  SetTimerProvider(nullptr, nullptr);
+  SetPropProvider(nullptr, nullptr);
   TraceMarker::DeleteTraceMarker();
 }
 
@@ -457,7 +457,7 @@ void GestureInterpreter::PushHardwareState(HardwareState* hwstate) {
     return;
   }
   stime_t timeout = NO_DEADLINE;
-  interpreter_->SyncInterpret(hwstate, &timeout);
+  interpreter_->SyncInterpret(*hwstate, &timeout);
   if (timer_provider_ && interpret_timer_) {
     if (timeout == NO_DEADLINE) {
       timer_provider_->cancel_fn(timer_provider_data_, interpret_timer_);
@@ -482,7 +482,8 @@ void GestureInterpreter::SetHardwareProperties(
   }
   hwprops_ = hwprops;
   if (consumer_)
-    interpreter_->Initialize(&hwprops_, NULL, mprops_.get(), consumer_.get());
+    interpreter_->Initialize(&hwprops_, nullptr, mprops_.get(),
+                             consumer_.get());
 }
 
 void GestureInterpreter::TimerCallback(stime_t now, stime_t* timeout) {
@@ -499,10 +500,10 @@ void GestureInterpreter::SetTimerProvider(GesturesTimerProvider* tp,
     return;
   if (timer_provider_ && interpret_timer_) {
     timer_provider_->free_fn(timer_provider_data_, interpret_timer_);
-    interpret_timer_ = NULL;
+    interpret_timer_ = nullptr;
   }
   if (interpret_timer_)
-    Log("How was interpret_timer_ not NULL?!");
+    Log("How was interpret_timer_ not null?!");
   timer_provider_ = tp;
   timer_provider_data_ = data;
   if (timer_provider_)
@@ -570,7 +571,7 @@ void GestureInterpreter::InitializeTouchpad(void) {
   temp = loggingFilter_ = new LoggingFilterInterpreter(prop_reg_.get(), temp,
                                                        tracer_.get());
   interpreter_.reset(temp);
-  temp = NULL;
+  temp = nullptr;
 }
 
 void GestureInterpreter::InitializeTouchpad2(void) {
@@ -599,7 +600,7 @@ void GestureInterpreter::InitializeTouchpad2(void) {
   temp = loggingFilter_ = new LoggingFilterInterpreter(prop_reg_.get(), temp,
                                                        tracer_.get());
   interpreter_.reset(temp);
-  temp = NULL;
+  temp = nullptr;
 }
 
 void GestureInterpreter::InitializeMouse(GestureInterpreterDeviceClass cls) {
@@ -614,7 +615,7 @@ void GestureInterpreter::InitializeMouse(GestureInterpreterDeviceClass cls) {
   temp = loggingFilter_ = new LoggingFilterInterpreter(prop_reg_.get(), temp,
                                                        tracer_.get());
   interpreter_.reset(temp);
-  temp = NULL;
+  temp = nullptr;
 }
 
 void GestureInterpreter::InitializeMultitouchMouse(void) {
@@ -638,7 +639,7 @@ void GestureInterpreter::InitializeMultitouchMouse(void) {
   temp = loggingFilter_ = new LoggingFilterInterpreter(prop_reg_.get(), temp,
                                                        tracer_.get());
   interpreter_.reset(temp);
-  temp = NULL;
+  temp = nullptr;
 }
 
 void GestureInterpreter::Initialize(GestureInterpreterDeviceClass cls) {

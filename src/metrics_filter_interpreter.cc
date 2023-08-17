@@ -21,7 +21,7 @@ MetricsFilterInterpreter::MetricsFilterInterpreter(
     Interpreter* next,
     Tracer* tracer,
     GestureInterpreterDeviceClass devclass)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       devclass_(devclass),
       mouse_movement_session_index_(0),
       mouse_movement_current_session_length(0),
@@ -41,7 +41,7 @@ MetricsFilterInterpreter::MetricsFilterInterpreter(
   InitName();
 }
 
-void MetricsFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void MetricsFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                  stime_t* timeout) {
   if (devclass_ == GESTURES_DEVCLASS_TOUCHPAD) {
     // Right now, we only want to update finger states for built-in touchpads
@@ -55,11 +55,11 @@ void MetricsFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
     // either.
     // TODO(sheckylin): Track finger related metrics for external peripherals
     // as well after gaining access to the UMA log.
-    UpdateFingerState(*hwstate);
+    UpdateFingerState(hwstate);
   } else if (devclass_ == GESTURES_DEVCLASS_MOUSE ||
              devclass_ == GESTURES_DEVCLASS_MULTITOUCH_MOUSE ||
              devclass_ == GESTURES_DEVCLASS_POINTING_STICK) {
-    UpdateMouseMovementState(*hwstate);
+    UpdateMouseMovementState(hwstate);
   }
   next_->SyncInterpret(hwstate, timeout);
 }

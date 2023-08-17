@@ -17,7 +17,7 @@ namespace gestures {
 ScalingFilterInterpreter::ScalingFilterInterpreter(
     PropRegistry* prop_reg, Interpreter* next, Tracer* tracer,
     GestureInterpreterDeviceClass devclass)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       tp_x_scale_(1.0),
       tp_y_scale_(1.0),
       tp_x_translate_(0.0),
@@ -53,7 +53,7 @@ ScalingFilterInterpreter::ScalingFilterInterpreter(
   InitName();
 }
 
-void ScalingFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void ScalingFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                      stime_t* timeout) {
   ScaleHardwareState(hwstate);
   next_->SyncInterpret(hwstate, timeout);
@@ -61,45 +61,45 @@ void ScalingFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
 
 // Ignore the finger events with low pressure values especially for the SEMI_MT
 // devices such as Synaptics touchpad on Cr-48.
-void ScalingFilterInterpreter::FilterLowPressure(HardwareState* hwstate) {
-  unsigned short finger_cnt = hwstate->finger_cnt;
-  unsigned short touch_cnt = hwstate->touch_cnt;
+void ScalingFilterInterpreter::FilterLowPressure(HardwareState& hwstate) {
+  unsigned short finger_cnt = hwstate.finger_cnt;
+  unsigned short touch_cnt = hwstate.touch_cnt;
   float threshold = 0.0;
 
   // If a button is down, only filter 0 pressure fingers:
   // Pressing fingers might have low pressure, but hovering fingers are
   // reported as fingers with 0 pressure and should still be filtered.
-  if (pressure_scale_.val_ > 0.0 && !hwstate->buttons_down) {
+  if (pressure_scale_.val_ > 0.0 && !hwstate.buttons_down) {
     threshold = (pressure_threshold_.val_ - pressure_translate_.val_)
         / pressure_scale_.val_ ;
   }
   for (short i = finger_cnt - 1 ; i >= 0; i--) {
-    if (hwstate->fingers[i].pressure <= threshold) {
+    if (hwstate.fingers[i].pressure <= threshold) {
       if (i != finger_cnt - 1)
-        hwstate->fingers[i] = hwstate->fingers[finger_cnt - 1];
+        hwstate.fingers[i] = hwstate.fingers[finger_cnt - 1];
       finger_cnt--;
       if (touch_cnt > 0)
         touch_cnt--;
     }
   }
-  hwstate->finger_cnt = finger_cnt;
-  hwstate->touch_cnt = touch_cnt;
+  hwstate.finger_cnt = finger_cnt;
+  hwstate.touch_cnt = touch_cnt;
 }
 
-void ScalingFilterInterpreter::FilterZeroArea(HardwareState* hwstate) {
-  unsigned short finger_cnt = hwstate->finger_cnt;
-  unsigned short touch_cnt = hwstate->touch_cnt;
+void ScalingFilterInterpreter::FilterZeroArea(HardwareState& hwstate) {
+  unsigned short finger_cnt = hwstate.finger_cnt;
+  unsigned short touch_cnt = hwstate.touch_cnt;
   for (short i = finger_cnt - 1 ; i >= 0; i--) {
-    if (hwstate->fingers[i].pressure == 0.0) {
+    if (hwstate.fingers[i].pressure == 0.0) {
       if (i != finger_cnt - 1)
-        hwstate->fingers[i] = hwstate->fingers[finger_cnt - 1];
+        hwstate.fingers[i] = hwstate.fingers[finger_cnt - 1];
       finger_cnt--;
       if (touch_cnt > 0)
         touch_cnt--;
     }
   }
-  hwstate->finger_cnt = finger_cnt;
-  hwstate->touch_cnt = touch_cnt;
+  hwstate.finger_cnt = finger_cnt;
+  hwstate.touch_cnt = touch_cnt;
 }
 
 bool ScalingFilterInterpreter::IsMouseDevice(
@@ -120,7 +120,7 @@ bool ScalingFilterInterpreter::IsTouchpadDevice(
           devclass == GESTURES_DEVCLASS_TOUCHSCREEN);
 }
 
-void ScalingFilterInterpreter::ScaleHardwareState(HardwareState* hwstate) {
+void ScalingFilterInterpreter::ScaleHardwareState(HardwareState& hwstate) {
   if (device_touchpad_.val_)
     ScaleTouchpadHardwareState(hwstate);
   if (device_mouse_.val_ || device_pointing_stick_.val_)
@@ -128,16 +128,16 @@ void ScalingFilterInterpreter::ScaleHardwareState(HardwareState* hwstate) {
 }
 
 void ScalingFilterInterpreter::ScaleMouseHardwareState(
-    HardwareState* hwstate) {
-  hwstate->rel_x = hwstate->rel_x / mouse_cpi_.val_ * 25.4;
-  hwstate->rel_y = hwstate->rel_y / mouse_cpi_.val_ * 25.4;
+    HardwareState& hwstate) {
+  hwstate.rel_x = hwstate.rel_x / mouse_cpi_.val_ * 25.4;
+  hwstate.rel_y = hwstate.rel_y / mouse_cpi_.val_ * 25.4;
   // TODO(clchiou): Scale rel_wheel and rel_hwheel
 }
 
 void ScalingFilterInterpreter::ScaleTouchpadHardwareState(
-    HardwareState* hwstate) {
+    HardwareState& hwstate) {
   if (force_touch_count_to_match_finger_count_.val_)
-    hwstate->touch_cnt = hwstate->finger_cnt;
+    hwstate.touch_cnt = hwstate.finger_cnt;
 
   if (surface_area_from_pressure_.val_) {
     // Drop the small fingers, i.e. low pressures.
@@ -145,68 +145,67 @@ void ScalingFilterInterpreter::ScaleTouchpadHardwareState(
       FilterLowPressure(hwstate);
   }
 
-  for (short i = 0; i < hwstate->finger_cnt; i++) {
+  for (short i = 0; i < hwstate.finger_cnt; i++) {
     float cos_2_orit = 0.0, sin_2_orit = 0.0, rx_2 = 0.0, ry_2 = 0.0;
-    hwstate->fingers[i].position_x *= tp_x_scale_;
-    hwstate->fingers[i].position_x += tp_x_translate_;
-    hwstate->fingers[i].position_y *= tp_y_scale_;
-    hwstate->fingers[i].position_y += tp_y_translate_;
+    hwstate.fingers[i].position_x *= tp_x_scale_;
+    hwstate.fingers[i].position_x += tp_x_translate_;
+    hwstate.fingers[i].position_y *= tp_y_scale_;
+    hwstate.fingers[i].position_y += tp_y_translate_;
 
     // TODO(clchiou): Output orientation is computed on a pixel-unit circle,
     // and it is only equal to the orientation computed on a mm-unit circle
     // when tp_x_scale_ == tp_y_scale_.  Since what we really want is the
     // latter, fix this!
-    hwstate->fingers[i].orientation *= orientation_scale_;
+    hwstate.fingers[i].orientation *= orientation_scale_;
 
-    if (hwstate->fingers[i].touch_major || hwstate->fingers[i].touch_minor) {
-      cos_2_orit = cosf(hwstate->fingers[i].orientation);
+    if (hwstate.fingers[i].touch_major || hwstate.fingers[i].touch_minor) {
+      cos_2_orit = cosf(hwstate.fingers[i].orientation);
       cos_2_orit *= cos_2_orit;
-      sin_2_orit = sinf(hwstate->fingers[i].orientation);
+      sin_2_orit = sinf(hwstate.fingers[i].orientation);
       sin_2_orit *= sin_2_orit;
       rx_2 = tp_x_scale_ * tp_x_scale_;
       ry_2 = tp_y_scale_ * tp_y_scale_;
     }
-    if (hwstate->fingers[i].touch_major) {
+    if (hwstate.fingers[i].touch_major) {
       float bias = tp_x_bias_.val_ * sin_2_orit + tp_y_bias_.val_ * cos_2_orit;
-      hwstate->fingers[i].touch_major =
-          fabsf(hwstate->fingers[i].touch_major - bias) *
+      hwstate.fingers[i].touch_major =
+          fabsf(hwstate.fingers[i].touch_major - bias) *
           sqrtf(rx_2 * sin_2_orit + ry_2 * cos_2_orit);
     }
-    if (hwstate->fingers[i].touch_minor) {
+    if (hwstate.fingers[i].touch_minor) {
       float bias = tp_x_bias_.val_ * cos_2_orit + tp_y_bias_.val_ * sin_2_orit;
-      hwstate->fingers[i].touch_minor =
-          fabsf(hwstate->fingers[i].touch_minor - bias) *
+      hwstate.fingers[i].touch_minor =
+          fabsf(hwstate.fingers[i].touch_minor - bias) *
           sqrtf(rx_2 * cos_2_orit + ry_2 * sin_2_orit);
     }
 
     // After calibration, touch_major could be smaller than touch_minor.
     // If so, swap them here and update orientation.
     if (orientation_scale_ &&
-        hwstate->fingers[i].touch_major < hwstate->fingers[i].touch_minor) {
-      std::swap(hwstate->fingers[i].touch_major,
-                hwstate->fingers[i].touch_minor);
-      if (hwstate->fingers[i].orientation > 0.0)
-        hwstate->fingers[i].orientation -= M_PI_2;
+        hwstate.fingers[i].touch_major < hwstate.fingers[i].touch_minor) {
+      std::swap(hwstate.fingers[i].touch_major,
+                hwstate.fingers[i].touch_minor);
+      if (hwstate.fingers[i].orientation > 0.0)
+        hwstate.fingers[i].orientation -= M_PI_2;
       else
-        hwstate->fingers[i].orientation += M_PI_2;
+        hwstate.fingers[i].orientation += M_PI_2;
     }
 
     if (surface_area_from_pressure_.val_) {
-      hwstate->fingers[i].pressure *= pressure_scale_.val_;
-      hwstate->fingers[i].pressure += pressure_translate_.val_;
+      hwstate.fingers[i].pressure *= pressure_scale_.val_;
+      hwstate.fingers[i].pressure += pressure_translate_.val_;
     } else {
-      if (hwstate->fingers[i].touch_major && hwstate->fingers[i].touch_minor)
-        hwstate->fingers[i].pressure = M_PI_4 *
-            hwstate->fingers[i].touch_major * hwstate->fingers[i].touch_minor;
-      else if (hwstate->fingers[i].touch_major)
-        hwstate->fingers[i].pressure = M_PI_4 *
-            hwstate->fingers[i].touch_major * hwstate->fingers[i].touch_major;
+      if (hwstate.fingers[i].touch_major && hwstate.fingers[i].touch_minor)
+        hwstate.fingers[i].pressure = M_PI_4 *
+            hwstate.fingers[i].touch_major * hwstate.fingers[i].touch_minor;
+      else if (hwstate.fingers[i].touch_major)
+        hwstate.fingers[i].pressure = M_PI_4 *
+            hwstate.fingers[i].touch_major * hwstate.fingers[i].touch_major;
       else
-        hwstate->fingers[i].pressure = 0;
+        hwstate.fingers[i].pressure = 0;
     }
 
-    hwstate->fingers[i].pressure = std::max(1.0f,
-                                            hwstate->fingers[i].pressure);
+    hwstate.fingers[i].pressure = std::max(1.0f, hwstate.fingers[i].pressure);
   }
 
   if (!surface_area_from_pressure_.val_) {
@@ -376,8 +375,8 @@ void ScalingFilterInterpreter::Initialize(const HardwareProperties* hwprops,
     hwprops->wheel_is_hi_res,
     hwprops->is_haptic_pad,
   };
-  // current metrics is no longer valid, pass metrics=NULL
-  FilterInterpreter::Initialize(&friendly_props_, NULL, mprops, consumer);
+  // current metrics is no longer valid, pass metrics=nullptr
+  FilterInterpreter::Initialize(&friendly_props_, nullptr, mprops, consumer);
 }
 
 }  // namespace gestures

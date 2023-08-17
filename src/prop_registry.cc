@@ -67,7 +67,7 @@ void Property::DestroyProp() {
     return;
   }
   parent_->PropProvider()->free_fn(parent_->PropProviderData(), gprop_);
-  gprop_ = NULL;
+  gprop_ = nullptr;
 }
 
 void BoolProperty::CreatePropImpl() {
@@ -97,9 +97,8 @@ bool BoolProperty::SetValue(const Json::Value& value) {
 void BoolProperty::HandleGesturesPropWritten() {
   if (parent_ && parent_->activity_log()) {
     ActivityLog::PropChangeEntry entry = {
-      name(), ActivityLog::PropChangeEntry::kBoolProp, { 0 }
+      name(), { val_ }
     };
-    entry.value.bool_val = val_;
     parent_->activity_log()->LogPropChange(entry);
   }
   if (delegate_)
@@ -174,9 +173,8 @@ bool DoubleProperty::SetValue(const Json::Value& value) {
 void DoubleProperty::HandleGesturesPropWritten() {
   if (parent_ && parent_->activity_log()) {
     ActivityLog::PropChangeEntry entry = {
-      name(), ActivityLog::PropChangeEntry::kDoubleProp, { 0 }
+      name(), { val_ }
     };
-    entry.value.double_val = val_;
     parent_->activity_log()->LogPropChange(entry);
   }
   if (delegate_)
@@ -256,9 +254,8 @@ bool IntProperty::SetValue(const Json::Value& value) {
 void IntProperty::HandleGesturesPropWritten() {
   if (parent_ && parent_->activity_log()) {
     ActivityLog::PropChangeEntry entry = {
-      name(), ActivityLog::PropChangeEntry::kIntProp, { 0 }
+      name(), { val_ }
     };
-    entry.value.int_val = val_;
     parent_->activity_log()->LogPropChange(entry);
   }
   if (delegate_)

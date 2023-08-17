@@ -60,7 +60,7 @@ void MultitouchMouseInterpreter::ProduceGesture(const Gesture& gesture) {
   MouseInterpreter::ProduceGesture(gesture);
 }
 
-void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                        stime_t* timeout) {
   if (!state_buffer_.Get(0)->fingers) {
     Err("Must call SetHardwareProperties() before interpreting anything.");
@@ -68,19 +68,19 @@ void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState* hwstate,
   }
 
   // Should we remove all fingers from our structures, or just removed ones?
-  if ((hwstate->rel_x * hwstate->rel_x + hwstate->rel_y * hwstate->rel_y) >
+  if ((hwstate.rel_x * hwstate.rel_x + hwstate.rel_y * hwstate.rel_y) >
       moving_min_rel_amount_.val_ * moving_min_rel_amount_.val_) {
     start_position_.clear();
     moving_.clear();
     should_fling_ = false;
   } else {
-    RemoveMissingIdsFromMap(&start_position_, *hwstate);
-    RemoveMissingIdsFromSet(&moving_, *hwstate);
+    RemoveMissingIdsFromMap(&start_position_, hwstate);
+    RemoveMissingIdsFromSet(&moving_, hwstate);
   }
 
   // Set start positions/moving
-  for (size_t i = 0; i < hwstate->finger_cnt; i++) {
-    const FingerState& fs = hwstate->fingers[i];
+  for (size_t i = 0; i < hwstate.finger_cnt; i++) {
+    const FingerState& fs = hwstate.fingers[i];
     if (MapContainsKey(start_position_, fs.tracking_id)) {
       // Is moving?
       if (!SetContainsValue(moving_, fs.tracking_id) &&  // not already moving &
@@ -94,15 +94,15 @@ void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState* hwstate,
   }
 
   // Mark all non-moving fingers as unable to cause scroll
-  for (size_t i = 0; i < hwstate->finger_cnt; i++) {
-    FingerState* fs = &hwstate->fingers[i];
+  for (size_t i = 0; i < hwstate.finger_cnt; i++) {
+    FingerState* fs = &hwstate.fingers[i];
     if (!SetContainsValue(moving_, fs->tracking_id))
       fs->flags |=
           GESTURES_FINGER_WARP_X_NON_MOVE | GESTURES_FINGER_WARP_Y_NON_MOVE;
   }
 
   // Record current HardwareState now.
-  state_buffer_.PushState(*hwstate);
+  state_buffer_.PushState(hwstate);
 
   // TODO(clchiou): Remove palm and thumb.
   gs_fingers_.clear();
@@ -112,8 +112,8 @@ void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState* hwstate,
   for (size_t i = 0; i < num_fingers; i++)
     gs_fingers_.insert(fs[i].tracking_id);
 
-  InterpretScrollWheelEvent(*hwstate, true);
-  InterpretScrollWheelEvent(*hwstate, false);
+  InterpretScrollWheelEvent(hwstate, true);
+  InterpretScrollWheelEvent(hwstate, false);
   InterpretMouseButtonEvent(prev_state_, *state_buffer_.Get(0));
   InterpretMouseMotionEvent(prev_state_, *state_buffer_.Get(0));
 
@@ -150,8 +150,8 @@ void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState* hwstate,
     InterpretMultitouchEvent();
 
   // We don't keep finger data here, this is just for standard mouse:
-  prev_state_ = *hwstate;
-  prev_state_.fingers = NULL;
+  prev_state_ = hwstate;
+  prev_state_.fingers = nullptr;
   prev_state_.finger_cnt = 0;
 
   prev_gs_fingers_ = gs_fingers_;

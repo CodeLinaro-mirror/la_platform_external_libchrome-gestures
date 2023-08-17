@@ -19,9 +19,9 @@ class NonLinearityFilterTest : public ::testing::Test {};
 class NonLinearityFilterInterpreterTestInterpreter : public Interpreter {
  public:
   NonLinearityFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false) {}
+      : Interpreter(nullptr, nullptr, false) {}
 
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {}
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {}
 };
 
 TEST(NonLinearityFilterInterpreterTest, DisablingTest) {
@@ -30,17 +30,17 @@ TEST(NonLinearityFilterInterpreterTest, DisablingTest) {
 
   NonLinearityFilterInterpreterTestInterpreter* base =
                             new NonLinearityFilterInterpreterTestInterpreter;
-  NonLinearityFilterInterpreter interpreter(NULL, base, NULL);
+  NonLinearityFilterInterpreter interpreter(nullptr, base, nullptr);
   TestInterpreterWrapper wrapper(&interpreter);
 
   // Nothing should change since it is disabled by default without data
-  EXPECT_EQ(NULL, wrapper.SyncInterpret(&hwstate, NULL));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hwstate, nullptr));
   EXPECT_FLOAT_EQ(hwstate.fingers[0].position_x, 999);
   EXPECT_FLOAT_EQ(hwstate.fingers[0].position_y, 500);
 
   // Nothing should change even though it's "enabled" since there is no data
   interpreter.enabled_.val_ = 1;
-  EXPECT_EQ(NULL, wrapper.SyncInterpret(&hwstate, NULL));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hwstate, nullptr));
   EXPECT_FLOAT_EQ(hwstate.fingers[0].position_x, 999);
   EXPECT_FLOAT_EQ(hwstate.fingers[0].position_y, 500);
 
@@ -48,7 +48,7 @@ TEST(NonLinearityFilterInterpreterTest, DisablingTest) {
   interpreter.data_location_.val_ = kTestNonlinearData;
   interpreter.LoadData();
   interpreter.enabled_.val_ = 0;
-  EXPECT_EQ(NULL, wrapper.SyncInterpret(&hwstate, NULL));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hwstate, nullptr));
   EXPECT_FLOAT_EQ(hwstate.fingers[0].position_x, 999);
   EXPECT_FLOAT_EQ(hwstate.fingers[0].position_y, 500);
 }
@@ -59,7 +59,7 @@ TEST(NonLinearityFilterInterpreterTest, HWstateModificationTest) {
 
   NonLinearityFilterInterpreterTestInterpreter* base =
                             new NonLinearityFilterInterpreterTestInterpreter;
-  NonLinearityFilterInterpreter interpreter(NULL, base, NULL);
+  NonLinearityFilterInterpreter interpreter(nullptr, base, nullptr);
   TestInterpreterWrapper wrapper(&interpreter);
   interpreter.enabled_.val_ = 1;
   interpreter.data_location_.val_ = kTestNonlinearData;
@@ -67,7 +67,7 @@ TEST(NonLinearityFilterInterpreterTest, HWstateModificationTest) {
 
   // This reading should be modified slightly by the testing filter
   // with errors of (0.325000, -0.325000)
-  EXPECT_EQ(NULL, wrapper.SyncInterpret(&hwstate, NULL));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hwstate, nullptr));
   EXPECT_FLOAT_EQ((float)hwstate.fingers[0].position_x, 0.1 - 0.325);
   EXPECT_FLOAT_EQ((float)hwstate.fingers[0].position_y, 0.3 + 0.325);
 }
@@ -85,21 +85,21 @@ TEST(NonLinearityFilterInterpreterTest, HWstateNoChangesNeededTest) {
 
   NonLinearityFilterInterpreterTestInterpreter* base =
                             new NonLinearityFilterInterpreterTestInterpreter;
-  NonLinearityFilterInterpreter interpreter(NULL, base, NULL);
+  NonLinearityFilterInterpreter interpreter(nullptr, base, nullptr);
   TestInterpreterWrapper wrapper(&interpreter);
   interpreter.enabled_.val_ = 1;
   interpreter.data_location_.val_ = kTestNonlinearData;
   interpreter.LoadData();
 
   // Nothing should change since 2 fingers are on the touchpad
-  EXPECT_EQ(NULL, wrapper.SyncInterpret(&hwstates[0], NULL));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hwstates[0], nullptr));
   EXPECT_FLOAT_EQ(hwstates[0].fingers[0].position_x, 0.5);
   EXPECT_FLOAT_EQ(hwstates[0].fingers[0].position_y, 0.5);
   EXPECT_FLOAT_EQ(hwstates[0].fingers[1].position_x, 0.78);
   EXPECT_FLOAT_EQ(hwstates[0].fingers[1].position_y, 0.34);
 
   // This finger is at (0.5, 0.5, 0.5) which has 0 error in the test readings
-  EXPECT_EQ(NULL, wrapper.SyncInterpret(&hwstates[1], NULL));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hwstates[1], nullptr));
   EXPECT_FLOAT_EQ(hwstates[1].fingers[0].position_x, 0.5);
   EXPECT_FLOAT_EQ(hwstates[1].fingers[0].position_y, 0.5);
 }

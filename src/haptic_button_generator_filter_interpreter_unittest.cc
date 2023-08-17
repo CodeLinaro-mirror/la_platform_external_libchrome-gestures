@@ -16,8 +16,9 @@ class HapticButtonGeneratorFilterInterpreterTestInterpreter :
       public Interpreter {
  public:
   HapticButtonGeneratorFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false) {}
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {
+      : Interpreter(nullptr, nullptr, false) {}
+
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {
     if (return_value_.type != kGestureTypeNull)
       ProduceGesture(return_value_);
   }
@@ -43,7 +44,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, SimpleTest) {
   HapticButtonGeneratorFilterInterpreterTestInterpreter* base_interpreter =
       new HapticButtonGeneratorFilterInterpreterTestInterpreter;
   HapticButtonGeneratorFilterInterpreter interpreter(
-      NULL, base_interpreter, NULL);
+      nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0, 0, 100, 100,  // left, top, right, bottom
     10,  // x res (pixels/mm)
@@ -108,7 +109,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, SimpleTest) {
     make_hwstate(4.05, 0, 2, 2, &fs[13]),
 
     // Expect to set button up after all fingers leave
-    make_hwstate(5.01, 0, 0, 0, NULL),
+    make_hwstate(5.01, 0, 0, 0, nullptr),
   };
 
   stime_t expected_buttons[] = {
@@ -122,7 +123,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, SimpleTest) {
 
   for (size_t i = 0; i < arraysize(hs); i++) {
     stime_t timeout = NO_DEADLINE;
-    wrapper.SyncInterpret(&hs[i], &timeout);
+    wrapper.SyncInterpret(hs[i], &timeout);
     EXPECT_EQ(hs[i].buttons_down, expected_buttons[i]);
   }
 }
@@ -131,7 +132,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, NotHapticTest) {
   HapticButtonGeneratorFilterInterpreterTestInterpreter* base_interpreter =
       new HapticButtonGeneratorFilterInterpreterTestInterpreter;
   HapticButtonGeneratorFilterInterpreter interpreter(
-      NULL, base_interpreter, NULL);
+      nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0, 0, 100, 100,  // left, top, right, bottom
     10,  // x res (pixels/mm)
@@ -177,7 +178,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, NotHapticTest) {
 
   for (size_t i = 0; i < arraysize(hs); i++) {
     stime_t timeout = NO_DEADLINE;
-    wrapper.SyncInterpret(&hs[i], &timeout);
+    wrapper.SyncInterpret(hs[i], &timeout);
     EXPECT_EQ(hs[i].buttons_down, expected_buttons[i]);
   }
 }
@@ -187,7 +188,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest,
   HapticButtonGeneratorFilterInterpreterTestInterpreter* base_interpreter =
       new HapticButtonGeneratorFilterInterpreterTestInterpreter;
   HapticButtonGeneratorFilterInterpreter interpreter(
-      NULL, base_interpreter, NULL);
+      nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0, 0, 100, 100,  // left, top, right, bottom
     10,  // x res (pixels/mm)
@@ -237,7 +238,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest,
     {3.000, 2, fs_low_force,  kScroll, GESTURES_BUTTON_NONE},
     {3.010, 2, fs_high_force, kNull,   GESTURES_BUTTON_NONE},
     {3.011, 2, fs_high_force, kNull,   GESTURES_BUTTON_NONE},
-    {3.011 + interpreter.active_gesture_timeout_, -1, NULL, kNull, 0},
+    {3.011 + interpreter.active_gesture_timeout_, -1, nullptr, kNull, 0},
     {3.200 + interpreter.active_gesture_timeout_,
             2, fs_high_force, kNull,   GESTURES_BUTTON_LEFT},
   };
@@ -253,7 +254,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest,
           static_cast<unsigned short>(input.touch_count);
       HardwareState hs = make_hwstate(input.time, 0, touch_count, touch_count,
                                       input.fs);
-      wrapper.SyncInterpret(&hs, &timeout);
+      wrapper.SyncInterpret(hs, &timeout);
       EXPECT_EQ(hs.buttons_down, input.expected_button);
     }
   }
@@ -263,7 +264,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, DynamicThresholdTest) {
   HapticButtonGeneratorFilterInterpreterTestInterpreter* base_interpreter =
       new HapticButtonGeneratorFilterInterpreterTestInterpreter;
   HapticButtonGeneratorFilterInterpreter interpreter(
-      NULL, base_interpreter, NULL);
+      nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0, 0, 100, 100,  // left, top, right, bottom
     10,  // x res (pixels/mm)
@@ -334,7 +335,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, DynamicThresholdTest) {
 
   for (size_t i = 0; i < arraysize(hs); i++) {
     stime_t timeout = NO_DEADLINE;
-    wrapper.SyncInterpret(&hs[i].first, &timeout);
+    wrapper.SyncInterpret(hs[i].first, &timeout);
     EXPECT_EQ(hs[i].first.buttons_down, hs[i].second);
   }
 }
@@ -343,7 +344,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, PalmTest) {
   HapticButtonGeneratorFilterInterpreterTestInterpreter* base_interpreter =
       new HapticButtonGeneratorFilterInterpreterTestInterpreter;
   HapticButtonGeneratorFilterInterpreter interpreter(
-      NULL, base_interpreter, NULL);
+      nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0, 0, 100, 100,  // left, top, right, bottom
     10,  // x res (pixels/mm)
@@ -399,7 +400,7 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, PalmTest) {
 
   for (size_t i = 0; i < arraysize(hs); i++) {
     stime_t timeout = NO_DEADLINE;
-    wrapper.SyncInterpret(&hs[i], &timeout);
+    wrapper.SyncInterpret(hs[i], &timeout);
     EXPECT_EQ(hs[i].buttons_down, expected_buttons[i]);
   }
 }

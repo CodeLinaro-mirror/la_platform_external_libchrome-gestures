@@ -21,25 +21,25 @@ class SplitCorrectingFilterInterpreterTestInterpreter :
       public Interpreter {
  public:
   SplitCorrectingFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false),
+      : Interpreter(nullptr, nullptr, false),
         expect_finger_ids_(true),
         iteration_(0),
         expect_warp_on_one_finger_only_(false) {}
 
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {
     if (expect_finger_ids_) {
-      EXPECT_EQ(hwstate->finger_cnt, hwstate->touch_cnt);
-      EXPECT_EQ(hwstate->finger_cnt, expected_ids_.size());
+      EXPECT_EQ(hwstate.finger_cnt, hwstate.touch_cnt);
+      EXPECT_EQ(hwstate.finger_cnt, expected_ids_.size());
     }
-    for (size_t i = 0; i < hwstate->finger_cnt; i++) {
+    for (size_t i = 0; i < hwstate.finger_cnt; i++) {
       bool found = SetContainsValue(expected_ids_,
-                                    hwstate->fingers[i].tracking_id);
+                                    hwstate.fingers[i].tracking_id);
       if (expect_finger_ids_)
         EXPECT_TRUE(found) << iteration_ << ","
-                           << hwstate->fingers[i].tracking_id;
+                           << hwstate.fingers[i].tracking_id;
       if (expect_warp_on_one_finger_only_) {
-        EXPECT_EQ(hwstate->finger_cnt == 1,
-                  (hwstate->fingers[i].flags &
+        EXPECT_EQ(hwstate.finger_cnt == 1,
+                  (hwstate.fingers[i].flags &
                    (GESTURES_FINGER_WARP_X | GESTURES_FINGER_WARP_Y)) ==
                   (GESTURES_FINGER_WARP_X | GESTURES_FINGER_WARP_Y));
       }
@@ -65,7 +65,8 @@ namespace {
 void DoTest(InputEventWithExpectations* events, size_t events_len, bool t5r2) {
   SplitCorrectingFilterInterpreterTestInterpreter* base_interpreter
       = new SplitCorrectingFilterInterpreterTestInterpreter;
-  SplitCorrectingFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  SplitCorrectingFilterInterpreter interpreter(
+      nullptr, base_interpreter, nullptr);
   interpreter.Enable();
 
   HardwareProperties hwprops = {
@@ -104,7 +105,7 @@ void DoTest(InputEventWithExpectations* events, size_t events_len, bool t5r2) {
          outidx++)
       base_interpreter->expected_ids_.insert(event->out_ids[outidx]);
     stime_t timestamp = -1.0;
-    wrapper.SyncInterpret(&hs, &timestamp);
+    wrapper.SyncInterpret(hs, &timestamp);
   }
 }
 
@@ -161,7 +162,8 @@ TEST(SplitCorrectingFilterInterpreterTest, FalseMergeTest) {
 
   SplitCorrectingFilterInterpreterTestInterpreter* base_interpreter
       = new SplitCorrectingFilterInterpreterTestInterpreter;
-  SplitCorrectingFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  SplitCorrectingFilterInterpreter interpreter(
+      nullptr, base_interpreter, nullptr);
   interpreter.Enable();
 
   HardwareProperties hwprops = {
@@ -219,7 +221,7 @@ TEST(SplitCorrectingFilterInterpreterTest, FalseMergeTest) {
     // if the last iteration
     stime_t timestamp = -1.0;
 
-    wrapper.SyncInterpret(&hs, &timestamp);
+    wrapper.SyncInterpret(hs, &timestamp);
     base_interpreter->expect_warp_on_one_finger_only_ = true;
   }
 }
@@ -313,7 +315,8 @@ struct LumpyThumbSplitTestInputs {
 TEST(SplitCorrectingFilterInterpreterTest, LumpyThumbSplitTest) {
   SplitCorrectingFilterInterpreterTestInterpreter* base_interpreter
       = new SplitCorrectingFilterInterpreterTestInterpreter;
-  SplitCorrectingFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  SplitCorrectingFilterInterpreter interpreter(
+      nullptr, base_interpreter, nullptr);
   interpreter.Enable();
 
   base_interpreter->expected_ids_.insert(2);
@@ -376,7 +379,7 @@ TEST(SplitCorrectingFilterInterpreterTest, LumpyThumbSplitTest) {
     HardwareState hs =
         make_hwstate(input.now, input.buttons_down, finger_cnt, finger_cnt, fs);
     stime_t timeout = NO_DEADLINE;
-    wrapper.SyncInterpret(&hs, &timeout);
+    wrapper.SyncInterpret(hs, &timeout);
   }
   EXPECT_EQ(arraysize(inputs), base_interpreter->iteration_);
 }

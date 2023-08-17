@@ -20,16 +20,16 @@ class ClickWiggleFilterInterpreterTest : public ::testing::Test {};
 class ClickWiggleFilterInterpreterTestInterpreter : public Interpreter {
  public:
   ClickWiggleFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false),
+      : Interpreter(nullptr, nullptr, false),
         expect_warp_(true),
         expected_fingers_(-1) {}
 
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {
     if (expected_fingers_ >= 0)
-      EXPECT_EQ(expected_fingers_, hwstate->finger_cnt);
-    if (hwstate->finger_cnt > 0 && expect_warp_) {
-      EXPECT_TRUE(hwstate->fingers[0].flags & GESTURES_FINGER_WARP_X);
-      EXPECT_TRUE(hwstate->fingers[0].flags & GESTURES_FINGER_WARP_Y);
+      EXPECT_EQ(expected_fingers_, hwstate.finger_cnt);
+    if (hwstate.finger_cnt > 0 && expect_warp_) {
+      EXPECT_TRUE(hwstate.fingers[0].flags & GESTURES_FINGER_WARP_X);
+      EXPECT_TRUE(hwstate.fingers[0].flags & GESTURES_FINGER_WARP_Y);
     }
   }
 
@@ -53,7 +53,7 @@ TEST(ClickWiggleFilterInterpreterTest, ClickWiggleRecEquate) {
 TEST(ClickWiggleFilterInterpreterTest, WiggleSuppressTest) {
   ClickWiggleFilterInterpreterTestInterpreter* base_interpreter =
       new ClickWiggleFilterInterpreterTestInterpreter;
-  ClickWiggleFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0,  // left edge
     0,  // top edge
@@ -118,18 +118,18 @@ TEST(ClickWiggleFilterInterpreterTest, WiggleSuppressTest) {
     make_hwstate(1319735240.850482, 0, 1, 1, &finger_states[15]),
     make_hwstate(1319735240.862749, 0, 1, 1, &finger_states[16]),
     make_hwstate(1319735240.876571, 0, 1, 1, &finger_states[17]),
-    make_hwstate(1319735240.888128, 0, 0, 0, NULL),
+    make_hwstate(1319735240.888128, 0, 0, 0, nullptr),
   };
 
   for (size_t i = 0; i < arraysize(hardware_state); ++i)
     // Assertions happen in the base interpreter
-    wrapper.SyncInterpret(&hardware_state[i], NULL);
+    wrapper.SyncInterpret(hardware_state[i], nullptr);
 }
 
 TEST(ClickWiggleFilterInterpreterTest, OneFingerClickSuppressTest) {
   ClickWiggleFilterInterpreterTestInterpreter* base_interpreter =
       new ClickWiggleFilterInterpreterTestInterpreter;
-  ClickWiggleFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0,  // left edge
     0,  // top edge
@@ -183,7 +183,7 @@ TEST(ClickWiggleFilterInterpreterTest, OneFingerClickSuppressTest) {
   for (size_t i = 0; i < arraysize(hardware_state); ++i) {
     // Assertions happen in the base interpreter
     base_interpreter->expect_warp_ = (i != 3 && i != 7);
-    wrapper.SyncInterpret(&hardware_state[i], NULL);
+    wrapper.SyncInterpret(hardware_state[i], nullptr);
   }
 }
 
@@ -200,7 +200,7 @@ struct ThumbClickTestInput {
 TEST(ClickWiggleFilterInterpreter, ThumbClickTest) {
   ClickWiggleFilterInterpreterTestInterpreter* base_interpreter =
       new ClickWiggleFilterInterpreterTestInterpreter;
-  ClickWiggleFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0,  // left edge
     0,  // top edge
@@ -246,7 +246,7 @@ TEST(ClickWiggleFilterInterpreter, ThumbClickTest) {
     };
     HardwareState hs =
         make_hwstate(input.timestamp_, input.buttons_down_, 1, 1, &fs);
-    wrapper.SyncInterpret(&hs, NULL);
+    wrapper.SyncInterpret(hs, nullptr);
     // Assertions tested in base interpreter
   }
 }
@@ -256,7 +256,7 @@ TEST(ClickWiggleFilterInterpreter, ThumbClickTest) {
 TEST(ClickWiggleFilterInterpreter, TimeBackwardsTest) {
   ClickWiggleFilterInterpreterTestInterpreter* base_interpreter =
       new ClickWiggleFilterInterpreterTestInterpreter;
-  ClickWiggleFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0,  // left edge
     0,  // top edge
@@ -300,7 +300,7 @@ TEST(ClickWiggleFilterInterpreter, TimeBackwardsTest) {
     }
     if (i == arraysize(hs) - 1)
       base_interpreter->expect_warp_ = false;
-    wrapper.SyncInterpret(&hs[i], NULL);
+    wrapper.SyncInterpret(hs[i], nullptr);
     if (i == arraysize(hs) - 1)
       EXPECT_EQ(0, fs.flags);
   }
@@ -324,7 +324,7 @@ struct ThumbClickWiggleWithPalmTestInputs {
 TEST(ClickWiggleFilterInterpreter, ThumbClickWiggleWithPalmTest) {
   ClickWiggleFilterInterpreterTestInterpreter* base_interpreter =
       new ClickWiggleFilterInterpreterTestInterpreter;
-  ClickWiggleFilterInterpreter interpreter(NULL, base_interpreter, NULL);
+  ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
     0.000000,  // left edge
     0.000000,  // top edge
@@ -406,7 +406,7 @@ TEST(ClickWiggleFilterInterpreter, ThumbClickWiggleWithPalmTest) {
                                     input.p0 == 0.0 ? &fs[1] : &fs[0]);
     base_interpreter->expect_warp_ = !!input.buttons_down;
     base_interpreter->expected_fingers_ = finger_count;
-    wrapper.SyncInterpret(&hs, NULL);
+    wrapper.SyncInterpret(hs, nullptr);
   }
 }
 

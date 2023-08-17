@@ -25,7 +25,7 @@ void TraceMarker::CreateTraceMarker() {
 void TraceMarker::DeleteTraceMarker() {
   if (trace_marker_count_ == 1) {
     delete trace_marker_;
-    trace_marker_ = NULL;
+    trace_marker_ = nullptr;
   }
   trace_marker_count_--;
   if (trace_marker_count_ < 0)
@@ -66,17 +66,17 @@ TraceMarker::~TraceMarker() {
     close(fd_);
 }
 
-TraceMarker* TraceMarker::trace_marker_ = NULL;
+TraceMarker* TraceMarker::trace_marker_ = nullptr;
 int TraceMarker::trace_marker_count_ = 0;
 
 bool TraceMarker::FindDebugfs(const char** ret) const {
   FILE* mounts = setmntent("/proc/mounts", "r");
-  if (mounts == NULL)
+  if (mounts == nullptr)
     return false;
 
   while (true) {
     struct mntent* entry = getmntent(mounts);
-    if (entry == NULL) {
+    if (entry == nullptr) {
       fclose(mounts);
       return false;
     }
@@ -90,18 +90,18 @@ bool TraceMarker::FindDebugfs(const char** ret) const {
 }
 
 bool TraceMarker::FindTraceMarker(char** ret) const {
-  const char* debugfs = NULL;
+  const char* debugfs = nullptr;
   if (!FindDebugfs(&debugfs))
     return false;
   if (asprintf(ret, "%s/tracing/trace_marker", debugfs) == -1) {
-    *ret = NULL;
+    *ret = nullptr;
     return false;
   }
   return true;
 }
 
 bool TraceMarker::OpenTraceMarker() {
-  char* trace_marker_filename = NULL;
+  char* trace_marker_filename = nullptr;
   if (!FindTraceMarker(&trace_marker_filename))
     return false;
   fd_ = HANDLE_EINTR(open(trace_marker_filename, O_WRONLY));

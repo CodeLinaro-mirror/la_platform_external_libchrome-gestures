@@ -35,7 +35,7 @@ class SensorJumpFilterInterpreter : public FilterInterpreter,
   virtual ~SensorJumpFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   // Fingers from the previous two SyncInterpret calls. previous_input_[0]
