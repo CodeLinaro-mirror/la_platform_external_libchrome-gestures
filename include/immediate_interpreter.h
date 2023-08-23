@@ -358,12 +358,12 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   FRIEND_TEST(ImmediateInterpreterTest, TapToClickEnableTest);
   FRIEND_TEST(ImmediateInterpreterTest, TapToClickKeyboardTest);
   FRIEND_TEST(ImmediateInterpreterTest, TapToClickLowPressureBeginOrEndTest);
-  FRIEND_TEST(ImmediateInterpreterTest, TapToClickStateMachineTest);
   FRIEND_TEST(ImmediateInterpreterTest, ThumbRetainReevaluateTest);
   FRIEND_TEST(ImmediateInterpreterTest, ThumbRetainTest);
   FRIEND_TEST(ImmediateInterpreterTest, WarpedFingersTappingTest);
   FRIEND_TEST(ImmediateInterpreterTest, ZeroClickInitializationTest);
   friend class TapRecord;
+  friend class TapToClickStateMachineTest;
   friend class FingerButtonClick;
 
  public:
@@ -395,6 +395,8 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   float tap_min_pressure() const { return tap_min_pressure_.val_; }
 
   stime_t tap_max_finger_age() const { return tap_max_finger_age_.val_; }
+
+  bool device_reports_pressure() const { return hwprops_->reports_pressure; }
 
   stime_t finger_origin_timestamp(short finger_id) const {
     return origin_timestamps_.at(finger_id);

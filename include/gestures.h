@@ -101,6 +101,9 @@ struct HardwareProperties {
   // Whether the touchpad is haptic, meaning that it reports true pressure (not
   // just touch area) via the pressure axis, and can provide haptic feedback.
   unsigned is_haptic_pad:1;
+
+  // Whether the touchpad reports pressure values in any way.
+  bool reports_pressure = true;
 #ifdef __cplusplus
   std::string String() const;
 #endif  // __cplusplus
