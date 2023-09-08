@@ -37,14 +37,14 @@ class HapticButtonGeneratorFilterInterpreter : public FilterInterpreter {
                           Metrics* metrics, MetricsProperties* mprops,
                           GestureConsumer* consumer) override;
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate,
+  virtual void SyncInterpretImpl(HardwareState& hwstate,
                                  stime_t* timeout) override;
 
  private:
   void ConsumeGesture(const Gesture& gesture) override;
-  void HandleHardwareState(HardwareState* hwstate);
+  void HandleHardwareState(HardwareState& hwstate);
   virtual void HandleTimerImpl(stime_t now, stime_t *timeout) override;
-  void UpdatePalmState(HardwareState* hwstate);
+  void UpdatePalmState(const HardwareState& hwstate);
 
   static const size_t kMaxSensitivitySettings = 5;
 

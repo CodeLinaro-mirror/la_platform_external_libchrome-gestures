@@ -36,7 +36,7 @@ class PalmClassifyingFilterInterpreter : public FilterInterpreter {
   virtual ~PalmClassifyingFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   void FillOriginInfo(const HardwareState& hwstate);
@@ -62,7 +62,7 @@ class PalmClassifyingFilterInterpreter : public FilterInterpreter {
   void UpdatePalmState(const HardwareState& hwstate);
 
   // Updates the hwstate based on the local state.
-  void UpdatePalmFlags(HardwareState* hwstate);
+  void UpdatePalmFlags(HardwareState& hwstate);
 
   // Updates the distance travelled for each finger along +- x/y direction.
   void UpdateDistanceInfo(const HardwareState& hwstate);

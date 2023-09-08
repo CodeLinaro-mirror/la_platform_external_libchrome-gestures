@@ -34,7 +34,7 @@ class T5R2CorrectingFilterInterpreter : public FilterInterpreter {
   virtual ~T5R2CorrectingFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   unsigned short last_finger_cnt_;

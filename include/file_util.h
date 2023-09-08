@@ -10,7 +10,7 @@
 namespace gestures {
 
 // Reads the file at |path| into |contents| and returns true on success.
-// |contents| may be NULL, in which case this function is useful for its
+// |contents| may be nullptr, in which case this function is useful for its
 // side effect of priming the disk cache (could be used for unit tests).
 // The function returns false and the string pointed to by |contents| is
 // cleared when |path| does not exist or if it contains path traversal

@@ -26,15 +26,15 @@ class T5R2CorrectingFilterInterpreterTest : public ::testing::Test {};
 class T5R2CorrectingFilterInterpreterTestInterpreter : public Interpreter {
  public:
   T5R2CorrectingFilterInterpreterTestInterpreter()
-      : Interpreter(NULL, NULL, false) {}
+      : Interpreter(nullptr, nullptr, false) {}
 
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout) {
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout) {
     if (expected_hardware_state_) {
-      EXPECT_EQ(expected_hardware_state_->timestamp, hwstate->timestamp);
-      EXPECT_EQ(expected_hardware_state_->buttons_down, hwstate->buttons_down);
-      EXPECT_EQ(expected_hardware_state_->finger_cnt, hwstate->finger_cnt);
-      EXPECT_EQ(expected_hardware_state_->touch_cnt, hwstate->touch_cnt);
-      EXPECT_EQ(expected_hardware_state_->fingers, hwstate->fingers);
+      EXPECT_EQ(expected_hardware_state_->timestamp, hwstate.timestamp);
+      EXPECT_EQ(expected_hardware_state_->buttons_down, hwstate.buttons_down);
+      EXPECT_EQ(expected_hardware_state_->finger_cnt, hwstate.finger_cnt);
+      EXPECT_EQ(expected_hardware_state_->touch_cnt, hwstate.touch_cnt);
+      EXPECT_EQ(expected_hardware_state_->fingers, hwstate.fingers);
     }
     if (return_values_.empty())
       return;
@@ -64,7 +64,7 @@ struct HardwareStateAndExpectations {
 // state.
 
 TEST(T5R2CorrectingFilterInterpreterTest, SimpleTest) {
-  T5R2CorrectingFilterInterpreterTestInterpreter* base_interpreter = NULL;
+  T5R2CorrectingFilterInterpreterTestInterpreter* base_interpreter = nullptr;
   std::unique_ptr<T5R2CorrectingFilterInterpreter> interpreter;
 
   HardwareProperties hwprops = {
@@ -90,18 +90,18 @@ TEST(T5R2CorrectingFilterInterpreterTest, SimpleTest) {
     { make_hwstate(0.01, 0, 1, 1, &fs[0]), false },
     { make_hwstate(0.02, 0, 1, 3, &fs[0]), false },
     { make_hwstate(0.03, 0, 2, 3, &fs[0]), false },
-    { make_hwstate(0.04, 0, 0, 0, NULL), false },
+    { make_hwstate(0.04, 0, 0, 0, nullptr), false },
     // problem -- change expected at end
     { make_hwstate(0.01, 0, 2, 3, &fs[0]), false },
     { make_hwstate(0.02, 0, 2, 3, &fs[0]), false },
-    { make_hwstate(0.03, 0, 0, 1, NULL), false },
-    { make_hwstate(0.04, 0, 0, 1, NULL), true },
+    { make_hwstate(0.03, 0, 0, 1, nullptr), false },
+    { make_hwstate(0.04, 0, 0, 1, nullptr), true },
     // problem -- change expected at end
     { make_hwstate(0.01, 0, 1, 1, &fs[0]), false },
     { make_hwstate(0.02, 0, 1, 3, &fs[0]), false },
     { make_hwstate(0.03, 0, 2, 3, &fs[0]), false },
-    { make_hwstate(0.04, 0, 0, 2, NULL), false },
-    { make_hwstate(0.05, 0, 0, 2, NULL), true }
+    { make_hwstate(0.04, 0, 0, 2, nullptr), false },
+    { make_hwstate(0.05, 0, 0, 2, nullptr), true }
   };
 
   for (size_t i = 0; i < arraysize(hse); i++) {
@@ -109,8 +109,8 @@ TEST(T5R2CorrectingFilterInterpreterTest, SimpleTest) {
     if (hse[i].hs.timestamp == 0.01) {
       base_interpreter =
           new T5R2CorrectingFilterInterpreterTestInterpreter;
-      interpreter.reset(
-          new T5R2CorrectingFilterInterpreter(NULL, base_interpreter, NULL));
+      interpreter.reset(new T5R2CorrectingFilterInterpreter(
+            nullptr, base_interpreter, nullptr));
       wrapper.Reset(interpreter.get());
     }
     HardwareState expected_hs = hse[i].hs;
@@ -118,8 +118,8 @@ TEST(T5R2CorrectingFilterInterpreterTest, SimpleTest) {
       expected_hs.touch_cnt = 0;
     base_interpreter->expected_hardware_state_ = &expected_hs;
     stime_t timeout = NO_DEADLINE;
-    EXPECT_EQ(NULL, wrapper.SyncInterpret(&hse[i].hs, &timeout));
-    base_interpreter->expected_hardware_state_ = NULL;
+    EXPECT_EQ(nullptr, wrapper.SyncInterpret(hse[i].hs, &timeout));
+    base_interpreter->expected_hardware_state_ = nullptr;
     EXPECT_LT(timeout, 0.0);
   }
 }

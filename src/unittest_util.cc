@@ -17,12 +17,12 @@ TestInterpreterWrapper::TestInterpreterWrapper(Interpreter* interpreter,
 
 TestInterpreterWrapper::TestInterpreterWrapper(Interpreter* interpreter)
     : interpreter_(interpreter),
-      hwprops_(NULL) {
+      hwprops_(nullptr) {
   Reset(interpreter);
 }
 
 void TestInterpreterWrapper::Reset(Interpreter* interpreter) {
-  Reset(interpreter, static_cast<MetricsProperties*>(NULL));
+  Reset(interpreter, static_cast<MetricsProperties*>(nullptr));
 }
 
 void TestInterpreterWrapper::Reset(Interpreter* interpreter,
@@ -33,7 +33,7 @@ void TestInterpreterWrapper::Reset(Interpreter* interpreter,
 
   if (!mprops) {
     if (mprops_.get()) {
-      mprops_.reset(NULL);
+      mprops_.reset(nullptr);
     }
     prop_reg_.reset(new PropRegistry());
     mprops_.reset(new MetricsProperties(prop_reg_.get()));
@@ -43,7 +43,7 @@ void TestInterpreterWrapper::Reset(Interpreter* interpreter,
 
   interpreter_ = interpreter;
   if (interpreter_) {
-    interpreter_->Initialize(hwprops_, NULL, mprops_.get(), this);
+    interpreter_->Initialize(hwprops_, nullptr, mprops_.get(), this);
   }
 }
 
@@ -53,12 +53,12 @@ void TestInterpreterWrapper::Reset(Interpreter* interpreter,
   Reset(interpreter);
 }
 
-Gesture* TestInterpreterWrapper::SyncInterpret(HardwareState* state,
+Gesture* TestInterpreterWrapper::SyncInterpret(HardwareState& state,
                                                stime_t* timeout) {
   gesture_ = Gesture();
   interpreter_->SyncInterpret(state, timeout);
   if (gesture_.type == kGestureTypeNull)
-    return NULL;
+    return nullptr;
   return &gesture_;
 }
 
@@ -66,7 +66,7 @@ Gesture* TestInterpreterWrapper::HandleTimer(stime_t now, stime_t* timeout) {
   gesture_.type = kGestureTypeNull;
   interpreter_->HandleTimer(now, timeout);
   if (gesture_.type == kGestureTypeNull)
-    return NULL;
+    return nullptr;
   return &gesture_;
 }
 

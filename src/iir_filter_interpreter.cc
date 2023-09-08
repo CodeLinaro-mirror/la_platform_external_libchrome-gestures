@@ -31,7 +31,7 @@ bool IirFilterInterpreter::IoHistory::operator==(
 IirFilterInterpreter::IirFilterInterpreter(PropRegistry* prop_reg,
                                            Interpreter* next,
                                            Tracer* tracer)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       using_iir_(true),
       b0_(prop_reg, "IIR b0", 0.0674552738890719),
       b1_(prop_reg, "IIR b1", 0.134910547778144),
@@ -51,27 +51,27 @@ IirFilterInterpreter::IirFilterInterpreter(PropRegistry* prop_reg,
   iir_dist_thresh_.SetDelegate(this);
 }
 
-void IirFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void IirFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                              stime_t* timeout) {
   // Delete old entries from map
   short dead_ids[histories_.size() + 1];
   size_t dead_ids_len = 0;
   for (std::map<short, IoHistory>::iterator it = histories_.begin(),
            e = histories_.end(); it != e; ++it)
-    if (!hwstate->GetFingerState((*it).first))
+    if (!hwstate.GetFingerState((*it).first))
       dead_ids[dead_ids_len++] = (*it).first;
   for (size_t i = 0; i < dead_ids_len; ++i)
     histories_.erase(dead_ids[i]);
 
   // Modify current hwstate
-  for (size_t i = 0; i < hwstate->finger_cnt; i++) {
-    FingerState* fs = &hwstate->fingers[i];
+  for (size_t i = 0; i < hwstate.finger_cnt; i++) {
+    FingerState& fs = hwstate.fingers[i];
     std::map<short, IoHistory>::iterator history =
-        histories_.find(fs->tracking_id);
+        histories_.find(fs.tracking_id);
     if (history == histories_.end()) {
       // new finger
-      IoHistory hist(*fs);
-      histories_[fs->tracking_id] = hist;
+      IoHistory hist(fs);
+      histories_[fs.tracking_id] = hist;
       continue;
     }
     // existing finger, apply filter
@@ -81,16 +81,16 @@ void IirFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
     if (adjust_iir_on_warp_.val_) {
       float dx = 0.0, dy = 0.0;
 
-      if (fs->flags & GESTURES_FINGER_WARP_X_MOVE)
-        dx = fs->position_x - hist->PrevIn(0)->position_x;
-      if (fs->flags & GESTURES_FINGER_WARP_Y_MOVE)
-        dy = fs->position_y - hist->PrevIn(0)->position_y;
+      if (fs.flags & GESTURES_FINGER_WARP_X_MOVE)
+        dx = fs.position_x - hist->PrevIn(0)->position_x;
+      if (fs.flags & GESTURES_FINGER_WARP_Y_MOVE)
+        dy = fs.position_y - hist->PrevIn(0)->position_y;
 
       hist->WarpBy(dx, dy);
     }
 
-    float dx = fs->position_x - hist->PrevOut(0)->position_x;
-    float dy = fs->position_y - hist->PrevOut(0)->position_y;
+    float dx = fs.position_x - hist->PrevOut(0)->position_x;
+    float dy = fs.position_y - hist->PrevOut(0)->position_y;
 
     // IIR filter is too smooth for a quick finger movement. We do a simple
     // rolling average if the position change between current and previous
@@ -110,20 +110,20 @@ void IirFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
       // values will be same if there is two fingers on a SemiMT device.
       if (hwprops_ && hwprops_->support_semi_mt &&
           (field == &FingerState::pressure)) {
-        hist->NextOut()->pressure = fs->pressure;
+        hist->NextOut()->pressure = fs.pressure;
         continue;
       }
 
       if (adjust_iir_on_warp_.val_) {
         if (field == &FingerState::position_x &&
-            (fs->flags & GESTURES_FINGER_WARP_X_MOVE)) {
-          hist->NextOut()->position_x = fs->position_x;
+            (fs.flags & GESTURES_FINGER_WARP_X_MOVE)) {
+          hist->NextOut()->position_x = fs.position_x;
           continue;
         }
 
         if (field == &FingerState::position_y &&
-            (fs->flags & GESTURES_FINGER_WARP_Y_MOVE)) {
-          hist->NextOut()->position_y = fs->position_y;
+            (fs.flags & GESTURES_FINGER_WARP_Y_MOVE)) {
+          hist->NextOut()->position_y = fs.position_y;
           continue;
         }
       }
@@ -133,11 +133,11 @@ void IirFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
             b3_.val_ * hist->PrevIn(2)->*field +
             b2_.val_ * hist->PrevIn(1)->*field +
             b1_.val_ * hist->PrevIn(0)->*field +
-            b0_.val_ * fs->*field -
+            b0_.val_ * fs.*field -
             a2_.val_ * hist->PrevOut(1)->*field -
             a1_.val_ * hist->PrevOut(0)->*field;
       } else {
-        hist->NextOut()->*field = 0.5 * (fs->*field + hist->PrevOut(0)->*field);
+        hist->NextOut()->*field = 0.5 * (fs.*field + hist->PrevOut(0)->*field);
       }
     }
     float FingerState::*pass_fields[] = { &FingerState::touch_major,
@@ -146,10 +146,10 @@ void IirFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
                                           &FingerState::width_minor,
                                           &FingerState::orientation };
     for (size_t f_idx = 0; f_idx < arraysize(pass_fields); f_idx++)
-      hist->NextOut()->*pass_fields[f_idx] = fs->*pass_fields[f_idx];
-    hist->NextOut()->flags = fs->flags;
-    *hist->NextIn() = *fs;
-    *fs = *hist->NextOut();
+      hist->NextOut()->*pass_fields[f_idx] = fs.*pass_fields[f_idx];
+    hist->NextOut()->flags = fs.flags;
+    *hist->NextIn() = fs;
+    fs = *hist->NextOut();
     hist->Increment();
   }
   next_->SyncInterpret(hwstate, timeout);

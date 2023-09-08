@@ -133,12 +133,12 @@ class StationaryWiggleFilterInterpreter : public FilterInterpreter {
   virtual ~StationaryWiggleFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   // Calculate signal energy from input data and update finger flag if
   // a finger is stationary
-  void UpdateStationaryFlags(HardwareState* hwstate);
+  void UpdateStationaryFlags(HardwareState& hwstate);
 
   // Map of finger energy histories
   typedef std::map<short, FingerEnergyHistory> FingerEnergyHistoryMap;

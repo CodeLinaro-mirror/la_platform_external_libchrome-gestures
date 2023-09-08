@@ -15,7 +15,7 @@ namespace gestures {
 // Takes ownership of |next|:
 ClickWiggleFilterInterpreter::ClickWiggleFilterInterpreter(
     PropRegistry* prop_reg, Interpreter* next, Tracer* tracer)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       button_edge_occurred_(-1.0),
       prev_buttons_(0),
       wiggle_max_dist_(prop_reg, "Wiggle Max Distance", 5.5),
@@ -29,16 +29,16 @@ ClickWiggleFilterInterpreter::ClickWiggleFilterInterpreter(
   InitName();
 }
 
-void ClickWiggleFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void ClickWiggleFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                      stime_t* timeout) {
-  UpdateClickWiggle(*hwstate);
+  UpdateClickWiggle(hwstate);
   SetWarpFlags(hwstate);
 
   // Update previous state
-  prev_buttons_ = hwstate->buttons_down;
-  RemoveMissingIdsFromMap(&prev_pressure_, *hwstate);
-  for (size_t i = 0; i < hwstate->finger_cnt; i++) {
-    const FingerState& fs = hwstate->fingers[i];
+  prev_buttons_ = hwstate.buttons_down;
+  RemoveMissingIdsFromMap(&prev_pressure_, hwstate);
+  for (size_t i = 0; i < hwstate.finger_cnt; i++) {
+    const FingerState& fs = hwstate.fingers[i];
     prev_pressure_[fs.tracking_id] = fs.pressure;
   }
 
@@ -111,26 +111,26 @@ void ClickWiggleFilterInterpreter::UpdateClickWiggle(
   }
 }
 
-void ClickWiggleFilterInterpreter::SetWarpFlags(HardwareState* hwstate) const {
+void ClickWiggleFilterInterpreter::SetWarpFlags(HardwareState& hwstate) const {
   if (button_edge_occurred_ != -1.0 &&
-      button_edge_occurred_ < hwstate->timestamp &&
+      button_edge_occurred_ < hwstate.timestamp &&
       button_edge_occurred_ + one_finger_click_wiggle_timeout_.val_ >
-      hwstate->timestamp && button_edge_with_one_finger_) {
-    for (size_t i = 0; i < hwstate->finger_cnt; i++)
-      hwstate->fingers[i].flags |=
+      hwstate.timestamp && button_edge_with_one_finger_) {
+    for (size_t i = 0; i < hwstate.finger_cnt; i++)
+      hwstate.fingers[i].flags |=
           (GESTURES_FINGER_WARP_X | GESTURES_FINGER_WARP_Y);
     // May as well return b/c already set warp on the only finger there is.
     return;
   }
 
-  for (size_t i = 0; i < hwstate->finger_cnt; i++) {
-    FingerState* fs = &hwstate->fingers[i];
-    if (!MapContainsKey(wiggle_recs_, fs->tracking_id)) {
+  for (size_t i = 0; i < hwstate.finger_cnt; i++) {
+    FingerState& fs = hwstate.fingers[i];
+    if (!MapContainsKey(wiggle_recs_, fs.tracking_id)) {
       Err("Missing finger in wiggle recs.");
       continue;
     }
-    if (wiggle_recs_.at(fs->tracking_id).suppress_)
-      fs->flags |= (GESTURES_FINGER_WARP_X | GESTURES_FINGER_WARP_Y);
+    if (wiggle_recs_.at(fs.tracking_id).suppress_)
+      fs.flags |= (GESTURES_FINGER_WARP_X | GESTURES_FINGER_WARP_Y);
   }
 }
 

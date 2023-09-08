@@ -101,7 +101,7 @@ bool FingerEnergyHistory::operator!=(const FingerEnergyHistory& that) const {
 
 StationaryWiggleFilterInterpreter::StationaryWiggleFilterInterpreter(
     PropRegistry* prop_reg, Interpreter* next, Tracer* tracer)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       enabled_(prop_reg, "Stationary Wiggle Filter Enabled", false),
       threshold_(prop_reg, "Finger Moving Energy", 0.012),
       hysteresis_(prop_reg, "Finger Moving Hysteresis", 0.006) {
@@ -109,30 +109,30 @@ StationaryWiggleFilterInterpreter::StationaryWiggleFilterInterpreter(
 }
 
 void StationaryWiggleFilterInterpreter::SyncInterpretImpl(
-    HardwareState* hwstate, stime_t* timeout) {
+    HardwareState& hwstate, stime_t* timeout) {
   if (enabled_.val_)
     UpdateStationaryFlags(hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 
 void StationaryWiggleFilterInterpreter::UpdateStationaryFlags(
-    HardwareState* hwstate) {
+    HardwareState& hwstate) {
 
-  RemoveMissingIdsFromMap(&histories_, *hwstate);
+  RemoveMissingIdsFromMap(&histories_, hwstate);
 
-  for (int i = 0; i < hwstate->finger_cnt; ++i) {
-    FingerState *fs = &hwstate->fingers[i];
+  for (int i = 0; i < hwstate.finger_cnt; ++i) {
+    FingerState *fs = &hwstate.fingers[i];
 
     // Create a new entry if it is a new finger
     if (!MapContainsKey(histories_, fs->tracking_id)) {
       histories_[fs->tracking_id] = FingerEnergyHistory();
-      histories_[fs->tracking_id].PushFingerState(*fs, hwstate->timestamp);
+      histories_[fs->tracking_id].PushFingerState(*fs, hwstate.timestamp);
       continue;
     }
 
     // Update the energy history and check if the finger is moving
     FingerEnergyHistory& feh = histories_[fs->tracking_id];
-    feh.PushFingerState(*fs, hwstate->timestamp);
+    feh.PushFingerState(*fs, hwstate.timestamp);
     if (feh.HasEnoughSamples()) {
       float threshold = feh.moving() ? hysteresis_.val_ : threshold_.val_;
       if (!feh.IsFingerMoving(threshold))

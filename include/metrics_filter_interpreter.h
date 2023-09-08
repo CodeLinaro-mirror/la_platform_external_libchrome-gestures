@@ -36,7 +36,7 @@ class MetricsFilterInterpreter : public FilterInterpreter {
   virtual ~MetricsFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   template <class DataType, size_t kHistorySize>

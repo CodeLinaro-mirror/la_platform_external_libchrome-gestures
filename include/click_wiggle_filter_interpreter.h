@@ -47,11 +47,11 @@ class ClickWiggleFilterInterpreter : public FilterInterpreter {
   virtual ~ClickWiggleFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpretImpl(HardwareState& hwstate, stime_t* timeout);
 
  private:
   void UpdateClickWiggle(const HardwareState& hwstate);
-  void SetWarpFlags(HardwareState* hwstate) const;
+  void SetWarpFlags(HardwareState& hwstate) const;
 
   std::map<short, ClickWiggleRec> wiggle_recs_;
 

@@ -40,7 +40,7 @@ class LookaheadFilterInterpreter : public FilterInterpreter {
   virtual ~LookaheadFilterInterpreter() {}
 
  protected:
-  virtual void SyncInterpretImpl(HardwareState* hwstate,
+  virtual void SyncInterpretImpl(HardwareState& hwstate,
                                  stime_t* timeout);
 
   virtual void HandleTimerImpl(stime_t now, stime_t* timeout);
@@ -113,7 +113,8 @@ class LookaheadFilterInterpreter : public FilterInterpreter {
 
   unsigned short max_fingers_per_hwstate_;
 
-  stime_t interpreter_due_;
+  // Last detected due_ time as an absolute deadline
+  stime_t interpreter_due_deadline_;
 
   // We want to present time to next_ in a monotonically increasing manner,
   // so this keeps track of the most recent timestamp we've given next_.

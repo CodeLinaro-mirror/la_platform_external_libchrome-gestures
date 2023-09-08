@@ -8,6 +8,7 @@
 #include "include/gestures.h"
 
 #include <string>
+#include <variant>
 
 #include <gtest/gtest.h>  // For FRIEND_TEST
 #include <json/value.h>
@@ -23,40 +24,33 @@ class ActivityLog {
   FRIEND_TEST(ActivityLogTest, SimpleTest);
   FRIEND_TEST(ActivityLogTest, WrapAroundTest);
   FRIEND_TEST(ActivityLogTest, VersionTest);
+  FRIEND_TEST(ActivityLogTest, EncodePropChangeBoolTest);
+  FRIEND_TEST(ActivityLogTest, EncodePropChangeDoubleTest);
+  FRIEND_TEST(ActivityLogTest, EncodePropChangeIntTest);
+  FRIEND_TEST(ActivityLogTest, EncodePropChangeShortTest);
   FRIEND_TEST(LoggingFilterInterpreterTest, SimpleTest);
   FRIEND_TEST(PropRegistryTest, PropChangeTest);
  public:
-  enum EntryType {
-    kHardwareState = 0,
-    kTimerCallback,
-    kCallbackRequest,
-    kGesture,
-    kPropChange
+  struct TimerCallbackEntry {
+    stime_t timestamp;
+  };
+  struct CallbackRequestEntry {
+    stime_t timestamp;
   };
   struct PropChangeEntry {
     const char* name;
-    enum {
-      kBoolProp = 0,
-      kDoubleProp,
-      kIntProp,
-      kShortProp
-    } type;
-    union {
-      GesturesPropBool bool_val;
-      double double_val;
-      int int_val;
-      short short_val;
-      // No string because string values can't change
-    } value;
+    // No string variant because string values can't change
+    std::variant<GesturesPropBool,
+                 double,
+                 int,
+                 short> value;
   };
   struct Entry {
-    EntryType type;
-    struct details {
-      HardwareState hwstate;  // kHardwareState
-      stime_t timestamp;  // kTimerCallback, kCallbackRequest
-      Gesture gesture;  // kGesture
-      PropChangeEntry prop_change;  // kPropChange
-    } details;
+    std::variant<HardwareState,
+                 TimerCallbackEntry,
+                 CallbackRequestEntry,
+                 Gesture,
+                 PropChangeEntry> details;
   };
 
   explicit ActivityLog(PropRegistry* prop_reg);

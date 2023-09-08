@@ -193,7 +193,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9699785857706376
+    "score": 0.9699785944759369
   },
   "big-elan-5.0/baseline/fling": {
     "description": "",
@@ -207,7 +207,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.10897709371764838
+    "score": 0.10897709647675068
   },
   "big-elan-5.0/baseline/scroll": {
     "description": "",
@@ -249,14 +249,14 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.03632247373708561
+    "score": 0.03632292835357449
   },
   "blaze-elan-1.0/baseline/move": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9942045725940168
+    "score": 0.9942045666873714
   },
   "blaze-elan-1.0/baseline/scroll": {
     "description": "",
@@ -389,7 +389,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9908285375481853
+    "score": 0.9908285496063849
   },
   "butterfly2.4/move_jumped_at_end": {
     "description": "\n    Feedback showed the cursor jumping after lifting the finger.\n    Make sure it does not happen.\n  ",
@@ -844,7 +844,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9879208413548463
+    "score": 0.9879210811306939
   },
   "glimmer-1.0/baseline/click": {
     "description": "",
@@ -900,21 +900,21 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9977383344583843
+    "score": 0.997738329781867
   },
   "gnawty-elan-4.0/baseline/fling": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9537432270400718
+    "score": 0.9537474467290741
   },
   "gnawty-elan-4.0/baseline/move": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9790638408694419
+    "score": 0.9790638646838501
   },
   "gnawty-elan-4.0/baseline/scroll": {
     "description": "",
@@ -970,14 +970,14 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9957815045042238
+    "score": 0.9957815245350038
   },
   "kip-elan-3.0/baseline/fling": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9935268622390703
+    "score": 0.9935254419506476
   },
   "kip-elan-3.0/baseline/move": {
     "description": "",
@@ -1089,7 +1089,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.8912969619671856
+    "score": 0.8912969952591686
   },
   "leon-1.0/right_click_fail": {
     "description": "",
@@ -1166,7 +1166,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9788202498346636
+    "score": 0.9788202509230436
   },
   "link/base_right_click": {
     "description": "",
@@ -1201,7 +1201,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9851884024923939
+    "score": 0.985188704940706
   },
   "link/base_scroll_right": {
     "description": "",
@@ -1229,14 +1229,14 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9410150510261198
+    "score": 0.9410150451179711
   },
   "link/base_single_finger_tap_and_half": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9862666245784508
+    "score": 0.9862666312062258
   },
   "link/base_tap": {
     "description": "",
@@ -1614,7 +1614,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9991259534285497
+    "score": 0.9991255297087251
   },
   "link/resting_2F_with_thumb_click": {
     "description": "",
@@ -1649,7 +1649,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9992143169512682
+    "score": 0.999213802857196
   },
   "link/scroll_before_pinch_2": {
     "description": "",
@@ -1957,7 +1957,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9773338224281853
+    "score": 0.9773338137604507
   },
   "lumpy/base_click": {
     "description": "",
@@ -2412,14 +2412,14 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.7987787305237143
+    "score": 0.7987786869843075
   },
   "peppy/move_with_thumb_3": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.061912523388185946
+    "score": 0.06191254292677331
   },
   "pit1.0/baseline/click": {
     "description": "",
@@ -2503,21 +2503,21 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9970284708094699
+    "score": 0.9970284280519195
   },
   "quawks-elan-6.0/baseline/fling": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9958536571810523
+    "score": 0.995856896057069
   },
   "quawks-elan-6.0/baseline/move": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9822969405087333
+    "score": 0.9822969667763042
   },
   "quawks-elan-6.0/baseline/scroll": {
     "description": "",
@@ -2545,21 +2545,21 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9979429291269938
+    "score": 0.9979430046981552
   },
   "rambi-elan-0.0/baseline/fling": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9953488901422479
+    "score": 0.9953567727288528
   },
   "rambi-elan-0.0/baseline/move": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.986743974868078
+    "score": 0.9867439784993131
   },
   "rambi-elan-0.0/baseline/scroll": {
     "description": "",
@@ -2623,6 +2623,13 @@
     "error": "",
     "result": "success",
     "score": 1
+  },
+  "redrix-1.0/tap-drag": {
+    "description": "",
+    "disabled": false,
+    "error": "",
+    "result": "success",
+    "score": 1.0
   },
   "relm-1.0/baseline/click": {
     "description": "",
@@ -2734,7 +2741,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9319811438404452
+    "score": 0.9319811340447308
   },
   "relm-1.0/stale-finger-should-scroll": {
     "description": "",
@@ -2951,7 +2958,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.983625958488363
+    "score": 0.9836259581661809
   },
   "snow1.3/move_then_tap": {
     "description": "",
@@ -3007,7 +3014,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9388368401161803
+    "score": 0.9388368401792873
   },
   "snow1.3/top_edge_tap": {
     "description": "",
@@ -3112,7 +3119,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9991165829447851
+    "score": 0.9991156461889733
   },
   "snow2.3/scrolling_with_low_press_fingers": {
     "description": "",
@@ -3504,7 +3511,7 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9549862243986353
+    "score": 0.9549860483562952
   },
   "swanky-elan-2.0/move_lift_1": {
     "description": "",
@@ -3595,21 +3602,21 @@
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9959707052972615
+    "score": 0.9959707544173486
   },
   "wolf-elan-2.0/baseline/fling": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.7769717878231045
+    "score": 0.7769712683176837
   },
   "wolf-elan-2.0/baseline/move": {
     "description": "",
     "disabled": false,
     "error": "",
     "result": "success",
-    "score": 0.9948194250866649
+    "score": 0.994819421040505
   },
   "wolf-elan-2.0/baseline/scroll": {
     "description": "",

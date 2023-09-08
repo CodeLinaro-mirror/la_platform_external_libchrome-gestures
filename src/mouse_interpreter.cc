@@ -18,12 +18,18 @@ namespace gestures {
  */
 const static int REL_WHEEL_HI_RES_UNITS_PER_NOTCH = 120;
 
+// Default value for mouse scroll sensitivity.
+const static int kMouseScrollSensitivityDefaultValue = 3;
+
 MouseInterpreter::MouseInterpreter(PropRegistry* prop_reg, Tracer* tracer)
-    : Interpreter(NULL, tracer, false),
+    : Interpreter(nullptr, tracer, false),
       wheel_emulation_accu_x_(0.0),
       wheel_emulation_accu_y_(0.0),
       wheel_emulation_active_(false),
       reverse_scrolling_(prop_reg, "Mouse Reverse Scrolling", false),
+      scroll_acceleration_(prop_reg, "Mouse Scroll Acceleration", true),
+      scroll_sensitivity_(prop_reg,"Mouse Scroll Sensitivity",
+        kMouseScrollSensitivityDefaultValue),
       hi_res_scrolling_(prop_reg, "Mouse High Resolution Scrolling", true),
       scroll_accel_curve_prop_(prop_reg, "Mouse Scroll Accel Curve",
           scroll_accel_curve_, sizeof(scroll_accel_curve_) / sizeof(double)),
@@ -55,23 +61,23 @@ MouseInterpreter::MouseInterpreter(PropRegistry* prop_reg, Tracer* tracer)
   scroll_max_allowed_input_speed_.SetDelegate(this);
 }
 
-void MouseInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void MouseInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                          stime_t* timeout) {
-  if(!EmulateScrollWheel(*hwstate)) {
+  if(!EmulateScrollWheel(hwstate)) {
     // Interpret mouse events in the order of pointer moves, scroll wheels and
     // button clicks.
-    InterpretMouseMotionEvent(prev_state_, *hwstate);
+    InterpretMouseMotionEvent(prev_state_, hwstate);
     // Note that unlike touchpad scrolls, we interpret and send separate events
     // for horizontal/vertical mouse wheel scrolls. This is partly to match what
     // the xf86-input-evdev driver does and is partly because not all code in
     // Chrome honors MouseWheelEvent that has both X and Y offsets.
-    InterpretScrollWheelEvent(*hwstate, true);
-    InterpretScrollWheelEvent(*hwstate, false);
-    InterpretMouseButtonEvent(prev_state_, *hwstate);
+    InterpretScrollWheelEvent(hwstate, true);
+    InterpretScrollWheelEvent(hwstate, false);
+    InterpretMouseButtonEvent(prev_state_, hwstate);
   }
   // Pass max_finger_cnt = 0 to DeepCopy() since we don't care fingers and
   // did not allocate any space for fingers.
-  prev_state_.DeepCopy(*hwstate, 0);
+  prev_state_.DeepCopy(hwstate, 0);
 }
 
 double MouseInterpreter::ComputeScrollAccelFactor(double input_speed) {
@@ -192,8 +198,17 @@ void MouseInterpreter::InterpretScrollWheelEvent(const HardwareState& hwstate,
       dt = scroll_wheel_event_time_delta_min;
     }
 
+    // When scroll acceleration is off, the scroll factor does not relate to
+    // scroll velocity. It's simply a constant multiplier to the wheel value.
+    // TODO(zhangwenyu): This is gated behind a flag in settings and final
+    // values will be updated after some experimentations.
+    const double unaccel_scroll_factors[] = { 8.0, 20.0, 36.0, 64.0, 108.0 };
+
     float velocity = current_wheel_value / dt;
-    float offset = current_wheel_value * ComputeScrollAccelFactor(velocity);
+    float offset = current_wheel_value * (
+      scroll_acceleration_.val_?
+      ComputeScrollAccelFactor(velocity) :
+      unaccel_scroll_factors[scroll_sensitivity_.val_ - 1]);
     last_wheel_record->timestamp = hwstate.timestamp;
     last_wheel_record->value = current_wheel_value;
 

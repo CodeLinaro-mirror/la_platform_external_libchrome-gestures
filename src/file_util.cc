@@ -15,7 +15,7 @@
 namespace gestures {
 
 FILE* OpenFile(const char* filename, const char* mode) {
-  FILE* result = NULL;
+  FILE* result = nullptr;
   do {
     result = fopen(filename, mode);
   } while (!result && errno == EINTR);
@@ -23,7 +23,7 @@ FILE* OpenFile(const char* filename, const char* mode) {
 }
 
 bool CloseFile(FILE* file) {
-  if (file == NULL)
+  if (file == nullptr)
     return true;
   return fclose(file) == 0;
 }

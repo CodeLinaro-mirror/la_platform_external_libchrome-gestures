@@ -21,10 +21,21 @@ using std::endl;
 using std::set;
 using std::string;
 
+namespace {
+
+// Helper to std::visit with lambdas.
+template <typename... V>
+struct Visitor : V... {};
+// Explicit deduction guide (not needed as of C++20).
+template <typename... V>
+Visitor(V...) -> Visitor<V...>;
+
+} // namespace
+
 namespace gestures {
 
 ActivityReplay::ActivityReplay(PropRegistry* prop_reg)
-    : log_(NULL), prop_reg_(prop_reg) {}
+    : log_(nullptr), prop_reg_(prop_reg) {}
 
 bool ActivityReplay::Parse(const string& data) {
   std::set<string> emptyset;
@@ -597,37 +608,35 @@ bool ActivityReplay::ParsePropChange(const Json::Value& entry) {
   string type = entry[ActivityLog::kKeyPropChangeType].asString();
 
   if (type == ActivityLog::kValuePropChangeTypeBool) {
-    prop_change.type = ActivityLog::PropChangeEntry::kBoolProp;
     if (!entry.isMember(ActivityLog::kKeyPropChangeValue)) {
       Err("Can't parse prop change value");
       return false;
     }
-    prop_change.value.bool_val =
-        entry[ActivityLog::kKeyPropChangeValue].asBool();
+    prop_change.value =
+        static_cast<GesturesPropBool>(
+          entry[ActivityLog::kKeyPropChangeValue].asBool());
   } else if (type == ActivityLog::kValuePropChangeTypeDouble) {
-    prop_change.type = ActivityLog::PropChangeEntry::kDoubleProp;
     if (!entry.isMember(ActivityLog::kKeyPropChangeValue)) {
       Err("Can't parse prop change value");
       return false;
     }
-    prop_change.value.double_val =
+    prop_change.value =
         entry[ActivityLog::kKeyPropChangeValue].asDouble();
   } else if (type == ActivityLog::kValuePropChangeTypeInt) {
-    prop_change.type = ActivityLog::PropChangeEntry::kIntProp;
     if (!entry.isMember(ActivityLog::kKeyPropChangeValue)) {
       Err("Can't parse prop change value");
       return false;
     }
-    prop_change.value.int_val =
+    prop_change.value =
         entry[ActivityLog::kKeyPropChangeValue].asInt();
   } else if (type == ActivityLog::kValuePropChangeTypeShort) {
-    prop_change.type = ActivityLog::PropChangeEntry::kIntProp;
     if (!entry.isMember(ActivityLog::kKeyPropChangeValue)) {
       Err("Can't parse prop change value");
       return false;
     }
-    prop_change.value.short_val =
-        entry[ActivityLog::kKeyPropChangeValue].asInt();
+    prop_change.value =
+        static_cast<short>(
+          entry[ActivityLog::kKeyPropChangeValue].asInt());
   } else {
     Err("Unable to parse prop change type %s", type.c_str());
     return false;
@@ -648,60 +657,61 @@ bool ActivityReplay::ParsePropChange(const Json::Value& entry) {
 // Replay the log and verify the output in a strict way.
 void ActivityReplay::Replay(Interpreter* interpreter,
                             MetricsProperties* mprops) {
-  interpreter->Initialize(&hwprops_, NULL, mprops, this);
+  interpreter->Initialize(&hwprops_, nullptr, mprops, this);
 
   stime_t last_timeout_req = -1.0;
   // Use last_gs to save a copy of last gesture.
   Gesture last_gs;
   for (size_t i = 0; i < log_.size(); ++i) {
     ActivityLog::Entry* entry = log_.GetEntry(i);
-    switch (entry->type) {
-      case ActivityLog::kHardwareState: {
-        last_timeout_req = -1.0;
-        HardwareState hs = entry->details.hwstate;
-        for (size_t i = 0; i < hs.finger_cnt; i++)
-          Log("Input Finger ID: %d", hs.fingers[i].tracking_id);
-        interpreter->SyncInterpret(&hs, &last_timeout_req);
-        break;
-      }
-      case ActivityLog::kTimerCallback: {
-        last_timeout_req = -1.0;
-        interpreter->HandleTimer(entry->details.timestamp, &last_timeout_req);
-        break;
-      }
-      case ActivityLog::kCallbackRequest:
-        if (!DoubleEq(last_timeout_req, entry->details.timestamp)) {
-          Err("Expected timeout request of %f, but log has %f (entry idx %zu)",
-              last_timeout_req, entry->details.timestamp, i);
-        }
-        break;
-      case ActivityLog::kGesture: {
-        bool matched = false;
-        while (!consumed_gestures_.empty() && !matched) {
-          if (consumed_gestures_.front() == entry->details.gesture) {
-            Log("Gesture matched:\n  Actual gesture: %s.\n"
-                "Expected gesture: %s",
-                consumed_gestures_.front().String().c_str(),
-                entry->details.gesture.String().c_str());
-            matched = true;
-          } else {
-            Log("Unmatched actual gesture: %s\n",
-                consumed_gestures_.front().String().c_str());
+    std::visit(
+      Visitor {
+        [&interpreter, &last_timeout_req](HardwareState hs) {
+          last_timeout_req = -1.0;
+          for (size_t i = 0; i < hs.finger_cnt; i++)
+            Log("Input Finger ID: %d", hs.fingers[i].tracking_id);
+          interpreter->SyncInterpret(hs, &last_timeout_req);
+        },
+        [&interpreter, &last_timeout_req]
+            (ActivityLog::TimerCallbackEntry now) {
+          last_timeout_req = -1.0;
+          interpreter->HandleTimer(now.timestamp, &last_timeout_req);
+        },
+        [&i, &last_timeout_req](ActivityLog::CallbackRequestEntry when) {
+          if (!DoubleEq(last_timeout_req, when.timestamp)) {
+            Err("Expected timeout request of %f, "
+                "but log has %f (entry idx %zu)",
+                last_timeout_req, when.timestamp, i);
+          }
+        },
+        [this](Gesture gesture) {
+          bool matched = false;
+          while (!consumed_gestures_.empty() && !matched) {
+            if (consumed_gestures_.front() == gesture) {
+              Log("Gesture matched:\n  Actual gesture: %s.\n"
+                  "Expected gesture: %s",
+                  consumed_gestures_.front().String().c_str(),
+                  gesture.String().c_str());
+              matched = true;
+            } else {
+              Log("Unmatched actual gesture: %s\n",
+                  consumed_gestures_.front().String().c_str());
+              ADD_FAILURE();
+            }
+            consumed_gestures_.pop_front();
+          }
+          if (!matched) {
+            Log("Missing logged gesture: %s", gesture.String().c_str());
             ADD_FAILURE();
           }
-          consumed_gestures_.pop_front();
+        },
+        [this](ActivityLog::PropChangeEntry prop_change) {
+          ReplayPropChange(prop_change);
+        },
+        [](auto arg) {
+          Err("Unknown ActivityLog type");
         }
-        if (!matched) {
-          Log("Missing logged gesture: %s",
-              entry->details.gesture.String().c_str());
-          ADD_FAILURE();
-        }
-        break;
-      }
-      case ActivityLog::kPropChange:
-        ReplayPropChange(entry->details.prop_change);
-        break;
-    }
+      }, entry->details);
   }
   while (!consumed_gestures_.empty()) {
     Log("Unmatched actual gesture: %s\n",
@@ -722,36 +732,44 @@ bool ActivityReplay::ReplayPropChange(
     return false;
   }
   ::set<Property*> props = prop_reg_->props();
-  Property* prop = NULL;
+  Property* prop = nullptr;
   for (::set<Property*>::iterator it = props.begin(), e = props.end(); it != e;
        ++it) {
     prop = *it;
     if (strcmp(prop->name(), entry.name) == 0)
       break;
-    prop = NULL;
+    prop = nullptr;
   }
   if (!prop) {
     Err("Unable to find prop %s to set.", entry.name);
     return false;
   }
+  bool valid_property = true;
   Json::Value value;
-  switch (entry.type) {
-    case ActivityLog::PropChangeEntry::kBoolProp:
-      value = Json::Value(entry.value.bool_val);
-      break;
-    case ActivityLog::PropChangeEntry::kDoubleProp:
-      value = Json::Value(entry.value.double_val);
-      break;
-    case ActivityLog::PropChangeEntry::kIntProp:
-      value = Json::Value(entry.value.int_val);
-      break;
-    case ActivityLog::PropChangeEntry::kShortProp:
-      value = Json::Value(entry.value.short_val);
-      break;
+  std::visit(
+    Visitor {
+      [&value](GesturesPropBool entry_value) {
+        value = Json::Value(static_cast<bool>(entry_value));
+      },
+      [&value](double entry_value) {
+        value = Json::Value(entry_value);
+      },
+      [&value](int entry_value) {
+        value = Json::Value(entry_value);
+      },
+      [&value](short entry_value) {
+        value = Json::Value(entry_value);
+      },
+      [&valid_property](auto arg) {
+        valid_property = false;
+        Err("Invalid property type");
+      }
+    }, entry.value);
+  if (valid_property) {
+    prop->SetValue(value);
+    prop->HandleGesturesPropWritten();
   }
-  prop->SetValue(value);
-  prop->HandleGesturesPropWritten();
-  return true;
+  return valid_property;
 }
 
 }  // namespace gestures

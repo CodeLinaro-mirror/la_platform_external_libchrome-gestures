@@ -17,7 +17,7 @@ namespace gestures {
 
 FingerMergeFilterInterpreter::FingerMergeFilterInterpreter(
     PropRegistry* prop_reg, Interpreter* next, Tracer* tracer)
-    : FilterInterpreter(NULL, next, tracer, false),
+    : FilterInterpreter(nullptr, next, tracer, false),
       finger_merge_filter_enable_(prop_reg,
                                   "Finger Merge Filter Enabled", false),
       merge_distance_threshold_(prop_reg,
@@ -43,10 +43,10 @@ FingerMergeFilterInterpreter::FingerMergeFilterInterpreter(
   InitName();
 }
 
-void FingerMergeFilterInterpreter::SyncInterpretImpl(HardwareState* hwstate,
+void FingerMergeFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                      stime_t* timeout) {
   if (finger_merge_filter_enable_.val_)
-    UpdateFingerMergeState(*hwstate);
+    UpdateFingerMergeState(hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

@@ -72,19 +72,21 @@ TEST(ActivityLogTest, SimpleTest) {
   EXPECT_EQ(1, log.size());
   EXPECT_TRUE(strstr(log.Encode().c_str(), "22"));
   ActivityLog::Entry* entry = log.GetEntry(0);
-  EXPECT_EQ(ActivityLog::kHardwareState, entry->type);
+  EXPECT_TRUE(std::holds_alternative<HardwareState>(entry->details));
 
   log.LogTimerCallback(234.5);
   EXPECT_EQ(2, log.size());
   EXPECT_TRUE(strstr(log.Encode().c_str(), "234.5"));
   entry = log.GetEntry(1);
-  EXPECT_EQ(ActivityLog::kTimerCallback, entry->type);
+  EXPECT_TRUE(std::holds_alternative<ActivityLog::TimerCallbackEntry>
+                (entry->details));
 
   log.LogCallbackRequest(90210);
   EXPECT_EQ(3, log.size());
   EXPECT_TRUE(strstr(log.Encode().c_str(), "90210"));
   entry = log.GetEntry(2);
-  EXPECT_EQ(ActivityLog::kCallbackRequest, entry->type);
+  EXPECT_TRUE(std::holds_alternative<ActivityLog::CallbackRequestEntry>
+                (entry->details));
 
   Gesture null;
   Gesture move(kGestureMove, 1.0, 2.0, 773, 4.0);
@@ -116,9 +118,11 @@ TEST(ActivityLogTest, SimpleTest) {
   ASSERT_EQ(arraysize(gs), arraysize(test_strs));
   for (size_t i = 0; i < arraysize(gs); ++i) {
     log.LogGesture(*gs[i]);
-    EXPECT_TRUE(strstr(log.Encode().c_str(), test_strs[i])) << "i=" << i;
+    EXPECT_TRUE(strstr(log.Encode().c_str(), test_strs[i]))
+      << "i=" << i;
     entry = log.GetEntry(log.size() - 1);
-    EXPECT_EQ(ActivityLog::kGesture, entry->type) << "i=" << i;
+    EXPECT_TRUE(std::holds_alternative<Gesture>(entry->details))
+      << "i=" << i;
   }
 
   log.Clear();
@@ -126,7 +130,7 @@ TEST(ActivityLogTest, SimpleTest) {
 }
 
 TEST(ActivityLogTest, WrapAroundTest) {
-  ActivityLog log(NULL);
+  ActivityLog log(nullptr);
   // overfill the buffer
   const size_t fill_size = (ActivityLog::kBufferSize * 3) / 2;
   for (size_t i = 0; i < fill_size; i++)
@@ -139,9 +143,83 @@ TEST(ActivityLogTest, WrapAroundTest) {
 }
 
 TEST(ActivityLogTest, VersionTest) {
-  ActivityLog log(NULL);
+  ActivityLog log(nullptr);
   string thelog = log.Encode();
   EXPECT_TRUE(thelog.find(VCSID) != string::npos);
+}
+
+TEST(ActivityLogTest, EncodePropChangeBoolTest) {
+  ActivityLog log(nullptr);
+  Json::Value ret;
+
+  ActivityLog::PropChangeEntry bool_prop;
+  bool_prop.name = "boolean";
+  bool_prop.value = static_cast<GesturesPropBool>(true);
+  ret = log.EncodePropChange(bool_prop);
+  EXPECT_EQ(ret[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyPropChange));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeName],
+            Json::Value(bool_prop.name));
+  EXPECT_EQ(static_cast<GesturesPropBool>(
+            ret[ActivityLog::kKeyPropChangeValue].asBool()),
+            std::get<GesturesPropBool>(bool_prop.value));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeType],
+            ActivityLog::kValuePropChangeTypeBool);
+}
+
+TEST(ActivityLogTest, EncodePropChangeDoubleTest) {
+  ActivityLog log(nullptr);
+  Json::Value ret;
+
+  ActivityLog::PropChangeEntry double_prop;
+  double_prop.name = "double";
+  double_prop.value = 42.0;
+  ret = log.EncodePropChange(double_prop);
+  EXPECT_EQ(ret[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyPropChange));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeName],
+            Json::Value(double_prop.name));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeValue].asDouble(),
+            std::get<double>(double_prop.value));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeType],
+            ActivityLog::kValuePropChangeTypeDouble);
+}
+
+TEST(ActivityLogTest, EncodePropChangeIntTest) {
+  ActivityLog log(nullptr);
+  Json::Value ret;
+
+  ActivityLog::PropChangeEntry int_prop;
+  int_prop.name = "int";
+  int_prop.value = 42;
+  ret = log.EncodePropChange(int_prop);
+  EXPECT_EQ(ret[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyPropChange));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeName],
+            Json::Value(int_prop.name));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeValue].asInt(),
+            std::get<int>(int_prop.value));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeType],
+            ActivityLog::kValuePropChangeTypeInt);
+}
+
+TEST(ActivityLogTest, EncodePropChangeShortTest) {
+  ActivityLog log(nullptr);
+  Json::Value ret;
+
+  ActivityLog::PropChangeEntry short_prop;
+  short_prop.name = "short";
+  short_prop.value = static_cast<short>(42);
+  ret = log.EncodePropChange(short_prop);
+  EXPECT_EQ(ret[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyPropChange));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeName],
+            Json::Value(short_prop.name));
+  EXPECT_EQ(static_cast<short>(
+            ret[ActivityLog::kKeyPropChangeValue].asInt()),
+            std::get<short>(short_prop.value));
+  EXPECT_EQ(ret[ActivityLog::kKeyPropChangeType],
+            ActivityLog::kValuePropChangeTypeShort);
 }
 
 }  // namespace gestures

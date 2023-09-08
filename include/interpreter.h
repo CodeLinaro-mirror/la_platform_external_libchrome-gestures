@@ -49,7 +49,7 @@ class Interpreter {
   // have up to 1 outstanding timer, so if a timeout is requested by
   // setting *timeout and one already exists, the old one will be cancelled
   // and reused for this timeout.
-  virtual void SyncInterpret(HardwareState* hwstate, stime_t* timeout);
+  virtual void SyncInterpret(HardwareState& hwstate, stime_t* timeout);
 
   // Called to handle a timeout.
   // If *timeout is set to >0.0, a timer will be setup to call
@@ -86,7 +86,7 @@ class Interpreter {
   void InitName();
   void Trace(const char* message, const char* name);
 
-  virtual void SyncInterpretImpl(HardwareState* hwstate,
+  virtual void SyncInterpretImpl(HardwareState& hwstate,
                                  stime_t* timeout) {}
   virtual void HandleTimerImpl(stime_t now, stime_t* timeout) {}
 
