@@ -136,11 +136,14 @@ void TapRecord::Update(const HardwareState& hwstate,
        it != e; ++it) {
     const FingerState* fs = hwstate.GetFingerState((*it).first);
     if (fs) {
-      if (fs->pressure >= immediate_interpreter_->tap_min_pressure())
+      if (fs->pressure >= immediate_interpreter_->tap_min_pressure() ||
+          !immediate_interpreter_->device_reports_pressure())
         min_tap_pressure_met_.insert(fs->tracking_id);
-      if (fs->pressure >= cotap_min_pressure) {
+      if (fs->pressure >= cotap_min_pressure ||
+          !immediate_interpreter_->device_reports_pressure()) {
         min_cotap_pressure_met_.insert(fs->tracking_id);
-        if ((*it).second.pressure < cotap_min_pressure) {
+        if ((*it).second.pressure < cotap_min_pressure &&
+            immediate_interpreter_->device_reports_pressure()) {
           // Update existing record, since the old one hadn't met the cotap
           // pressure
           (*it).second = *fs;
@@ -175,8 +178,9 @@ bool TapRecord::Moving(const HardwareState& hwstate,
       continue;
     // Only look for moving when current frame meets cotap pressure and
     // our history contains a contact that's met cotap pressure.
-    if (fs->pressure < cotap_min_pressure ||
-        (*it).second.pressure < cotap_min_pressure)
+    if ((fs->pressure < cotap_min_pressure ||
+        (*it).second.pressure < cotap_min_pressure) &&
+        immediate_interpreter_->device_reports_pressure())
       continue;
     // Compute distance moved
     float dist_x = fs->position_x - (*it).second.position_x;
@@ -184,7 +188,7 @@ bool TapRecord::Moving(const HardwareState& hwstate,
     // Respect WARP flags
     if (fs->flags & GESTURES_FINGER_WARP_X_TAP_MOVE)
       dist_x = 0.0;
-    if (fs->flags & GESTURES_FINGER_WARP_X_TAP_MOVE)
+    if (fs->flags & GESTURES_FINGER_WARP_Y_TAP_MOVE)
       dist_y = 0.0;
 
     bool moving =
@@ -206,8 +210,9 @@ bool TapRecord::Motionless(const HardwareState& hwstate, const HardwareState&
       continue;
     // Only look for moving when current frame meets cotap pressure and
     // our history contains a contact that's met cotap pressure.
-    if (fs->pressure < cotap_min_pressure ||
-        prev_fs->pressure < cotap_min_pressure)
+    if ((fs->pressure < cotap_min_pressure ||
+        prev_fs->pressure < cotap_min_pressure) &&
+        immediate_interpreter_->device_reports_pressure())
       continue;
     // Compute distance moved
     if (DistSq(*fs, *prev_fs) > max_speed * max_speed)

@@ -340,6 +340,7 @@ void ScalingFilterInterpreter::Initialize(const HardwareProperties* hwprops,
   float friendly_orientation_minimum;
   float friendly_orientation_maximum;
   if (orientation_scale_) {
+    // Transform minimum and maximum values into radians.
     friendly_orientation_minimum =
         orientation_scale_ * hwprops->orientation_minimum;
     friendly_orientation_maximum =
@@ -355,26 +356,18 @@ void ScalingFilterInterpreter::Initialize(const HardwareProperties* hwprops,
     surface_area_from_pressure_.val_ = false;
 
   // Make fake idealized hardware properties to report to next_.
-  friendly_props_ = {
-    0.0,  // left
-    0.0,  // top
-    (hwprops->right - hwprops->left) * tp_x_scale_,  // right
-    (hwprops->bottom - hwprops->top) * tp_y_scale_,  // bottom
-    1.0,  // X pixels/mm
-    1.0,  // Y pixels/mm
-    25.4,  // screen dpi x
-    25.4,  // screen dpi y
-    friendly_orientation_minimum,  // radians
-    friendly_orientation_maximum,  // radians
-    hwprops->max_finger_cnt,
-    hwprops->max_touch_cnt,
-    hwprops->supports_t5r2,
-    hwprops->support_semi_mt,
-    hwprops->is_button_pad,
-    hwprops->has_wheel,
-    hwprops->wheel_is_hi_res,
-    hwprops->is_haptic_pad,
-  };
+  friendly_props_ = *hwprops;
+  friendly_props_.left = 0.0;
+  friendly_props_.top = 0.0;
+  friendly_props_.right = (hwprops->right - hwprops->left) * tp_x_scale_;
+  friendly_props_.bottom = (hwprops->bottom - hwprops->top) * tp_y_scale_;
+  friendly_props_.res_x = 1.0;  // X pixels/mm
+  friendly_props_.res_y = 1.0;  // Y pixels/mm
+  friendly_props_.screen_x_dpi = 25.4;
+  friendly_props_.screen_y_dpi = 25.4;
+  friendly_props_.orientation_minimum = friendly_orientation_minimum;
+  friendly_props_.orientation_maximum = friendly_orientation_maximum;
+
   // current metrics is no longer valid, pass metrics=nullptr
   FilterInterpreter::Initialize(&friendly_props_, nullptr, mprops, consumer);
 }
