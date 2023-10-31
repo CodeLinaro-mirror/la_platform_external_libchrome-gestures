@@ -26,6 +26,13 @@
         <option name="push" value="libchrome-gestures_test->/data/local/tmp/libchrome-gestures_test" />
     </target_preparer>
 
+    <!--
+        Because we push the test binary into /data/local/tmp, SELinux prevents
+        it from being read to produce symbolized stack traces when crashes
+        occur, so disable SELinux for these tests.
+    -->
+    <target_preparer class="com.android.tradefed.targetprep.DisableSELinuxTargetPreparer" />
+
     <test class="com.android.tradefed.testtype.GTest" >
         <option name="native-test-device-path" value="/data/local/tmp" />
         <option name="module-name" value="libchrome-gestures_test" />
