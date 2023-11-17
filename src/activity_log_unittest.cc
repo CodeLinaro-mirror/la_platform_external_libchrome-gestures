@@ -131,6 +131,10 @@ TEST(ActivityLogTest, SimpleTest) {
 
 TEST(ActivityLogTest, WrapAroundTest) {
   ActivityLog log(nullptr);
+#ifndef __ANDROID__
+  // Disabling this test with DISABLED_ prefix is not sufficient as just by compiling this
+  // section causes the hwasan crash at runtime in some other tests
+  // TODO(b/311110623): re-enable this section once we've tracked down the hwasan crash
   // overfill the buffer
   const size_t fill_size = (ActivityLog::kBufferSize * 3) / 2;
   for (size_t i = 0; i < fill_size; i++)
@@ -140,6 +144,7 @@ TEST(ActivityLogTest, WrapAroundTest) {
   log.LogCallbackRequest(static_cast<stime_t>(fill_size));
   string second_prefix = log.Encode().substr(0, prefix_length);
   EXPECT_NE(first_prefix, second_prefix);
+#endif
 }
 
 TEST(ActivityLogTest, VersionTest) {
