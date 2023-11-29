@@ -33,24 +33,24 @@ TEST(ActivityLogTest, SimpleTest) {
   EXPECT_TRUE(strstr(log.Encode().c_str(), "foobarstr"));
 
   HardwareProperties hwprops = {
-    6011,  // left edge
-    6012,  // top edge
-    6013,  // right edge
-    6014,  // bottom edge
-    6015,  // x pixels/TP width
-    6016,  // y pixels/TP height
-    6017,  // x screen DPI
-    6018,  // y screen DPI
-    6019,  // orientation minimum
-    6020,  // orientation maximum
-    6021,  // max fingers
-    6022,  // max touch
-    1,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad,
-    0,  // has wheel
-    0,  // vertical wheel is high resolution
-    0,  // is haptic pad
+    .left = 6011,
+    .top = 6012,
+    .right = 6013,
+    .bottom = 6014,
+    .res_x = 6015,
+    .res_y = 6016,
+    .screen_x_dpi = 6017,
+    .screen_y_dpi = 6018,
+    .orientation_minimum = 6019,
+    .orientation_maximum = 6020,
+    .max_finger_cnt = 6021,
+    .max_touch_cnt = 6022,
+    .supports_t5r2 = 1,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   log.SetHardwareProperties(hwprops);
@@ -225,6 +225,275 @@ TEST(ActivityLogTest, EncodePropChangeShortTest) {
             std::get<short>(short_prop.value));
   EXPECT_EQ(ret[ActivityLog::kKeyPropChangeType],
             ActivityLog::kValuePropChangeTypeShort);
+}
+
+TEST(ActivityLogTest, HardwareStatePreTest) {
+  PropRegistry prop_reg;
+  ActivityLog log(&prop_reg);
+
+  HardwareProperties hwprops = {
+    .left = 6011,
+    .top = 6012,
+    .right = 6013,
+    .bottom = 6014,
+    .res_x = 6015,
+    .res_y = 6016,
+    .screen_x_dpi = 6017,
+    .screen_y_dpi = 6018,
+    .orientation_minimum = 6019,
+    .orientation_maximum = 6020,
+    .max_finger_cnt = 6021,
+    .max_touch_cnt = 6022,
+    .supports_t5r2 = 1,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
+  };
+  log.SetHardwareProperties(hwprops);
+
+  FingerState fs = { 0.0, 0.0, 0.0, 0.0, 9.0, 0.0, 3.0, 4.0, 22, 0 };
+  HardwareState hs = make_hwstate(1.0, 0, 1, 1, &fs);
+
+  ActivityLog::Entry* entry;
+  Json::Value result;
+
+  EXPECT_EQ(0, log.size());
+
+  // Build and log a HardwareStatePre structure
+  log.LogHardwareStatePre("ActivityLogTest_HwStateTest", hs);
+  ASSERT_EQ(1, log.size());
+  entry = log.GetEntry(0);
+  ASSERT_TRUE(std::holds_alternative<ActivityLog::HardwareStatePre>
+                (entry->details));
+
+  // Encode the HardwareStatePre into Json
+  result = log.EncodeCommonInfo();
+  result = result[ActivityLog::kKeyRoot][0];
+
+  // Verify the Json information
+  EXPECT_EQ(result[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHardwareStatePre));
+  EXPECT_EQ(result[ActivityLog::kKeyMethodName],
+            Json::Value("ActivityLogTest_HwStateTest"));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateButtonsDown],
+            Json::Value(hs.buttons_down));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateTouchCnt],
+            Json::Value(hs.touch_cnt));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateTimestamp],
+            Json::Value(hs.timestamp));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateRelX], Json::Value(hs.rel_x));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateRelY], Json::Value(hs.rel_y));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateRelWheel],
+            Json::Value(hs.rel_wheel));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateRelHWheel],
+            Json::Value(hs.rel_hwheel));
+  log.Clear();
+}
+
+TEST(ActivityLogTest, HardwareStatePostTest) {
+  PropRegistry prop_reg;
+  ActivityLog log(&prop_reg);
+
+  HardwareProperties hwprops = {
+    .left = 6011,
+    .top = 6012,
+    .right = 6013,
+    .bottom = 6014,
+    .res_x = 6015,
+    .res_y = 6016,
+    .screen_x_dpi = 6017,
+    .screen_y_dpi = 6018,
+    .orientation_minimum = 6019,
+    .orientation_maximum = 6020,
+    .max_finger_cnt = 6021,
+    .max_touch_cnt = 6022,
+    .supports_t5r2 = 1,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
+  };
+  log.SetHardwareProperties(hwprops);
+
+  FingerState fs = { 0.0, 0.0, 0.0, 0.0, 9.0, 0.0, 3.0, 4.0, 22, 0 };
+  HardwareState hs = make_hwstate(1.0, 0, 1, 1, &fs);
+
+  ActivityLog::Entry* entry;
+  Json::Value result;
+
+  EXPECT_EQ(0, log.size());
+
+  // Build and log a HardwareStatePost structure
+  log.LogHardwareStatePost("ActivityLogTest_HwStateTest", hs);
+  ASSERT_EQ(1, log.size());
+  entry = log.GetEntry(0);
+  ASSERT_TRUE(std::holds_alternative<ActivityLog::HardwareStatePost>
+                (entry->details));
+
+  // Encode the HardwareStatePost into Json
+  result = log.EncodeCommonInfo();
+  result = result[ActivityLog::kKeyRoot][0];
+
+  // Verify the Json information
+  EXPECT_EQ(result[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHardwareStatePost));
+  EXPECT_EQ(result[ActivityLog::kKeyMethodName],
+            Json::Value("ActivityLogTest_HwStateTest"));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateButtonsDown],
+            Json::Value(hs.buttons_down));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateTouchCnt],
+            Json::Value(hs.touch_cnt));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateTimestamp],
+            Json::Value(hs.timestamp));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateRelX], Json::Value(hs.rel_x));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateRelY], Json::Value(hs.rel_y));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateRelWheel],
+            Json::Value(hs.rel_wheel));
+  EXPECT_EQ(result[ActivityLog::kKeyHardwareStateRelHWheel],
+            Json::Value(hs.rel_hwheel));
+  log.Clear();
+}
+
+
+TEST(ActivityLogTest, GestureConsumeTest) {
+  PropRegistry prop_reg;
+  ActivityLog log(&prop_reg);
+  ActivityLog::Entry* entry;
+  Json::Value result;
+
+  EXPECT_EQ(0, log.size());
+
+  // Build and log a GestureConsume structure
+  Gesture move(kGestureMove, 1.0, 2.0, 773, 4.0);
+  log.LogGestureConsume("ActivityLogTest_GestureTest", move);
+  ASSERT_EQ(1, log.size());
+  entry = log.GetEntry(0);
+  ASSERT_TRUE(std::holds_alternative<ActivityLog::GestureConsume>
+                (entry->details));
+
+  // Encode the GestureConsume into Json
+  result = log.EncodeCommonInfo();
+  result = result[ActivityLog::kKeyRoot][0];
+
+  // Verify the Json information
+  EXPECT_EQ(result[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureConsume));
+  EXPECT_EQ(result[ActivityLog::kKeyMethodName],
+            Json::Value("ActivityLogTest_GestureTest"));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureType],
+            Json::Value(ActivityLog::kValueGestureTypeMove));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureDX],
+            Json::Value(move.details.move.dx));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureDY],
+            Json::Value(move.details.move.dy));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureOrdinalDX],
+            Json::Value(move.details.move.ordinal_dx));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureOrdinalDY],
+            Json::Value(move.details.move.ordinal_dy));
+  log.Clear();
+}
+
+TEST(ActivityLogTest, GestureProduceTest) {
+  PropRegistry prop_reg;
+  ActivityLog log(&prop_reg);
+  ActivityLog::Entry* entry;
+  Json::Value result;
+
+  EXPECT_EQ(0, log.size());
+
+  // Build and log a GestureProduce structure
+  Gesture scroll(kGestureScroll, 1.0, 2.0, 312, 4.0);
+  log.LogGestureProduce("ActivityLogTest_GestureTest", scroll);
+  ASSERT_EQ(1, log.size());
+  entry = log.GetEntry(0);
+  ASSERT_TRUE(std::holds_alternative<ActivityLog::GestureProduce>
+                (entry->details));
+
+  // Encode the GestureProduce into Json
+  result = log.EncodeCommonInfo();
+  result = result[ActivityLog::kKeyRoot][0];
+
+  // Verify the Json information
+  EXPECT_EQ(result[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureProduce));
+  EXPECT_EQ(result[ActivityLog::kKeyMethodName],
+            Json::Value("ActivityLogTest_GestureTest"));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureType],
+            Json::Value(ActivityLog::kValueGestureTypeScroll));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureDX],
+            Json::Value(scroll.details.scroll.dx));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureDY],
+            Json::Value(scroll.details.scroll.dy));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureOrdinalDX],
+            Json::Value(scroll.details.scroll.ordinal_dx));
+  EXPECT_EQ(result[ActivityLog::kKeyGestureOrdinalDY],
+            Json::Value(scroll.details.scroll.ordinal_dy));
+  log.Clear();
+}
+
+TEST(ActivityLogTest, HandleTimerPreTest) {
+  PropRegistry prop_reg;
+  ActivityLog log(&prop_reg);
+  ActivityLog::Entry* entry;
+  Json::Value result;
+  stime_t timeout = 1;
+
+  EXPECT_EQ(0, log.size());
+
+  // Build and log a HandleTimerPre structure
+  log.LogHandleTimerPre("ActivityLogTest_HandleTimerTest", 0, &timeout);
+  EXPECT_EQ(1, log.size());
+  entry = log.GetEntry(0);
+  EXPECT_TRUE(std::holds_alternative<ActivityLog::HandleTimerPre>
+                (entry->details));
+
+  // Encode the HandleTimerPre into Json
+  result = log.EncodeCommonInfo();
+  result = result[ActivityLog::kKeyRoot][0];
+
+  // Verify the Json information
+  EXPECT_EQ(result[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHandleTimerPre));
+  EXPECT_EQ(result[ActivityLog::kKeyMethodName],
+            Json::Value("ActivityLogTest_HandleTimerTest"));
+  EXPECT_EQ(result[ActivityLog::kKeyTimerNow],
+            Json::Value(static_cast<stime_t>(0)));
+  EXPECT_EQ(result[ActivityLog::kKeyHandleTimerTimeout], Json::Value(timeout));
+  log.Clear();
+}
+
+TEST(ActivityLogTest, HandleTimerPostTest) {
+  PropRegistry prop_reg;
+  ActivityLog log(&prop_reg);
+  ActivityLog::Entry* entry;
+  Json::Value result;
+  stime_t timeout = 1;
+
+  EXPECT_EQ(0, log.size());
+
+  // Build and log a HandleTimerPost structure
+  log.LogHandleTimerPost("ActivityLogTest_HandleTimerTest", 0, &timeout);
+  EXPECT_EQ(1, log.size());
+  entry = log.GetEntry(0);
+  EXPECT_TRUE(std::holds_alternative<ActivityLog::HandleTimerPost>
+                (entry->details));
+
+  // Encode the HandleTimerPost into Json
+  result = log.EncodeCommonInfo();
+  result = result[ActivityLog::kKeyRoot][0];
+
+  // Verify the Json information
+  EXPECT_EQ(result[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyHandleTimerPost));
+  EXPECT_EQ(result[ActivityLog::kKeyMethodName],
+            Json::Value("ActivityLogTest_HandleTimerTest"));
+  EXPECT_EQ(result[ActivityLog::kKeyTimerNow],
+            Json::Value(static_cast<stime_t>(0)));
+  EXPECT_EQ(result[ActivityLog::kKeyHandleTimerTimeout], Json::Value(timeout));
+  log.Clear();
 }
 
 }  // namespace gestures

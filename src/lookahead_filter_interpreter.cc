@@ -45,6 +45,9 @@ LookaheadFilterInterpreter::LookaheadFilterInterpreter(
 
 void LookaheadFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                        stime_t* timeout) {
+  const char name[] = "LookaheadFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   // Keep track of where the last node is in the current queue_
   auto const queue_was_not_empty = !queue_.empty();
   QState* old_back_node = queue_was_not_empty ? &queue_.back() : nullptr;
@@ -91,6 +94,8 @@ void LookaheadFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
       hwstate.fingers[i].flags = q_node.state_.fingers[i].flags;
    }
   }
+
+  LogHardwareStatePost(name, hwstate);
 }
 
 // Interpolates the two hardware states into out.
@@ -353,6 +358,9 @@ void LookaheadFilterInterpreter::TapDownOccurringGesture(stime_t now) {
     return;
   if (queue_.size() < 2)
     return;  // Not enough data to know
+
+  const char name[] = "LookaheadFilterInterpreter::TapDownOccurringGesture";
+
   HardwareState& hs = queue_.back().state_;
   if (queue_.back().state_.timestamp != now)
     return;  // We didn't push a new hardware state now
@@ -361,15 +369,21 @@ void LookaheadFilterInterpreter::TapDownOccurringGesture(stime_t now) {
   HardwareState& prev_hs = queue_.at(-2).state_;
   if (hs.finger_cnt > prev_hs.finger_cnt) {
     // Finger was added.
-    ProduceGesture(Gesture(kGestureFling, prev_hs.timestamp, hs.timestamp,
-                           0, 0, GESTURES_FLING_TAP_DOWN));
+    auto fling_tap_down = Gesture(kGestureFling,
+                                  prev_hs.timestamp, hs.timestamp,
+                                  0, 0, GESTURES_FLING_TAP_DOWN);
+    LogGestureProduce(name, fling_tap_down);
+    ProduceGesture(fling_tap_down);
     return;
   }
   // Go finger by finger for a final check
   for (size_t i = 0; i < hs.finger_cnt; i++)
     if (!prev_hs.GetFingerState(hs.fingers[i].tracking_id)) {
-      ProduceGesture(Gesture(kGestureFling, prev_hs.timestamp, hs.timestamp,
-                             0, 0, GESTURES_FLING_TAP_DOWN));
+      auto fling_tap_down = Gesture(kGestureFling,
+                                    prev_hs.timestamp, hs.timestamp,
+                                    0, 0, GESTURES_FLING_TAP_DOWN);
+      LogGestureProduce(name, fling_tap_down);
+      ProduceGesture(fling_tap_down);
       return;
     }
 }
@@ -416,6 +430,9 @@ void LookaheadFilterInterpreter::AttemptInterpolation() {
 
 void LookaheadFilterInterpreter::HandleTimerImpl(stime_t now,
                                                  stime_t* timeout) {
+  const char name[] = "LookaheadFilterInterpreter::HandleTimerImpl";
+  LogHandleTimerPre(name, now, timeout);
+
   stime_t next_timeout = NO_DEADLINE;
 
   // Determine if a FlingTapDown gesture needs to be produced
@@ -492,9 +509,13 @@ void LookaheadFilterInterpreter::HandleTimerImpl(stime_t now,
     UpdateInterpreterDue(next_timeout, now, timeout);
   }
   UpdateInterpreterDue(next_timeout, now, timeout);
+  LogHandleTimerPost(name, now, timeout);
 }
 
 void LookaheadFilterInterpreter::ConsumeGesture(const Gesture& gesture) {
+  const char name[] = "LookaheadFilterInterpreter::ConsumeGesture";
+  LogGestureConsume(name, gesture);
+
   QState& node = queue_.front();
 
   float distance_sq = 0.0;
@@ -510,6 +531,7 @@ void LookaheadFilterInterpreter::ConsumeGesture(const Gesture& gesture) {
       break;
     default:
       // Non-movement: just allow it.
+      LogGestureProduce(name, gesture);
       ProduceGesture(gesture);
       return;
   }
@@ -518,6 +540,7 @@ void LookaheadFilterInterpreter::ConsumeGesture(const Gesture& gesture) {
       min_nonsuppress_speed_.val_ * min_nonsuppress_speed_.val_ *
       time_delta * time_delta;
   if (distance_sq >= min_nonsuppress_dist_sq) {
+    LogGestureProduce(name, gesture);
     ProduceGesture(gesture);
     return;
   }
@@ -528,6 +551,7 @@ void LookaheadFilterInterpreter::ConsumeGesture(const Gesture& gesture) {
       return; // suppress
   }
 
+  LogGestureProduce(name, gesture);
   ProduceGesture(gesture);
 }
 

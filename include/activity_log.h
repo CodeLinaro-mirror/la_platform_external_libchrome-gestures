@@ -13,6 +13,11 @@
 #include <gtest/gtest.h>  // For FRIEND_TEST
 #include <json/value.h>
 
+// This should be set by build system:
+#ifndef VCSID
+#define VCSID "Unknown"
+#endif  // VCSID
+
 // This is a class that circularly buffers all incoming and outgoing activity
 // so that end users can report issues and engineers can reproduce them.
 
@@ -28,6 +33,10 @@ class ActivityLog {
   FRIEND_TEST(ActivityLogTest, EncodePropChangeDoubleTest);
   FRIEND_TEST(ActivityLogTest, EncodePropChangeIntTest);
   FRIEND_TEST(ActivityLogTest, EncodePropChangeShortTest);
+  FRIEND_TEST(ActivityLogTest, GestureConsumeTest);
+  FRIEND_TEST(ActivityLogTest, GestureProduceTest);
+  FRIEND_TEST(ActivityLogTest, HardwareStatePreTest);
+  FRIEND_TEST(ActivityLogTest, HardwareStatePostTest);
   FRIEND_TEST(LoggingFilterInterpreterTest, SimpleTest);
   FRIEND_TEST(PropRegistryTest, PropChangeTest);
  public:
@@ -38,19 +47,126 @@ class ActivityLog {
     stime_t timestamp;
   };
   struct PropChangeEntry {
-    const char* name;
+    std::string name;
     // No string variant because string values can't change
     std::variant<GesturesPropBool,
                  double,
                  int,
                  short> value;
   };
+
+  struct HardwareStatePre {
+    std::string name;
+    HardwareState hwstate;
+  };
+  struct HardwareStatePost {
+    std::string name;
+    HardwareState hwstate;
+  };
+  struct GestureConsume {
+    std::string name;
+    Gesture gesture;
+  };
+  struct GestureProduce {
+    std::string name;
+    Gesture gesture;
+  };
+  struct HandleTimerPre {
+    std::string name;
+    bool timeout_is_present;
+    stime_t now;
+    stime_t timeout;
+  };
+  struct HandleTimerPost {
+    std::string name;
+    bool timeout_is_present;
+    stime_t now;
+    stime_t timeout;
+  };
+  struct AccelGestureDebug {
+    bool no_accel_for_gesture_type;
+    bool no_accel_for_small_dt;
+    bool no_accel_for_small_speed;
+    bool no_accel_for_bad_gain;
+    bool dropped_gesture;
+    bool x_y_are_velocity;
+    float x_scale, y_scale;
+    float dt;
+    float adjusted_dt;
+    float speed;
+    float smoothed_speed;
+    float gain_x, gain_y;
+  };
+  struct TimestampGestureDebug {
+    stime_t skew;
+  };
+  struct TimestampHardwareStateDebug {
+    bool is_using_fake;
+    union {
+      struct {
+        bool was_first_or_backward;
+        stime_t prev_msc_timestamp_in;
+        stime_t prev_msc_timestamp_out;
+      };
+      struct {
+        bool was_divergence_reset;
+        stime_t fake_timestamp_in;
+        stime_t fake_timestamp_delta;
+        stime_t fake_timestamp_out;
+      };
+    };
+    stime_t skew;
+    stime_t max_skew;
+  };
+
   struct Entry {
     std::variant<HardwareState,
                  TimerCallbackEntry,
                  CallbackRequestEntry,
                  Gesture,
-                 PropChangeEntry> details;
+                 PropChangeEntry,
+                 HardwareStatePre,
+                 HardwareStatePost,
+                 GestureConsume,
+                 GestureProduce,
+                 HandleTimerPre,
+                 HandleTimerPost,
+                 AccelGestureDebug,
+                 TimestampGestureDebug,
+                 TimestampHardwareStateDebug> details;
+  };
+
+  enum class EventDebug {
+    // Base Event Types
+    Gesture = 0,
+    HardwareState,
+    HandleTimer,
+    // FilterInterpreter Debug Detail Event Types
+    Accel,
+    Box,
+    ClickWiggle,
+    FingerMerge,
+    FlingStop,
+    HapticButtonGenerator,
+    Iir,
+    IntegratGesture,
+    Logging,
+    Lookahead,
+    Metrics,
+    NonLinearity,
+    PalmClassifying,
+    Scaling,
+    SensorJump,
+    SplitCorrecting,
+    StationaryWiggle,
+    StuckButtonInhibitor,
+    T5R2Correcting,
+    Timestamp,
+    TrendClassifying,
+    // Interpreter Debug Detail Event Types
+    ImmediateInterpreter,
+    MouseInterpreter,
+    MultitouchMouseInterpreter,
   };
 
   explicit ActivityLog(PropRegistry* prop_reg);
@@ -62,6 +178,24 @@ class ActivityLog {
   void LogCallbackRequest(stime_t when);
   void LogGesture(const Gesture& gesture);
   void LogPropChange(const PropChangeEntry& prop_change);
+
+  // Debug extensions for Log*()
+  void LogGestureConsume(const std::string& name, const Gesture& gesture);
+  void LogGestureProduce(const std::string& name, const Gesture& gesture);
+  void LogHardwareStatePre(const std::string& name,
+                           const HardwareState& hwstate);
+  void LogHardwareStatePost(const std::string& name,
+                            const HardwareState& hwstate);
+  void LogHandleTimerPre(const std::string& name,
+                         stime_t now, const stime_t* timeout);
+  void LogHandleTimerPost(const std::string& name,
+                          stime_t now, const stime_t* timeout);
+
+  template<typename T>
+  void LogDebugData(const T& debug_data) {
+    Entry* entry = PushBack();
+    entry->details = debug_data;
+  }
 
   // Dump allocates, and thus must not be called on a signal handler.
   void Dump(const char* filename);
@@ -81,11 +215,18 @@ class ActivityLog {
   static const char kKeyNext[];
   static const char kKeyRoot[];
   static const char kKeyType[];
+  static const char kKeyMethodName[];
   static const char kKeyHardwareState[];
+  static const char kKeyHardwareStatePre[];
+  static const char kKeyHardwareStatePost[];
   static const char kKeyTimerCallback[];
   static const char kKeyCallbackRequest[];
   static const char kKeyGesture[];
+  static const char kKeyGestureConsume[];
+  static const char kKeyGestureProduce[];
   static const char kKeyPropChange[];
+  static const char kKeyHandleTimerPre[];
+  static const char kKeyHandleTimerPost[];
   // HardwareState keys:
   static const char kKeyHardwareStateTimestamp[];
   static const char kKeyHardwareStateButtonsDown[];
@@ -106,9 +247,9 @@ class ActivityLog {
   static const char kKeyFingerStatePositionY[];
   static const char kKeyFingerStateTrackingId[];
   static const char kKeyFingerStateFlags[];
-  // TimerCallback keys:
-  static const char kKeyTimerCallbackNow[];
-  // CallbackRequest keys:
+  // Timer/Callback keys:
+  static const char kKeyTimerNow[];
+  static const char kKeyHandleTimerTimeout[];
   static const char kKeyCallbackRequestWhen[];
   // Gesture keys:
   static const char kKeyGestureType[];
@@ -126,16 +267,10 @@ class ActivityLog {
   static const char kValueGestureTypeMetrics[];
   static const char kKeyGestureStartTime[];
   static const char kKeyGestureEndTime[];
-  static const char kKeyGestureMoveDX[];
-  static const char kKeyGestureMoveDY[];
-  static const char kKeyGestureMoveOrdinalDX[];
-  static const char kKeyGestureMoveOrdinalDY[];
-  static const char kKeyGestureScrollDX[];
-  static const char kKeyGestureScrollDY[];
-  static const char kKeyGestureScrollOrdinalDX[];
-  static const char kKeyGestureScrollOrdinalDY[];
-  static const char kKeyGestureMouseWheelDX[];
-  static const char kKeyGestureMouseWheelDY[];
+  static const char kKeyGestureDX[];
+  static const char kKeyGestureDY[];
+  static const char kKeyGestureOrdinalDX[];
+  static const char kKeyGestureOrdinalDY[];
   static const char kKeyGestureMouseWheelTicksDX[];
   static const char kKeyGestureMouseWheelTicksDY[];
   static const char kKeyGesturePinchDZ[];
@@ -148,14 +283,6 @@ class ActivityLog {
   static const char kKeyGestureFlingOrdinalVX[];
   static const char kKeyGestureFlingOrdinalVY[];
   static const char kKeyGestureFlingState[];
-  static const char kKeyGestureSwipeDX[];
-  static const char kKeyGestureSwipeDY[];
-  static const char kKeyGestureSwipeOrdinalDX[];
-  static const char kKeyGestureSwipeOrdinalDY[];
-  static const char kKeyGestureFourFingerSwipeDX[];
-  static const char kKeyGestureFourFingerSwipeDY[];
-  static const char kKeyGestureFourFingerSwipeOrdinalDX[];
-  static const char kKeyGestureFourFingerSwipeOrdinalDY[];
   static const char kKeyGestureMetricsType[];
   static const char kKeyGestureMetricsData1[];
   static const char kKeyGestureMetricsData2[];
@@ -189,6 +316,37 @@ class ActivityLog {
 
   static const char kKeyProperties[];
 
+  // AccelFilterInterpreter Debug Data keys:
+  static const char kKeyAccelGestureDebug[];
+  static const char kKeyAccelDebugNoAccelBadGain[];
+  static const char kKeyAccelDebugNoAccelGestureType[];
+  static const char kKeyAccelDebugNoAccelSmallDt[];
+  static const char kKeyAccelDebugNoAccelSmallSpeed[];
+  static const char kKeyAccelDebugDroppedGesture[];
+  static const char kKeyAccelDebugXYAreVelocity[];
+  static const char kKeyAccelDebugXScale[];
+  static const char kKeyAccelDebugYScale[];
+  static const char kKeyAccelDebugDt[];
+  static const char kKeyAccelDebugAdjustedDt[];
+  static const char kKeyAccelDebugSpeed[];
+  static const char kKeyAccelDebugSmoothSpeed[];
+  static const char kKeyAccelDebugGainX[];
+  static const char kKeyAccelDebugGainY[];
+
+  // Timestamp Debug Data keys:
+  static const char kKeyTimestampGestureDebug[];
+  static const char kKeyTimestampHardwareStateDebug[];
+  static const char kKeyTimestampDebugIsUsingFake[];
+  static const char kKeyTimestampDebugWasFirstOrBackward[];
+  static const char kKeyTimestampDebugPrevMscTimestampIn[];
+  static const char kKeyTimestampDebugPrevMscTimestampOut[];
+  static const char kKeyTimestampDebugWasDivergenceReset[];
+  static const char kKeyTimestampDebugFakeTimestampIn[];
+  static const char kKeyTimestampDebugFakeTimestampDelta[];
+  static const char kKeyTimestampDebugFakeTimestampOut[];
+  static const char kKeyTimestampDebugSkew[];
+  static const char kKeyTimestampDebugMaxSkew[];
+
  private:
   // Extends the tail of the buffer by one element and returns that new element.
   // This may cause an older element to be overwritten if the buffer is full.
@@ -198,10 +356,26 @@ class ActivityLog {
 
   // JSON-encoders for various types
   Json::Value EncodeHardwareProperties() const;
+
+  Json::Value EncodeHardwareStateCommon(const HardwareState& hwstate);
   Json::Value EncodeHardwareState(const HardwareState& hwstate);
+  Json::Value EncodeHardwareState(const HardwareStatePre& hwstate);
+  Json::Value EncodeHardwareState(const HardwareStatePost& hwstate);
+  Json::Value EncodeHardwareStateDebug(
+      const TimestampHardwareStateDebug& debug_data);
+
   Json::Value EncodeTimerCallback(stime_t timestamp);
+  Json::Value EncodeHandleTimer(const HandleTimerPre& handle);
+  Json::Value EncodeHandleTimer(const HandleTimerPost& handle);
   Json::Value EncodeCallbackRequest(stime_t timestamp);
+
+  Json::Value EncodeGestureCommon(const Gesture& gesture);
   Json::Value EncodeGesture(const Gesture& gesture);
+  Json::Value EncodeGesture(const GestureConsume& gesture);
+  Json::Value EncodeGesture(const GestureProduce& gesture);
+  Json::Value EncodeGestureDebug(const AccelGestureDebug& debug_data);
+  Json::Value EncodeGestureDebug(const TimestampGestureDebug& debug_data);
+
   Json::Value EncodePropChange(const PropChangeEntry& prop_change);
 
   // Encode user-configurable properties

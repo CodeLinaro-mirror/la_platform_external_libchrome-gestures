@@ -161,12 +161,15 @@ AccelFilterInterpreter::AccelFilterInterpreter(PropRegistry* prop_reg,
 }
 
 void AccelFilterInterpreter::ConsumeGesture(const Gesture& gs) {
+  const char name[] = "AccelFilterInterpreter::ConsumeGesture";
+  LogGestureConsume(name, gs);
+  auto debug_data = ActivityLog::AccelGestureDebug{};
+
   // Use a copy of the gesture gs during the calculations and
   // adjustments so the original is left alone.
   Gesture gs_copy = gs;
 
-  // Setup the parameters for acceleration calculations based on gesture
-  // type.
+  // Setup the parameters for acceleration calculations based on gesture type.
   float* dx;
   float* dy;
   float x_scale;
@@ -185,42 +188,68 @@ void AccelFilterInterpreter::ConsumeGesture(const Gesture& gs) {
                             scale_out_x_ordinal, scale_out_y_ordinal,
                             segs, max_segs)) {
     // It was determined no acceleration was required.
+    debug_data.no_accel_for_gesture_type = true;
+    LogDebugData(debug_data);
+    LogGestureProduce(name, gs);
     ProduceGesture(gs);
     return;
   }
+  debug_data.x_y_are_velocity = (dx == nullptr || dy == nullptr);
+  debug_data.x_scale = x_scale;
+  debug_data.y_scale = y_scale;
+  debug_data.dt = get_dt(gs);
+  debug_data.adjusted_dt = get_adjusted_dt(gs);
 
   float speed;
   if (!get_actual_speed(dx, dy,
-                        gs_copy.details.fling.vx, gs_copy.details.fling.vy,
+                        gs.details.fling.vx, gs.details.fling.vy,
                         get_adjusted_dt(gs),
                         speed)) {
     // dt was too small, don't accelerate.
+    debug_data.no_accel_for_small_dt = true;
+    LogDebugData(debug_data);
+    LogGestureProduce(name, gs);
     ProduceGesture(gs);
     return;
   }
-  smooth_speed(gs_copy, speed);
+  debug_data.speed = speed;
+  smooth_speed(gs, speed);
+  debug_data.smoothed_speed = speed;
 
   // Avoid scaling if the speed is too small.
   if (speed < 0.00001) {
-    if (gs.type == kGestureTypeFling)
-      ProduceGesture(gs);  // Filter out zero length gestures.
-    return;  // Avoid division by 0.
-  }
-
-  // Find the appropriate ratio and apply scaling.
-  auto ratio = RatioFromAccelCurve(segs, max_segs, speed);
-  if (ratio > 0.0) {
-    *scale_out_x *= ratio * x_scale;
-    *scale_out_y *= ratio * y_scale;
-
-    if (gs.type == kGestureTypeFling ||
-        gs.type == kGestureTypeScroll) {
-      // We don't accelerate the ordinal values as we do for normal ones
-      // because this is how the Chrome needs it.
-      *scale_out_x_ordinal *= x_scale;
-      *scale_out_y_ordinal *= y_scale;
+    debug_data.no_accel_for_small_speed = true;
+    if (gs.type != kGestureTypeFling)
+      debug_data.dropped_gesture = true;
+    LogDebugData(debug_data);
+    if (gs.type == kGestureTypeFling) {
+      LogGestureProduce(name, gs);
+      ProduceGesture(gs); // Filter out zero length gestures.
     }
-    ProduceGesture(gs_copy);
+  } else {
+    // Find the appropriate ratio and apply scaling.
+    auto ratio = RatioFromAccelCurve(segs, max_segs, speed);
+    debug_data.gain_x = ratio;
+    debug_data.gain_y = ratio;
+    if (ratio > 0.0) {
+      *scale_out_x *= ratio * x_scale;
+      *scale_out_y *= ratio * y_scale;
+
+      if (gs.type == kGestureTypeFling ||
+          gs.type == kGestureTypeScroll) {
+        // We don't accelerate the ordinal values as we do for normal ones
+        // because this is how the Chrome needs it.
+        *scale_out_x_ordinal *= x_scale;
+        *scale_out_y_ordinal *= y_scale;
+      }
+      LogDebugData(debug_data);
+      LogGestureProduce(name, gs_copy);
+      ProduceGesture(gs_copy);
+    } else {
+      debug_data.no_accel_for_bad_gain = true;
+      debug_data.dropped_gesture = true;
+      LogDebugData(debug_data);
+    }
   }
 }
 
@@ -383,7 +412,7 @@ bool AccelFilterInterpreter::get_actual_speed(
   return true;
 }
 
-void AccelFilterInterpreter::smooth_speed(Gesture& gs, float& speed) {
+void AccelFilterInterpreter::smooth_speed(const Gesture& gs, float& speed) {
   // Perform smoothing, if it is enabled.
   if (smooth_accel_.val_) {
     // Check if clock changed backwards.
@@ -408,14 +437,14 @@ void AccelFilterInterpreter::smooth_speed(Gesture& gs, float& speed) {
 }
 
 float AccelFilterInterpreter::RatioFromAccelCurve(
-    CurveSegment const* segs,
-    size_t const max_segs,
-    float const speed) {
+    const CurveSegment* segs,
+    const size_t max_segs,
+    const float speed) {
   if (speed <= 0.0)
     return 0.0;
 
   for (size_t i = 0; i < max_segs; ++i) {
-    CurveSegment const & seg = segs[i];
+    const CurveSegment& seg = segs[i];
     if (speed <= seg.x_) {
       return (seg.sqr_ * speed) + seg.mul_ + (seg.int_ / speed);
     }

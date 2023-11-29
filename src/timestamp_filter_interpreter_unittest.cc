@@ -5,13 +5,19 @@
 #include <gtest/gtest.h>
 
 #include "include/gestures.h"
+#include "include/string_util.h"
 #include "include/timestamp_filter_interpreter.h"
 #include "include/unittest_util.h"
 #include "include/util.h"
 
 namespace gestures {
 
+using EventDebug = ActivityLog::EventDebug;
+
 class TimestampFilterInterpreterTest : public ::testing::Test {};
+class TimestampFilterInterpreterParmTest :
+          public TimestampFilterInterpreterTest,
+          public testing::WithParamInterface<stime_t> {};
 
 class TimestampFilterInterpreterTestInterpreter : public Interpreter {
  public:
@@ -219,4 +225,95 @@ TEST(TimestampFilterInterpreterTest, FakeTimestampFallBackwardTest) {
   // the last reset.
   EXPECT_FLOAT_EQ(adjusted_timestamp, 2.025);
 }
+
+TEST(TimestampFilterInterpreterTest, GestureDebugTest) {
+  PropRegistry prop_reg;
+  TimestampFilterInterpreter interpreter(&prop_reg, nullptr, nullptr);
+
+  using EventDebug = ActivityLog::EventDebug;
+  interpreter.SetEventLoggingEnabled(true);
+  interpreter.EventDebugLoggingEnable(EventDebug::Gesture);
+  interpreter.EventDebugLoggingEnable(EventDebug::HardwareState);
+  interpreter.EventDebugLoggingEnable(EventDebug::HandleTimer);
+  interpreter.EventDebugLoggingEnable(EventDebug::Timestamp);
+  interpreter.log_.reset(new ActivityLog(&prop_reg));
+
+  EXPECT_EQ(interpreter.log_->size(), 0);
+  interpreter.ConsumeGesture(Gesture(kGestureButtonsChange,
+                                     1,  // start time
+                                     2,  // end time
+                                     0, // down
+                                     0, // up
+                                     false)); // is_tap
+
+  // Encode the log into Json
+  Json::Value node;
+  Json::Value tree = interpreter.log_->EncodeCommonInfo();
+
+  // Verify the Json information
+  EXPECT_EQ(interpreter.log_->size(), 3);
+  node = tree[ActivityLog::kKeyRoot][0];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureConsume));
+  node = tree[ActivityLog::kKeyRoot][1];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyTimestampGestureDebug));
+  EXPECT_EQ(node[ActivityLog::kKeyTimestampDebugSkew],
+            Json::Value(interpreter.skew_));
+  node = tree[ActivityLog::kKeyRoot][2];
+  EXPECT_EQ(node[ActivityLog::kKeyType],
+            Json::Value(ActivityLog::kKeyGestureProduce));
+  interpreter.log_->Clear();
+}
+
+TEST_P(TimestampFilterInterpreterParmTest, TimestampDebugLoggingTest) {
+  PropRegistry prop_reg;
+  TimestampFilterInterpreterTestInterpreter* base_interpreter =
+      new TimestampFilterInterpreterTestInterpreter;
+  TimestampFilterInterpreter interpreter(&prop_reg, base_interpreter, nullptr);
+  TestInterpreterWrapper wrapper(&interpreter);
+
+  interpreter.SetEventLoggingEnabled(true);
+  interpreter.EventDebugLoggingEnable(EventDebug::Gesture);
+  interpreter.EventDebugLoggingEnable(EventDebug::HardwareState);
+  interpreter.EventDebugLoggingEnable(EventDebug::HandleTimer);
+  interpreter.EventDebugLoggingEnable(EventDebug::Timestamp);
+  interpreter.log_.reset(new ActivityLog(&prop_reg));
+  interpreter.fake_timestamp_delta_.val_ = GetParam();
+
+  HardwareState hs = make_hwstate_times(1.000, 0.000);
+  wrapper.SyncInterpret(hs, nullptr);
+
+  // Encode the log into Json
+  Json::Value node;
+  Json::Value tree = interpreter.log_->EncodeCommonInfo();
+
+  // Verify the Json information
+  EXPECT_EQ(interpreter.log_->size(), 4);
+  node = tree[ActivityLog::kKeyRoot][0];
+  EXPECT_EQ(node[ActivityLog::kKeyType].asString(),
+            ActivityLog::kKeyHardwareState);
+  node = tree[ActivityLog::kKeyRoot][1];
+  EXPECT_EQ(node[ActivityLog::kKeyType].asString(),
+            ActivityLog::kKeyHardwareStatePre);
+
+  node = tree[ActivityLog::kKeyRoot][2];
+  EXPECT_EQ(node[ActivityLog::kKeyType].asString(),
+            ActivityLog::kKeyTimestampHardwareStateDebug);
+  if (interpreter.fake_timestamp_delta_.val_ == 0.0) {
+    EXPECT_FALSE(node[ActivityLog::kKeyTimestampDebugIsUsingFake].asBool());
+  } else {
+    EXPECT_TRUE(node[ActivityLog::kKeyTimestampDebugIsUsingFake].asBool());
+  }
+
+  node = tree[ActivityLog::kKeyRoot][3];
+  EXPECT_EQ(node[ActivityLog::kKeyType].asString(),
+            ActivityLog::kKeyHardwareStatePost);
+  interpreter.log_->Clear();
+}
+
+INSTANTIATE_TEST_SUITE_P(TimestampFilterInterpreter,
+                         TimestampFilterInterpreterParmTest,
+                         testing::Values(0.000, 0.010));
+
 }  // namespace gestures

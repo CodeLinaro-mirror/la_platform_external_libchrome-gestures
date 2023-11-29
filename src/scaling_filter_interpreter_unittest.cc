@@ -98,8 +98,6 @@ class ScalingFilterInterpreterTestInterpreter : public Interpreter {
     EXPECT_FLOAT_EQ(expected_hwprops_.bottom, hw_props->bottom);
     EXPECT_FLOAT_EQ(expected_hwprops_.res_x, hw_props->res_x);
     EXPECT_FLOAT_EQ(expected_hwprops_.res_y, hw_props->res_y);
-    EXPECT_FLOAT_EQ(expected_hwprops_.screen_x_dpi, hw_props->screen_x_dpi);
-    EXPECT_FLOAT_EQ(expected_hwprops_.screen_y_dpi, hw_props->screen_y_dpi);
     EXPECT_FLOAT_EQ(expected_hwprops_.orientation_minimum,
                     hw_props->orientation_minimum);
     EXPECT_FLOAT_EQ(expected_hwprops_.orientation_maximum,
@@ -132,25 +130,30 @@ TEST(ScalingFilterInterpreterTest, SimpleTest) {
   ScalingFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
                                        GESTURES_DEVCLASS_TOUCHPAD);
   HardwareProperties initial_hwprops = {
-    133, 728, 10279, 5822,  // left, top, right, bottom
-    (10279.0 - 133.0) / 100.0,  // x res (pixels/mm)
-    (5822.0 - 728.0) / 60,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    0, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .left = 133, .top = 728, .right = 10279, .bottom = 5822,
+    .res_x = (10279.0 - 133.0) / 100.0,
+    .res_y = (5822.0 - 728.0) / 60,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   HardwareProperties expected_hwprops = {
-    0, 0, 100, 60,  // left, top, right, bottom
-    1.0, 1.0, 25.4, 25.4, // x res, y res, x DPI, y DPI
-    -M_PI_4,  // orientation minimum (1 tick above X-axis)
-    M_PI_2,   // orientation maximum
-    2, 5, 0, 0, 0,  // max_fingers, max_touch, t5r2, semi_mt, is button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // is haptic pad
+    .right = 100, .bottom = 60,
+    .res_x = 1.0,
+    .res_y = 1.0,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -M_PI_4,  // (1 tick above X-axis)
+    .orientation_maximum = M_PI_2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   base_interpreter->expected_hwprops_ = expected_hwprops;
 
@@ -278,25 +281,26 @@ TEST(ScalingFilterInterpreterTest, ResolutionFallback) {
   ScalingFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
                                        GESTURES_DEVCLASS_TOUCHPAD);
   HardwareProperties initial_hwprops = {
-    0, 0, 2000, 1000,  // left, top, right, bottom
-    0, 0,  // X/Y resolutions (pixels/mm)
-    0, 0,  // screen DPI X, Y (deprecated)
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    0, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 2000, .bottom = 1000,
+    .res_x = 0, .res_y = 0,
+    .screen_x_dpi = 0, .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   HardwareProperties expected_hwprops = {
-    0, 0, 2000 / 32.0, 1000 / 32.0,  // left, top, right, bottom
-    1, 1,  // X/Y resolutions (pixels/mm)
-    25.4, 25.4, // x DPI, y DPI
-    -M_PI_4,  // orientation minimum (1 tick above X-axis)
-    M_PI_2,   // orientation maximum
-    2, 5, 0, 0, 0,  // max_fingers, max_touch, t5r2, semi_mt, is button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // is haptic pad
+    .right = 2000 / 32.0, .bottom = 1000 / 32.0,
+    .res_x = 1, .res_y = 1,
+    .screen_x_dpi = 0, .screen_y_dpi = 0,
+    .orientation_minimum = -M_PI_4,  // (1 tick above X-axis)
+    .orientation_maximum = M_PI_2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   base_interpreter->expected_hwprops_ = expected_hwprops;
 
@@ -429,25 +433,28 @@ TEST(ScalingFilterInterpreterTest, TouchMajorAndMinorTest) {
   interpreter.tp_y_bias_.val_ = e_y;
 
   HardwareProperties hwprops = {
-    0, 0, 500, 1000,  // left, top, right, bottom
-    5,  // x res (pixels/mm)
-    10,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -31,  // orientation minimum
-    32,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    0, 0, 0,  // t5r2, semi, button pad
-    1, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 500, .bottom = 1000,
+    .res_x = 5,
+    .res_y = 10,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -31,
+    .orientation_maximum = 32,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 1, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   HardwareProperties expected_hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1.0, 1.0, 25.4, 25.4, // x res, y res, x DPI, y DPI
-    -M_PI * 31 / 64,  // orientation minimum (1 tick above X-axis)
-    M_PI_2,   // orientation maximum
-    2, 5, 0, 0, 0,  // max_fingers, max_touch, t5r2, semi_mt, button pad
-    1, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 1.0, .res_y = 1.0,
+    .screen_x_dpi = 0, .screen_y_dpi = 0,
+    .orientation_minimum = -M_PI * 31 / 64,  // (1 tick above X-axis)
+    .orientation_maximum = M_PI_2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 1, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   // Test 1: Touch major and touch minor scaling with orientation

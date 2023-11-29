@@ -142,4 +142,48 @@ TEST(FlingStopFilterInterpreterTest, SimpleTest) {
   }
 }
 
+TEST(FlingStopFilterInterpreterTest, FlingGestureTest) {
+  FlingStopFilterInterpreterTestInterpreter* base_interpreter =
+      new FlingStopFilterInterpreterTestInterpreter;
+  FlingStopFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
+                                         GESTURES_DEVCLASS_TOUCHPAD);
+
+  Gesture fling(kGestureFling, 0.0, 1.0, 0.0, 0.0, GESTURES_FLING_TAP_DOWN);
+  Gesture swipelift(kGestureSwipeLift, 1.0, 2.0);
+  Gesture swipe4flift(kGestureFourFingerSwipeLift, 1.0, 2.0);
+  Gesture move(kGestureMove, 1.0, 2.0, 3.0, 4.0);
+
+  interpreter.fling_stop_already_sent_ = true;
+  interpreter.ConsumeGesture(fling);
+  interpreter.ConsumeGesture(fling);
+  EXPECT_EQ(interpreter.prev_gesture_type_, kGestureTypeFling);
+  interpreter.ConsumeGesture(swipelift);
+  EXPECT_EQ(interpreter.prev_gesture_type_, kGestureTypeSwipeLift);
+  interpreter.ConsumeGesture(swipe4flift);
+  EXPECT_EQ(interpreter.prev_gesture_type_, kGestureTypeFourFingerSwipeLift);
+
+  interpreter.fling_stop_already_sent_ = false;
+  interpreter.ConsumeGesture(fling);
+  interpreter.ConsumeGesture(fling);
+  EXPECT_EQ(interpreter.prev_gesture_type_, kGestureTypeFling);
+  interpreter.ConsumeGesture(swipelift);
+  EXPECT_EQ(interpreter.prev_gesture_type_, kGestureTypeSwipeLift);
+  interpreter.ConsumeGesture(swipe4flift);
+  EXPECT_EQ(interpreter.prev_gesture_type_, kGestureTypeFourFingerSwipeLift);
+
+  interpreter.ConsumeGesture(move);
+  EXPECT_EQ(interpreter.prev_gesture_type_, kGestureTypeMove);
+}
+
+TEST(FlingStopFilterInterpreterTest, FlingStopMultimouseMoveTest) {
+  FlingStopFilterInterpreterTestInterpreter* base_interpreter =
+      new FlingStopFilterInterpreterTestInterpreter;
+  FlingStopFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
+                                         GESTURES_DEVCLASS_MULTITOUCH_MOUSE);
+
+  Gesture move(kGestureMove, 1.0, 2.0, 3.0, 4.0);
+  interpreter.ConsumeGesture(move);
+  EXPECT_EQ(interpreter.prev_gesture_type_, kGestureTypeMove);
+}
+
 }  // namespace gestures

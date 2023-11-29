@@ -34,6 +34,10 @@ FingerMetrics::FingerMetrics()
 FingerMetrics::FingerMetrics(short tracking_id)
     : tracking_id_(tracking_id) {}
 
+FingerMetrics::FingerMetrics(short tracking_id, stime_t timestamp)
+    : tracking_id_(tracking_id),
+      origin_time_(timestamp) {}
+
 FingerMetrics::FingerMetrics(const FingerState& state,
                              stime_t timestamp)
     : tracking_id_(state.tracking_id),
@@ -130,6 +134,15 @@ void Metrics::Update(const HardwareState& hwstate) {
 
 void Metrics::Clear() {
   fingers_.clear();
+}
+
+void Metrics::SetFingerOriginTimestampForTesting(short tracking_id,
+                                                 stime_t time) {
+  if (auto iter = fingers_.find(FingerMetrics(tracking_id));
+      iter != fingers_.end()) {
+    fingers_.erase(iter);
+  }
+  fingers_.push_back(FingerMetrics(tracking_id, time));
 }
 
 }  // namespace gestures

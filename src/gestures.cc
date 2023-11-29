@@ -203,7 +203,11 @@ void HardwareState::DeepCopy(const HardwareState& that,
   buttons_down = that.buttons_down;
   touch_cnt = that.touch_cnt;
   finger_cnt = min(that.finger_cnt, max_finger_cnt);
-  memcpy(fingers, that.fingers, finger_cnt * sizeof(FingerState));
+  if(that.fingers != nullptr) {
+    memcpy(fingers, that.fingers, finger_cnt * sizeof(FingerState));
+  } else if (finger_cnt > 0) {
+    Err("HardwareState with no finger data but %d finger count", finger_cnt);
+  }
   rel_x = that.rel_x;
   rel_y = that.rel_y;
   rel_wheel = that.rel_wheel;
@@ -531,8 +535,9 @@ void GestureInterpreter::set_callback(GestureReadyFunction callback,
 
 void GestureInterpreter::InitializeTouchpad(void) {
   if (prop_reg_.get()) {
-    IntProperty stack_version(prop_reg_.get(), "Touchpad Stack Version", 2);
-    if (stack_version.val_ == 2) {
+    stack_version_ = std::make_unique<IntProperty>(prop_reg_.get(),
+                                                   "Touchpad Stack Version", 2);
+    if (stack_version_->val_ == 2) {
       InitializeTouchpad2();
       return;
     }

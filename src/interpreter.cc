@@ -20,6 +20,8 @@ using std::string;
 
 namespace gestures {
 
+using EventDebug = ActivityLog::EventDebug;
+
 Interpreter::Interpreter(PropRegistry* prop_reg,
                          Tracer* tracer,
                          bool force_log_creation)
@@ -49,7 +51,7 @@ void Interpreter::Trace(const char* message, const char* name) {
 void Interpreter::SyncInterpret(HardwareState& hwstate,
                                     stime_t* timeout) {
   AssertWithReturn(initialized_);
-  if (enable_event_logging_ && log_.get()) {
+  if (EventLoggingIsEnabled()) {
     Trace("log: start: ", "LogHardwareState");
     log_->LogHardwareState(hwstate);
     Trace("log: end: ", "LogHardwareState");
@@ -65,7 +67,7 @@ void Interpreter::SyncInterpret(HardwareState& hwstate,
 
 void Interpreter::HandleTimer(stime_t now, stime_t* timeout) {
   AssertWithReturn(initialized_);
-  if (enable_event_logging_ && log_.get()) {
+  if (EventLoggingIsEnabled()) {
     Trace("log: start: ", "LogTimerCallback");
     log_->LogTimerCallback(now);
     Trace("log: end: ", "LogTimerCallback");
@@ -144,15 +146,40 @@ void Interpreter::InitName() {
   }
 }
 
+bool Interpreter::EventLoggingIsEnabled() {
+  return enable_event_logging_ && log_.get();
+}
+
 void Interpreter::SetEventLoggingEnabled(bool enabled) {
   // TODO(b/185844310): log an event when touch logging is enabled or disabled.
   enable_event_logging_ = enabled;
 }
 
+bool Interpreter::EventDebugLoggingIsEnabled(ActivityLog::EventDebug event) {
+  return EventLoggingIsEnabled() &&
+         (enable_event_debug_logging_ & (1 << static_cast<int>(event)));
+}
+
+uint32_t Interpreter::GetEventDebugLoggingEnabled() {
+  return enable_event_debug_logging_;
+}
+
+void Interpreter::SetEventDebugLoggingEnabled(uint32_t enabled) {
+  enable_event_debug_logging_ = enabled;
+}
+
+void Interpreter::EventDebugLoggingDisable(ActivityLog::EventDebug event) {
+  enable_event_debug_logging_ &= ~(1 << static_cast<int>(event));
+}
+
+void Interpreter::EventDebugLoggingEnable(ActivityLog::EventDebug event) {
+  enable_event_debug_logging_ |= (1 << static_cast<int>(event));
+}
+
 void Interpreter::LogOutputs(const Gesture* result,
                              stime_t* timeout,
                              const char* action) {
-  if (!enable_event_logging_ || !log_.get())
+  if (!EventLoggingIsEnabled())
     return;
   Trace("log: start: ", action);
   if (result)
@@ -161,4 +188,41 @@ void Interpreter::LogOutputs(const Gesture* result,
     log_->LogCallbackRequest(*timeout);
   Trace("log: end: ", action);
 }
+
+void Interpreter::LogGestureConsume(
+    const std::string& name, const Gesture& gesture) {
+  if (EventDebugLoggingIsEnabled(EventDebug::Gesture))
+    log_->LogGestureConsume(name, gesture);
+}
+
+void Interpreter::LogGestureProduce(
+    const std::string& name, const Gesture& gesture) {
+  if (EventDebugLoggingIsEnabled(EventDebug::Gesture))
+    log_->LogGestureProduce(name, gesture);
+}
+
+void Interpreter::LogHardwareStatePre(
+    const std::string& name, const HardwareState& hwstate) {
+  if (EventDebugLoggingIsEnabled(EventDebug::HardwareState))
+    log_->LogHardwareStatePre(name, hwstate);
+}
+
+void Interpreter::LogHardwareStatePost(
+    const std::string& name, const HardwareState& hwstate) {
+  if (EventDebugLoggingIsEnabled(EventDebug::HardwareState))
+    log_->LogHardwareStatePost(name, hwstate);
+}
+
+void Interpreter::LogHandleTimerPre(
+    const std::string& name, stime_t now, const stime_t* timeout) {
+  if (EventDebugLoggingIsEnabled(EventDebug::HandleTimer))
+    log_->LogHandleTimerPre(name, now, timeout);
+}
+
+void Interpreter::LogHandleTimerPost(
+    const std::string& name, stime_t now, const stime_t* timeout) {
+  if (EventDebugLoggingIsEnabled(EventDebug::HandleTimer))
+    log_->LogHandleTimerPost(name, now, timeout);
+}
+
 }  // namespace gestures
