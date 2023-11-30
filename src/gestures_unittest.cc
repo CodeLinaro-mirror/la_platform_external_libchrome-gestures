@@ -342,15 +342,12 @@ TEST(GesturesTest, SimpleTest) {
   gs_ptr->Initialize(GESTURES_DEVCLASS_POINTING_STICK);
   DeleteGestureInterpreter(gs_ptr);
 
-#ifndef __ANDROID__
-  // TODO(b/311110623): re-enable this section once we've tracked down the hwasan crash
   gs_ptr = NewGestureInterpreter();
   EXPECT_NE(nullptr, gs_ptr);
   gs_ptr->Initialize(GESTURES_DEVCLASS_MULTITOUCH_MOUSE);
   std::string activity = gs_ptr->EncodeActivityLog();
   EXPECT_NE(activity.size(), 0);
   DeleteGestureInterpreter(gs_ptr);
-#endif
 
   EXPECT_EQ("1073741824", FingerState::FlagsString(1 << 30));
 }
