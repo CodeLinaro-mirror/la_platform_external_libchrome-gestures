@@ -25,6 +25,9 @@ SplitCorrectingFilterInterpreter::SplitCorrectingFilterInterpreter(
 void SplitCorrectingFilterInterpreter::SyncInterpretImpl(
     HardwareState& hwstate,
     stime_t* timeout) {
+  const char name[] = "SplitCorrectingFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   // Update internal state
   if (enabled_.val_) {
     RemoveMissingUnmergedContacts(hwstate);
@@ -36,6 +39,7 @@ void SplitCorrectingFilterInterpreter::SyncInterpretImpl(
     // Use internal state to update hwstate
     UpdateHwState(hwstate);
   }
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

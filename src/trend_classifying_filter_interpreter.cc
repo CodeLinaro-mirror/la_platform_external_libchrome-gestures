@@ -45,8 +45,13 @@ TrendClassifyingFilterInterpreter::TrendClassifyingFilterInterpreter(
 
 void TrendClassifyingFilterInterpreter::SyncInterpretImpl(
     HardwareState& hwstate, stime_t* timeout) {
+  const char name[] = "TrendClassifyingFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if (trend_classifying_filter_enable_.val_)
     UpdateFingerState(hwstate);
+
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

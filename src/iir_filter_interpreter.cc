@@ -53,6 +53,9 @@ IirFilterInterpreter::IirFilterInterpreter(PropRegistry* prop_reg,
 
 void IirFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                              stime_t* timeout) {
+  const char name[] = "IirFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   // Delete old entries from map
   short dead_ids[histories_.size() + 1];
   size_t dead_ids_len = 0;
@@ -152,6 +155,7 @@ void IirFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
     fs = *hist->NextOut();
     hist->Increment();
   }
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

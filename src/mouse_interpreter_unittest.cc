@@ -14,10 +14,22 @@ namespace gestures {
 HardwareProperties make_hwprops_for_mouse(
     unsigned has_wheel, unsigned wheel_is_hi_res) {
   return {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // touch-specific properties
-    has_wheel,
-    wheel_is_hi_res,
-    0,  // is_haptic_pad
+    .right = 0,
+    .bottom = 0,
+    .res_x = 0,
+    .res_y = 0,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = 0,
+    .orientation_maximum = 0,
+    .max_finger_cnt = 0,
+    .max_touch_cnt = 0,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 0,
+    .has_wheel = has_wheel,
+    .wheel_is_hi_res = wheel_is_hi_res,
+    .is_haptic_pad = 0,
   };
 }
 
@@ -275,6 +287,96 @@ TEST(MouseInterpreterTest, WheelTickReportingLowResTest) {
   EXPECT_EQ(kGestureTypeMouseWheel, gs->type);
   EXPECT_EQ(120, gs->details.wheel.tick_120ths_dx);
   EXPECT_EQ(  0, gs->details.wheel.tick_120ths_dy);
+}
+
+TEST(MouseInterpreterTest, EmulateScrollWheelTest) {
+  HardwareProperties hwprops = make_hwprops_for_mouse(0, 0);
+  MouseInterpreter mi(nullptr, nullptr);
+  TestInterpreterWrapper wrapper(&mi, &hwprops);
+  Gesture* gs;
+
+  HardwareState hwstates[] = {
+    { 200000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
+    { 210000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 9, -7, 0, 0, 0, 0.0 },
+    { 220000, GESTURES_BUTTON_LEFT, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
+    { 230000, GESTURES_BUTTON_LEFT + GESTURES_BUTTON_RIGHT, 0, 0, nullptr,
+      0, 0, 0, 0, 0, 0.0 },
+    { 240000, GESTURES_BUTTON_LEFT + GESTURES_BUTTON_RIGHT, 0, 0, nullptr,
+      2, 2, 0, 0, 0, 0.0 },
+    { 250000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
+    { 260000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 9, -7, 0, 0, 0, 0.0 },
+    { 270000, GESTURES_BUTTON_MIDDLE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
+    { 280000, GESTURES_BUTTON_MIDDLE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
+    { 290000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 0, 0, -3, -360, 4, 0.0 },
+  };
+
+  mi.output_mouse_wheel_gestures_.val_ = true;
+
+  gs = wrapper.SyncInterpret(hwstates[0], nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  gs = wrapper.SyncInterpret(hwstates[1], nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+  EXPECT_EQ(9, gs->details.move.dx);
+  EXPECT_EQ(-7, gs->details.move.dy);
+  EXPECT_EQ(200000, gs->start_time);
+  EXPECT_EQ(210000, gs->end_time);
+
+  gs = wrapper.SyncInterpret(hwstates[2], nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+  EXPECT_EQ(1, gs->details.buttons.down);
+  EXPECT_EQ(0, gs->details.buttons.up);
+  EXPECT_EQ(210000, gs->start_time);
+  EXPECT_EQ(220000, gs->end_time);
+
+  gs = wrapper.SyncInterpret(hwstates[3], nullptr);
+  ASSERT_EQ(nullptr, gs);
+
+  // Temporarily adjust the threshold to force wheel_emulation_active_
+  auto thresh = mi.scroll_wheel_emulation_thresh_.val_;
+  mi.scroll_wheel_emulation_thresh_.val_ = 0.1;
+  EXPECT_FALSE(mi.wheel_emulation_active_);
+  gs = wrapper.SyncInterpret(hwstates[4], nullptr);
+  EXPECT_TRUE(mi.wheel_emulation_active_);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_EQ(200, gs->details.scroll.dx);
+  EXPECT_EQ(200, gs->details.scroll.dy);
+  EXPECT_EQ(240000, gs->start_time);
+  EXPECT_EQ(240000, gs->end_time);
+  mi.scroll_wheel_emulation_thresh_.val_ = thresh;
+
+  gs = wrapper.SyncInterpret(hwstates[5], nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+  EXPECT_EQ(0, gs->details.buttons.down);
+  EXPECT_EQ(5, gs->details.buttons.up);
+  EXPECT_EQ(240000, gs->start_time);
+  EXPECT_EQ(250000, gs->end_time);
+
+  gs = wrapper.SyncInterpret(hwstates[6], nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+  EXPECT_EQ(9, gs->details.move.dx);
+  EXPECT_EQ(-7, gs->details.move.dy);
+  EXPECT_EQ(250000, gs->start_time);
+  EXPECT_EQ(260000, gs->end_time);
+
+  gs = wrapper.SyncInterpret(hwstates[7], nullptr);
+  ASSERT_EQ(nullptr, gs);
+
+  gs = wrapper.SyncInterpret(hwstates[8], nullptr);
+  ASSERT_EQ(nullptr, gs);
+
+  gs = wrapper.SyncInterpret(hwstates[9], nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+  EXPECT_EQ(0, gs->details.buttons.down);
+  EXPECT_EQ(2, gs->details.buttons.up);
+  EXPECT_EQ(280000, gs->start_time);
+  EXPECT_EQ(290000, gs->end_time);
 }
 
 }  // namespace gestures

@@ -17,6 +17,8 @@ LoggingFilterInterpreter::LoggingFilterInterpreter(PropRegistry* prop_reg,
                                                    Interpreter* next,
                                                    Tracer* tracer)
     : FilterInterpreter(prop_reg, next, tracer, true),
+      event_debug_logging_enable_(prop_reg,
+          "Event Debug Logging Components Enable", 0),
       event_logging_enable_(prop_reg, "Event Logging Enable", false),
       logging_notify_(prop_reg, "Logging Notify", 0),
       logging_reset_(prop_reg, "Logging Reset", 0),
@@ -26,6 +28,8 @@ LoggingFilterInterpreter::LoggingFilterInterpreter(PropRegistry* prop_reg,
   InitName();
   if (prop_reg && log_.get())
     prop_reg->set_activity_log(log_.get());
+  event_debug_logging_enable_.SetDelegate(this);
+  IntWasWritten(&event_debug_logging_enable_);
   event_logging_enable_.SetDelegate(this);
   BoolWasWritten(&event_logging_enable_);
   logging_notify_.SetDelegate(this);
@@ -35,8 +39,12 @@ LoggingFilterInterpreter::LoggingFilterInterpreter(PropRegistry* prop_reg,
 void LoggingFilterInterpreter::IntWasWritten(IntProperty* prop) {
   if (prop == &logging_notify_)
     Dump(log_location_.val_);
-  if (prop == &logging_reset_)
+  else if (prop == &logging_reset_)
     Clear();
+  else if (prop == &event_debug_logging_enable_) {
+    Log("Event Debug Enabled 0x%X", event_debug_logging_enable_.val_);
+    SetEventDebugLoggingEnabled(event_debug_logging_enable_.val_);
+  }
 };
 
 void LoggingFilterInterpreter::BoolWasWritten(BoolProperty* prop) {

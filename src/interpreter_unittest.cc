@@ -67,6 +67,7 @@ class InterpreterTestInterpreter : public Interpreter {
 
   virtual void HandleTimerImpl(stime_t now, stime_t* timeout) {
     handle_timer_call_count_++;
+    Interpreter::HandleTimerImpl(now, timeout);
     ProduceGesture(return_value_);
   }
 };
@@ -80,16 +81,17 @@ TEST(InterpreterTest, SimpleTest) {
   MetricsProperties mprops(&prop_reg);
 
   HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    10,  // x res (pixels/mm)
-    10,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 10,
+    .res_y = 10,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = 1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   TestInterpreterWrapper wrapper(base_interpreter, &hwprops);
@@ -209,4 +211,97 @@ TEST(InterpreterTest, LoggingDisabledByDefault) {
   wrapper.SyncInterpret(hardware_state, &timeout);
   EXPECT_EQ(base_interpreter->log_->size(), 0);
 }
+
+TEST(InterpreterTest, EventDebugLoggingEnableTest) {
+  InterpreterResetLogTestInterpreter* base_interpreter =
+      new InterpreterResetLogTestInterpreter();
+
+  base_interpreter->SetEventDebugLoggingEnabled(0);
+  EXPECT_EQ(base_interpreter->GetEventDebugLoggingEnabled(), 0);
+
+  using EventDebug = ActivityLog::EventDebug;
+  base_interpreter->EventDebugLoggingEnable(EventDebug::HardwareState);
+  EXPECT_EQ(base_interpreter->GetEventDebugLoggingEnabled(),
+            1 << static_cast<int>(EventDebug::HardwareState));
+
+  base_interpreter->EventDebugLoggingDisable(EventDebug::HardwareState);
+  EXPECT_EQ(base_interpreter->GetEventDebugLoggingEnabled(), 0);
+}
+
+TEST(InterpreterTest, LogHardwareStateTest) {
+  PropRegistry prop_reg;
+  InterpreterResetLogTestInterpreter* base_interpreter =
+      new InterpreterResetLogTestInterpreter();
+
+  FingerState fs = { 0.0, 0.0, 0.0, 0.0, 9.0, 0.0, 3.0, 4.0, 22, 0 };
+  HardwareState hs = make_hwstate(1.0, 0, 1, 1, &fs);
+
+  base_interpreter->SetEventLoggingEnabled(false);
+  base_interpreter->SetEventDebugLoggingEnabled(0);
+
+  base_interpreter->LogHardwareStatePre(
+      "InterpreterTest_LogHardwareStateTest", hs);
+  EXPECT_EQ(base_interpreter->log_->size(), 0);
+
+  base_interpreter->LogHardwareStatePost(
+      "InterpreterTest_LogHardwareStateTest", hs);
+  EXPECT_EQ(base_interpreter->log_->size(), 0);
+
+  using EventDebug = ActivityLog::EventDebug;
+  base_interpreter->SetEventLoggingEnabled(true);
+  base_interpreter->EventDebugLoggingEnable(EventDebug::HardwareState);
+
+  base_interpreter->LogHardwareStatePre(
+      "InterpreterTest_LogHardwareStateTest", hs);
+  EXPECT_EQ(base_interpreter->log_->size(), 1);
+
+  base_interpreter->LogHardwareStatePost(
+      "InterpreterTest_LogHardwareStateTest", hs);
+  EXPECT_EQ(base_interpreter->log_->size(), 2);
+}
+
+TEST(InterpreterTest, LogGestureTest) {
+  PropRegistry prop_reg;
+  InterpreterResetLogTestInterpreter* base_interpreter =
+      new InterpreterResetLogTestInterpreter();
+
+  Gesture move(kGestureMove, 1.0, 2.0, 773, 4.0);
+
+  base_interpreter->SetEventLoggingEnabled(false);
+  base_interpreter->SetEventDebugLoggingEnabled(0);
+  base_interpreter->LogGestureConsume("InterpreterTest_LogGestureTest", move);
+  EXPECT_EQ(base_interpreter->log_->size(), 0);
+  base_interpreter->LogGestureProduce("InterpreterTest_LogGestureTest", move);
+  EXPECT_EQ(base_interpreter->log_->size(), 0);
+
+
+  using EventDebug = ActivityLog::EventDebug;
+  base_interpreter->SetEventLoggingEnabled(true);
+  base_interpreter->EventDebugLoggingEnable(EventDebug::Gesture);
+  base_interpreter->LogGestureConsume("InterpreterTest_LogGestureTest", move);
+  EXPECT_EQ(base_interpreter->log_->size(), 1);
+  base_interpreter->LogGestureProduce("InterpreterTest_LogGestureTest", move);
+  EXPECT_EQ(base_interpreter->log_->size(), 2);
+}
+
+TEST(InterpreterTest, LogHandleTimerTest) {
+  PropRegistry prop_reg;
+  InterpreterResetLogTestInterpreter* base_interpreter =
+      new InterpreterResetLogTestInterpreter();
+
+  using EventDebug = ActivityLog::EventDebug;
+  base_interpreter->SetEventLoggingEnabled(true);
+  base_interpreter->EventDebugLoggingEnable(EventDebug::HandleTimer);
+
+  stime_t timeout = 10;
+
+  base_interpreter->LogHandleTimerPre("InterpreterTest_LogHandleTimerTest",
+        0, &timeout);
+  EXPECT_EQ(base_interpreter->log_->size(), 1);
+
+  base_interpreter->LogHandleTimerPost("InterpreterTest_LogHandleTimerTest",
+        0, &timeout);
+  EXPECT_EQ(base_interpreter->log_->size(), 2);
+}
+
 }  // namespace gestures

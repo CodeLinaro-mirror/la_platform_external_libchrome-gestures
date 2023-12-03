@@ -18,16 +18,17 @@ TEST(MultitouchMouseInterpreterTest, SimpleTest) {
   Gesture* gs;
 
   HardwareProperties hwprops = {
-    133, 728, 10279, 5822,  // left, top, right, bottom
-    (10279.0 - 133.0) / 100.0,  // x res (pixels/mm)
-    (5822.0 - 728.0) / 60,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch
-    0, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .left = 133, .top = 728, .right = 10279, .bottom = 5822,
+    .res_x = (10279.0 - 133.0) / 100.0,
+    .res_y = (5822.0 - 728.0) / 60,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&mi, &hwprops);
 

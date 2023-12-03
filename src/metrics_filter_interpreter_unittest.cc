@@ -9,6 +9,22 @@
 
 namespace gestures {
 
+namespace {
+
+const HardwareProperties hwprops = {
+  .right = 100, .bottom = 100,
+  .res_x = 1, .res_y = 1,
+  .screen_x_dpi = 0, .screen_y_dpi = 0,
+  .orientation_minimum = -1,
+  .orientation_maximum = 2,
+  .max_finger_cnt = 5, .max_touch_cnt = 5,
+  .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 1,
+  .has_wheel = 0, .wheel_is_hi_res = 0,
+  .is_haptic_pad = 0,
+};
+
+}  // namespace
+
 class MetricsFilterInterpreterTest : public ::testing::Test {};
 
 class MetricsFilterInterpreterTestInterpreter : public Interpreter {
@@ -37,17 +53,6 @@ TEST(MetricsFilterInterpreterTest, SimpleTestTouchpad) {
   MetricsFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
                                        GESTURES_DEVCLASS_TOUCHPAD);
 
-  HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1, 1,  // x res (pixels/mm), y res (pixels/mm)
-    1, 1,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5, 5,  // max fingers, max_touch,
-    0, 0, 1,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
-  };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
   EXPECT_FALSE(base_interpreter->handle_timer_called_);
@@ -117,17 +122,6 @@ TEST(MetricsFilterInterpreterTest, SimpleTestMultitouchMouse) {
   MetricsFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
                                        GESTURES_DEVCLASS_MULTITOUCH_MOUSE);
 
-  HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1, 1,  // x res (pixels/mm), y res (pixels/mm)
-    1, 1,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5, 5,  // max fingers, max_touch,
-    0, 0, 1,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
-  };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
   EXPECT_FALSE(base_interpreter->handle_timer_called_);
@@ -197,17 +191,6 @@ TEST(MetricsFilterInterpreterTest, SimpleTestPointingStick) {
   MetricsFilterInterpreter interpreter(nullptr, base_interpreter, nullptr,
                                        GESTURES_DEVCLASS_POINTING_STICK);
 
-  HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1, 1,  // x res (pixels/mm), y res (pixels/mm)
-    1, 1,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5, 5,  // max fingers, max_touch,
-    0, 0, 1,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
-  };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
   EXPECT_FALSE(base_interpreter->handle_timer_called_);

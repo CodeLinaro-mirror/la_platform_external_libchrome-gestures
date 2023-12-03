@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstdio>
 #include <string>
 
 #include <gtest/gtest.h>
@@ -40,17 +41,28 @@ TEST(LoggingFilterInterpreterTest, LogResetHandlerTest) {
   interpreter.event_logging_enable_.SetValue(Json::Value(true));
   interpreter.BoolWasWritten(&interpreter.event_logging_enable_);
 
+  using EventDebug = ActivityLog::EventDebug;
+  EXPECT_EQ(interpreter.enable_event_debug_logging_, 0);
+  interpreter.event_debug_logging_enable_.SetValue(
+    Json::Value((1 << static_cast<int>(EventDebug::Gesture)) |
+                (1 << static_cast<int>(EventDebug::HardwareState))));
+  interpreter.IntWasWritten(&interpreter.event_debug_logging_enable_);
+  EXPECT_EQ(interpreter.enable_event_debug_logging_,
+            (1 << static_cast<int>(EventDebug::Gesture)) |
+            (1 << static_cast<int>(EventDebug::HardwareState)));
+
   HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    10,  // x res (pixels/mm)
-    10,  // y res (pixels/mm)
-    133, 133,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2, 5,  // max fingers, max_touch,
-    1, 0, 0,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 10,
+    .res_y = 10,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 1, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
@@ -76,8 +88,17 @@ TEST(LoggingFilterInterpreterTest, LogResetHandlerTest) {
   std::string str = interpreter.EncodeActivityLog();
   EXPECT_NE(0, str.size());
 
-  const char* filename = "testlog.dump";
-  interpreter.Dump(filename);
+  // std::tmpnam is considered unsafe because another process could create the
+  // temporary file after time std::tmpnam returns the name but before the code
+  // actually opens it. Because this is just test code, we don't need to be
+  // concerned about such security holes here.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+  const char* filename = std::tmpnam(nullptr);
+#pragma GCC diagnostic pop
+  ASSERT_NE(nullptr, filename) << "Couldn't generate a temporary file name";
+  interpreter.log_location_.SetValue(Json::Value(filename));
+  interpreter.IntWasWritten(&interpreter.logging_notify_);
 
   std::string read_str = "";
   bool couldRead = ReadFileToString(filename, &read_str);

@@ -21,7 +21,11 @@ BoxFilterInterpreter::BoxFilterInterpreter(PropRegistry* prop_reg,
 
 void BoxFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                              stime_t* timeout) {
+  const char name[] = "BoxFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if (box_width_.val_ == 0.0 && box_height_.val_ == 0.0) {
+    LogHardwareStatePost(name, hwstate);
     next_->SyncInterpret(hwstate, timeout);
     return;
   }
@@ -63,6 +67,7 @@ void BoxFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   for (size_t i = 0; i < hwstate.finger_cnt; i++)
     previous_output_[hwstate.fingers[i].tracking_id] = hwstate.fingers[i];
 
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

@@ -30,9 +30,11 @@ class LookaheadFilterInterpreter : public FilterInterpreter {
   FRIEND_TEST(LookaheadFilterInterpreterTest, QuickMoveTest);
   FRIEND_TEST(LookaheadFilterInterpreterTest, QuickSwipeTest);
   FRIEND_TEST(LookaheadFilterInterpreterTest, SemiMtNoTrackingIdAssignmentTest);
-  FRIEND_TEST(LookaheadFilterInterpreterTest, SimpleTest);
+  FRIEND_TEST(LookaheadFilterInterpreterParmTest, SimpleTest);
   FRIEND_TEST(LookaheadFilterInterpreterTest, SpuriousCallbackTest);
   FRIEND_TEST(LookaheadFilterInterpreterTest, VariableDelayTest);
+  FRIEND_TEST(LookaheadFilterInterpreterTest, AddFingerFlingTest);
+  FRIEND_TEST(LookaheadFilterInterpreterTest, ConsumeGestureTest);
 
  public:
   LookaheadFilterInterpreter(PropRegistry* prop_reg, Interpreter* next,

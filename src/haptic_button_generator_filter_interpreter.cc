@@ -57,8 +57,14 @@ void HapticButtonGeneratorFilterInterpreter::Initialize(
 
 void HapticButtonGeneratorFilterInterpreter::SyncInterpretImpl(
     HardwareState& hwstate, stime_t* timeout) {
+  const char name[] =
+      "HapticButtonGeneratorFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   HandleHardwareState(hwstate);
   stime_t next_timeout = NO_DEADLINE;
+
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, &next_timeout);
   UpdatePalmState(hwstate);
   *timeout = SetNextDeadlineAndReturnTimeoutVal(
@@ -162,6 +168,9 @@ void HapticButtonGeneratorFilterInterpreter::UpdatePalmState(
 
 void HapticButtonGeneratorFilterInterpreter::HandleTimerImpl(
     stime_t now, stime_t *timeout) {
+  const char name[] = "HapticButtonGeneratorFilterInterpreter::HandleTimerImpl";
+  LogHandleTimerPre(name, now, timeout);
+
   stime_t next_timeout;
   if (ShouldCallNextTimer(active_gesture_deadline_)) {
     next_timeout = NO_DEADLINE;
@@ -185,11 +194,16 @@ void HapticButtonGeneratorFilterInterpreter::HandleTimerImpl(
   *timeout = SetNextDeadlineAndReturnTimeoutVal(now,
                                                 active_gesture_deadline_,
                                                 next_timeout);
+  LogHandleTimerPost(name, now, timeout);
 }
 
 void HapticButtonGeneratorFilterInterpreter::ConsumeGesture(
     const Gesture& gesture) {
+  const char name[] = "HapticButtonGeneratorFilterInterpreter::ConsumeGesture";
+  LogGestureConsume(name, gesture);
+
   if (!enabled_.val_ || !is_haptic_pad_) {
+    LogGestureProduce(name, gesture);
     ProduceGesture(gesture);
     return;
   }
@@ -237,6 +251,7 @@ void HapticButtonGeneratorFilterInterpreter::ConsumeGesture(
     release_suppress_factor_ = fmax(release_suppress_factor_, 0.1);
   }
 
+  LogGestureProduce(name, gesture);
   ProduceGesture(gesture);
 }
 

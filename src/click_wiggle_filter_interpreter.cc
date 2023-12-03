@@ -31,6 +31,9 @@ ClickWiggleFilterInterpreter::ClickWiggleFilterInterpreter(
 
 void ClickWiggleFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                      stime_t* timeout) {
+  const char name[] = "ClickWiggleFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   UpdateClickWiggle(hwstate);
   SetWarpFlags(hwstate);
 
@@ -42,6 +45,7 @@ void ClickWiggleFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
     prev_pressure_[fs.tracking_id] = fs.pressure;
   }
 
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 
