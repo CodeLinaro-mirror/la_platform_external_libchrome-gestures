@@ -1729,6 +1729,10 @@ FingerMap ImmediateInterpreter::GetGesturingFingers(
   if (pointing_.size() <= kMaxGesturingFingers)
     return pointing_;
 
+  if (hwstate.finger_cnt <= 0) {
+    return {};
+  }
+
   const FingerState* fs[hwstate.finger_cnt];
   for (size_t i = 0; i < hwstate.finger_cnt; ++i)
     fs[i] = &hwstate.fingers[i];
