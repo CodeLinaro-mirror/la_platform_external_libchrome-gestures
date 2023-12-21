@@ -1501,7 +1501,7 @@ TEST(ImmediateInterpreterTest, GetGesturingFingersTest) {
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
   FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     {0, 0, 0, 0, 1, 0, 61, 70, 91, 0},
     {0, 0, 0, 0, 1, 0, 62, 65, 92, 0},
     {0, 0, 0, 0, 1, 0, 62, 69, 93, 0},
@@ -1560,6 +1560,27 @@ TEST(ImmediateInterpreterTest, GetGesturingFingersTest) {
   EXPECT_EQ(2, ids.size());
   EXPECT_TRUE(ids.end() != ids.find(91));
   EXPECT_TRUE(ids.end() != ids.find(92));
+}
+
+TEST(ImmediateInterpreterTest, GetGesturingFingersWithEmptyStateTest) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  HardwareProperties hwprops = {};
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+
+  FingerState finger_states[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
+    {0, 0, 0, 0, 1, 0, 61, 70, 91, 0},
+    {0, 0, 0, 0, 1, 0, 62, 65, 92, 0},
+    {0, 0, 0, 0, 1, 0, 62, 69, 93, 0},
+    {0, 0, 0, 0, 1, 0, 62, 61, 94, 0},
+    {0, 0, 0, 0, 1, 0, 63, 80, 95, 0},
+  };
+  HardwareState five_finger_hwstate =
+      make_hwstate(200000, 0, 5, 5, &finger_states[0]);
+  HardwareState no_finger_hwstate = make_hwstate(200001, 0, 0, 0, nullptr);
+  ii.ResetSameFingersState(five_finger_hwstate);
+  ii.UpdatePointingFingers(five_finger_hwstate);
+  EXPECT_TRUE(ii.GetGesturingFingers(no_finger_hwstate).empty());
 }
 
 namespace {
