@@ -344,6 +344,7 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   FRIEND_TEST(ImmediateInterpreterTest, ClickTest);
   FRIEND_TEST(ImmediateInterpreterTest, FlingDepthTest);
   FRIEND_TEST(ImmediateInterpreterTest, GetGesturingFingersTest);
+  FRIEND_TEST(ImmediateInterpreterTest, GetGesturingFingersWithEmptyStateTest);
   FRIEND_TEST(ImmediateInterpreterTest, PalmAtEdgeTest);
   FRIEND_TEST(ImmediateInterpreterTest, PalmReevaluateTest);
   FRIEND_TEST(ImmediateInterpreterTest, PalmTest);
