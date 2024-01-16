@@ -45,8 +45,13 @@ FingerMergeFilterInterpreter::FingerMergeFilterInterpreter(
 
 void FingerMergeFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                      stime_t* timeout) {
+  const char name[] = "FingerMergeFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if (finger_merge_filter_enable_.val_)
     UpdateFingerMergeState(hwstate);
+
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

@@ -25,7 +25,9 @@ namespace {
 
 // Helper to std::visit with lambdas.
 template <typename... V>
-struct Visitor : V... {};
+struct Visitor : V... {
+  using V::operator()...;
+};
 // Explicit deduction guide (not needed as of C++20).
 template <typename... V>
 Visitor(V...) -> Visitor<V...>;
@@ -334,11 +336,11 @@ bool ActivityReplay::ParseFingerState(const Json::Value& entry,
 }
 
 bool ActivityReplay::ParseTimerCallback(const Json::Value& entry) {
-  if (!entry.isMember(ActivityLog::kKeyTimerCallbackNow)) {
+  if (!entry.isMember(ActivityLog::kKeyTimerNow)) {
     Err("can't parse timercallback");
     return false;
   }
-  log_.LogTimerCallback(entry[ActivityLog::kKeyTimerCallbackNow].asDouble());
+  log_.LogTimerCallback(entry[ActivityLog::kKeyTimerNow].asDouble());
   return true;
 }
 
@@ -407,86 +409,86 @@ bool ActivityReplay::ParseGesture(const Json::Value& entry) {
 bool ActivityReplay::ParseGestureMove(const Json::Value& entry,
                                       Gesture* out_gs) {
   out_gs->type = kGestureTypeMove;
-  if (!entry.isMember(ActivityLog::kKeyGestureMoveDX)) {
+  if (!entry.isMember(ActivityLog::kKeyGestureDX)) {
     Err("can't parse move dx");
     return false;
   }
-  out_gs->details.move.dx = entry[ActivityLog::kKeyGestureMoveDX].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureMoveDY)) {
+  out_gs->details.move.dx = entry[ActivityLog::kKeyGestureDX].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureDY)) {
     Err("can't parse move dy");
     return false;
   }
-  out_gs->details.move.dy = entry[ActivityLog::kKeyGestureMoveDY].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureMoveOrdinalDX)) {
+  out_gs->details.move.dy = entry[ActivityLog::kKeyGestureDY].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureOrdinalDX)) {
     Err("can't parse move ordinal_dx");
     return false;
   }
   out_gs->details.move.ordinal_dx =
-      entry[ActivityLog::kKeyGestureMoveOrdinalDX].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureMoveOrdinalDY)) {
+      entry[ActivityLog::kKeyGestureOrdinalDX].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureOrdinalDY)) {
     Err("can't parse move ordinal_dy");
     return false;
   }
   out_gs->details.move.ordinal_dy =
-      entry[ActivityLog::kKeyGestureMoveOrdinalDY].asDouble();
+      entry[ActivityLog::kKeyGestureOrdinalDY].asDouble();
   return true;
 }
 
 bool ActivityReplay::ParseGestureScroll(const Json::Value& entry,
                                         Gesture* out_gs) {
   out_gs->type = kGestureTypeScroll;
-  if (!entry.isMember(ActivityLog::kKeyGestureScrollDX)) {
+  if (!entry.isMember(ActivityLog::kKeyGestureDX)) {
     Err("can't parse scroll dx");
     return false;
   }
   out_gs->details.scroll.dx =
-      entry[ActivityLog::kKeyGestureScrollDX].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureScrollDY)) {
+      entry[ActivityLog::kKeyGestureDX].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureDY)) {
     Err("can't parse scroll dy");
     return false;
   }
   out_gs->details.scroll.dy =
-      entry[ActivityLog::kKeyGestureScrollDY].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureScrollOrdinalDX)) {
+      entry[ActivityLog::kKeyGestureDY].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureOrdinalDX)) {
     Err("can't parse scroll ordinal_dx");
     return false;
   }
   out_gs->details.scroll.ordinal_dx =
-      entry[ActivityLog::kKeyGestureScrollOrdinalDX].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureScrollOrdinalDY)) {
+      entry[ActivityLog::kKeyGestureOrdinalDX].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureOrdinalDY)) {
     Err("can't parse scroll ordinal_dy");
     return false;
   }
   out_gs->details.scroll.ordinal_dy =
-      entry[ActivityLog::kKeyGestureScrollOrdinalDY].asDouble();
+      entry[ActivityLog::kKeyGestureOrdinalDY].asDouble();
   return true;
 }
 
 bool ActivityReplay::ParseGestureSwipe(const Json::Value& entry,
                                        Gesture* out_gs) {
   out_gs->type = kGestureTypeSwipe;
-  if (!entry.isMember(ActivityLog::kKeyGestureSwipeDX)) {
+  if (!entry.isMember(ActivityLog::kKeyGestureDX)) {
     Err("can't parse swipe dx");
     return false;
   }
-  out_gs->details.swipe.dx = entry[ActivityLog::kKeyGestureSwipeDX].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureSwipeDY)) {
+  out_gs->details.swipe.dx = entry[ActivityLog::kKeyGestureDX].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureDY)) {
     Err("can't parse swipe dy");
     return false;
   }
-  out_gs->details.swipe.dy = entry[ActivityLog::kKeyGestureSwipeDY].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureSwipeOrdinalDX)) {
+  out_gs->details.swipe.dy = entry[ActivityLog::kKeyGestureDY].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureOrdinalDX)) {
     Err("can't parse swipe ordinal_dx");
     return false;
   }
   out_gs->details.swipe.ordinal_dx =
-      entry[ActivityLog::kKeyGestureSwipeOrdinalDX].asDouble();
-  if (!entry.isMember(ActivityLog::kKeyGestureSwipeOrdinalDY)) {
+      entry[ActivityLog::kKeyGestureOrdinalDX].asDouble();
+  if (!entry.isMember(ActivityLog::kKeyGestureOrdinalDY)) {
     Err("can't parse swipe ordinal_dy");
     return false;
   }
   out_gs->details.swipe.ordinal_dy =
-      entry[ActivityLog::kKeyGestureSwipeOrdinalDY].asDouble();
+      entry[ActivityLog::kKeyGestureOrdinalDY].asDouble();
   return true;
 }
 
@@ -736,12 +738,12 @@ bool ActivityReplay::ReplayPropChange(
   for (::set<Property*>::iterator it = props.begin(), e = props.end(); it != e;
        ++it) {
     prop = *it;
-    if (strcmp(prop->name(), entry.name) == 0)
+    if (strcmp(prop->name(), entry.name.c_str()) == 0)
       break;
     prop = nullptr;
   }
   if (!prop) {
-    Err("Unable to find prop %s to set.", entry.name);
+    Err("Unable to find prop %s to set.", entry.name.c_str());
     return false;
   }
   bool valid_property = true;

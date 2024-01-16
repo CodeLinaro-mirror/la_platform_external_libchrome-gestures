@@ -59,15 +59,15 @@ TEST(StationaryWiggleFilterInterpreterTest, SimpleTest) {
   interpreter.enabled_.val_ = true;
 
   HardwareProperties hwprops = {
-    0, 0, 100, 100,  // left, top, right, bottom
-    1, 1,  // x res (pixels/mm), y res (pixels/mm)
-    1, 1,  // scrn DPI X, Y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5, 5,  // max fingers, max_touch,
-    0, 0, 1,  // t5r2, semi, button pad
-    0, 0,  // has wheel, vertical wheel is high resolution
-    0,  // haptic pad
+    .right = 100, .bottom = 100,
+    .res_x = 1, .res_y = 1,
+    .screen_x_dpi = 0, .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 5, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 1,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 

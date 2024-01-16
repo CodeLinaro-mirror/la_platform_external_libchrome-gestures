@@ -55,24 +55,22 @@ TEST(ClickWiggleFilterInterpreterTest, WiggleSuppressTest) {
       new ClickWiggleFilterInterpreterTestInterpreter;
   ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    92,  // right edge
-    61,  // bottom edge
-    1,  // x pixels/TP width
-    1,  // y pixels/TP height
-    26,  // x screen DPI
-    26,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    0,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 92,
+    .bottom = 61,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 0,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
@@ -131,24 +129,22 @@ TEST(ClickWiggleFilterInterpreterTest, OneFingerClickSuppressTest) {
       new ClickWiggleFilterInterpreterTestInterpreter;
   ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    92,  // right edge
-    61,  // bottom edge
-    1,  // x pixels/TP width
-    1,  // y pixels/TP height
-    26,  // x screen DPI
-    26,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    0,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 92,
+    .bottom = 61,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 0,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
 
@@ -202,24 +198,22 @@ TEST(ClickWiggleFilterInterpreter, ThumbClickTest) {
       new ClickWiggleFilterInterpreterTestInterpreter;
   ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    92,  // right edge
-    61,  // bottom edge
-    1,  // x pixels/TP width
-    1,  // y pixels/TP height
-    26,  // x screen DPI
-    26,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    0,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 92,
+    .bottom = 61,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 0,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
@@ -258,24 +252,22 @@ TEST(ClickWiggleFilterInterpreter, TimeBackwardsTest) {
       new ClickWiggleFilterInterpreterTestInterpreter;
   ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    92,  // right edge
-    61,  // bottom edge
-    1,  // x pixels/TP width
-    1,  // y pixels/TP height
-    26,  // x screen DPI
-    26,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    0,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 92,
+    .bottom = 61,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 0,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);
@@ -326,24 +318,22 @@ TEST(ClickWiggleFilterInterpreter, ThumbClickWiggleWithPalmTest) {
       new ClickWiggleFilterInterpreterTestInterpreter;
   ClickWiggleFilterInterpreter interpreter(nullptr, base_interpreter, nullptr);
   HardwareProperties hwprops = {
-    0.000000,  // left edge
-    0.000000,  // top edge
-    106.666672,  // right edge
-    68.000000,  // bottom edge
-    1.000000,  // x pixels/TP width
-    1.000000,  // y pixels/TP height
-    25.400000,  // x screen DPI
-    25.400000,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1.000000,
+    .res_y = 1.000000,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   TestInterpreterWrapper wrapper(&interpreter, &hwprops);

@@ -38,6 +38,11 @@ class Interpreter {
   FRIEND_TEST(InterpreterTest, ResetLogTest);
   FRIEND_TEST(InterpreterTest, LoggingDisabledByDefault);
   FRIEND_TEST(LoggingFilterInterpreterTest, LogResetHandlerTest);
+  FRIEND_TEST(InterpreterTest, EventDebugLoggingEnableTest);
+  FRIEND_TEST(InterpreterTest, LogHardwareStateTest);
+  FRIEND_TEST(InterpreterTest, LogGestureTest);
+  FRIEND_TEST(InterpreterTest, LogHandleTimerTest);
+  FRIEND_TEST(TimestampFilterInterpreterParmTest, TimestampDebugLoggingTest);
  public:
   Interpreter(PropRegistry* prop_reg, Tracer* tracer, bool force_log_creation);
   virtual ~Interpreter();
@@ -90,12 +95,32 @@ class Interpreter {
                                  stime_t* timeout) {}
   virtual void HandleTimerImpl(stime_t now, stime_t* timeout) {}
 
+  bool EventLoggingIsEnabled();
   void SetEventLoggingEnabled(bool enabled);
+
+  bool EventDebugLoggingIsEnabled(ActivityLog::EventDebug event);
+  uint32_t GetEventDebugLoggingEnabled();
+  void SetEventDebugLoggingEnabled(uint32_t enabled);
+  void EventDebugLoggingDisable(ActivityLog::EventDebug event);
+  void EventDebugLoggingEnable(ActivityLog::EventDebug event);
+
+  void LogGestureConsume(const std::string& name, const Gesture& gesture);
+  void LogGestureProduce(const std::string& name, const Gesture& gesture);
+  void LogHardwareStatePre(const std::string& name,
+                           const HardwareState& hwstate);
+  void LogHardwareStatePost(const std::string& name,
+                            const HardwareState& hwstate);
+  void LogHandleTimerPre(const std::string& name,
+                         stime_t now, const stime_t* timeout);
+  void LogHandleTimerPost(const std::string& name,
+                          stime_t now, const stime_t* timeout);
 
  private:
   const char* name_;
   Tracer* tracer_;
+
   bool enable_event_logging_ = false;
+  uint32_t enable_event_debug_logging_ = 0;
 
   void LogOutputs(const Gesture* result, stime_t* timeout, const char* action);
 };

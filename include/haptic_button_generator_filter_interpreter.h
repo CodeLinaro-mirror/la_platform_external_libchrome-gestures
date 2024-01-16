@@ -23,6 +23,8 @@ class HapticButtonGeneratorFilterInterpreter : public FilterInterpreter {
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, SimpleTest);
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, NotHapticTest);
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest,
+              NotHapticConsumeGestureTest);
+  FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest,
               GesturePreventsButtonDownTest);
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, DynamicThresholdTest);
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, PalmTest);

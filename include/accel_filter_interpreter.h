@@ -30,10 +30,15 @@ class AccelFilterInterpreter : public FilterInterpreter {
   FRIEND_TEST(AccelFilterInterpreterTest, NotSmoothingTest);
   FRIEND_TEST(AccelFilterInterpreterTest, SmoothingTest);
   FRIEND_TEST(AccelFilterInterpreterTest, TinyMoveTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, BadGestureTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, BadDeltaTTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, BadSpeedFlingTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, BadSpeedMoveTest);
   FRIEND_TEST(AccelFilterInterpreterTest, UnacceleratedMouseTest);
   FRIEND_TEST(AccelFilterInterpreterTest, UnacceleratedTouchpadTest);
   FRIEND_TEST(AccelFilterInterpreterTest, TouchpadPointAccelCurveTest);
   FRIEND_TEST(AccelFilterInterpreterTest, TouchpadScrollAccelCurveTest);
+  FRIEND_TEST(AccelFilterInterpreterTest, AccelDebugDataTest);
  public:
   // Takes ownership of |next|:
   AccelFilterInterpreter(PropRegistry* prop_reg, Interpreter* next,
@@ -116,16 +121,23 @@ class AccelFilterInterpreter : public FilterInterpreter {
   // means of the smooth_accel_ Property.
   //    in:     gs, provided Gesture
   //    inout:  speed, actual speed on input and smoothed on output
-  void smooth_speed(Gesture& gs, float& speed);
+  void smooth_speed(const Gesture& gs, float& speed);
 
   // Map a speed on a given CurveSegment array to a ratio multiplier.
   //    in:     segs, address of CurveSegment array being used
   //    in:     max_segs, number of array entries in segs
   //    in:     speed, actual distance/delta time value
   //    ret:    determined gain to apply
-  float RatioFromAccelCurve(CurveSegment const * segs,
-                            size_t const max_segs,
-                            float const speed);
+  float RatioFromAccelCurve(const CurveSegment* segs,
+                            const size_t max_segs,
+                            const float speed);
+
+  template<typename T>
+  void LogDebugData(const T& debug_data) {
+    using EventDebug = ActivityLog::EventDebug;
+    if (EventDebugLoggingIsEnabled(EventDebug::Accel))
+      log_->LogDebugData(debug_data);
+  }
 
   //**************************************************************************
 

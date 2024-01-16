@@ -63,6 +63,9 @@ MouseInterpreter::MouseInterpreter(PropRegistry* prop_reg, Tracer* tracer)
 
 void MouseInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                          stime_t* timeout) {
+  const char name[] = "MouseInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if(!EmulateScrollWheel(hwstate)) {
     // Interpret mouse events in the order of pointer moves, scroll wheels and
     // button clicks.
@@ -78,6 +81,8 @@ void MouseInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   // Pass max_finger_cnt = 0 to DeepCopy() since we don't care fingers and
   // did not allocate any space for fingers.
   prev_state_.DeepCopy(hwstate, 0);
+
+  LogHardwareStatePost(name, hwstate);
 }
 
 double MouseInterpreter::ComputeScrollAccelFactor(double input_speed) {
@@ -96,9 +101,10 @@ double MouseInterpreter::ComputeScrollAccelFactor(double input_speed) {
 }
 
 bool MouseInterpreter::EmulateScrollWheel(const HardwareState& hwstate) {
+  const char name[] = "MouseInterpreter::EmulateScrollWheel";
+
   if (!force_scroll_wheel_emulation_.val_ && hwprops_->has_wheel)
     return false;
-
   bool down = hwstate.buttons_down & GESTURES_BUTTON_MIDDLE ||
               (hwstate.buttons_down & GESTURES_BUTTON_LEFT &&
                hwstate.buttons_down & GESTURES_BUTTON_RIGHT);
@@ -117,12 +123,14 @@ bool MouseInterpreter::EmulateScrollWheel(const HardwareState& hwstate) {
 
   // Send button event if button has been released without scrolling.
   if (falling && !wheel_emulation_active_) {
-    ProduceGesture(Gesture(kGestureButtonsChange,
+    auto button_change = Gesture(kGestureButtonsChange,
                            prev_state_.timestamp,
                            hwstate.timestamp,
                            prev_state_.buttons_down,
                            prev_state_.buttons_down,
-                           false)); // is_tap
+                           false); // is_tap
+    LogGestureProduce(name, button_change);
+    ProduceGesture(button_change);
   }
 
   if (down) {
@@ -144,8 +152,11 @@ bool MouseInterpreter::EmulateScrollWheel(const HardwareState& hwstate) {
     if (wheel_emulation_active_) {
       double scroll_x = hwstate.rel_x * scroll_wheel_emulation_speed_.val_;
       double scroll_y = hwstate.rel_y * scroll_wheel_emulation_speed_.val_;
-      ProduceGesture(Gesture(kGestureScroll, hwstate.timestamp,
-                             hwstate.timestamp, scroll_x, scroll_y));
+
+      auto scroll = Gesture(kGestureScroll, hwstate.timestamp,
+                            hwstate.timestamp, scroll_x, scroll_y);
+      LogGestureProduce(name, scroll);
+      ProduceGesture(scroll);
     }
     return true;
   }
@@ -155,6 +166,8 @@ bool MouseInterpreter::EmulateScrollWheel(const HardwareState& hwstate) {
 
 void MouseInterpreter::InterpretScrollWheelEvent(const HardwareState& hwstate,
                                                  bool is_vertical) {
+  const char name[] = "MouseInterpreter::InterpretScrollWheelEvent";
+
   const float scroll_wheel_event_time_delta_min = 0.008;
   bool use_high_resolution =
       is_vertical && hwprops_->wheel_is_hi_res
@@ -200,9 +213,7 @@ void MouseInterpreter::InterpretScrollWheelEvent(const HardwareState& hwstate,
 
     // When scroll acceleration is off, the scroll factor does not relate to
     // scroll velocity. It's simply a constant multiplier to the wheel value.
-    // TODO(zhangwenyu): This is gated behind a flag in settings and final
-    // values will be updated after some experimentations.
-    const double unaccel_scroll_factors[] = { 8.0, 20.0, 36.0, 64.0, 108.0 };
+    const double unaccel_scroll_factors[] = { 20.0, 36.0, 72.0, 112.0, 164.0 };
 
     float velocity = current_wheel_value / dt;
     float offset = current_wheel_value * (
@@ -218,11 +229,15 @@ void MouseInterpreter::InterpretScrollWheelEvent(const HardwareState& hwstate,
         offset = -offset;
         ticks = -ticks;
       }
-      ProduceGesture(
-          CreateWheelGesture(start_time, end_time, 0, offset, 0, ticks));
+      auto scroll_wheel = CreateWheelGesture(start_time, end_time,
+                                             0, offset, 0, ticks);
+      LogGestureProduce(name, scroll_wheel);
+      ProduceGesture(scroll_wheel);
     } else {
-      ProduceGesture(
-          CreateWheelGesture(start_time, end_time, offset, 0, ticks, 0));
+      auto scroll_wheel = CreateWheelGesture(start_time, end_time,
+                                             offset, 0, ticks, 0);
+      LogGestureProduce(name, scroll_wheel);
+      ProduceGesture(scroll_wheel);
     }
   }
 }
@@ -240,12 +255,16 @@ Gesture MouseInterpreter::CreateWheelGesture(
 
 void MouseInterpreter::InterpretMouseButtonEvent(
     const HardwareState& prev_state, const HardwareState& hwstate) {
+  const char name[] = "MouseInterpreter::InterpretMouseButtonEvent";
+
   const unsigned buttons[] = {
     GESTURES_BUTTON_LEFT,
     GESTURES_BUTTON_MIDDLE,
     GESTURES_BUTTON_RIGHT,
     GESTURES_BUTTON_BACK,
-    GESTURES_BUTTON_FORWARD
+    GESTURES_BUTTON_FORWARD,
+    GESTURES_BUTTON_SIDE,
+    GESTURES_BUTTON_EXTRA,
   };
   unsigned down = 0, up = 0;
 
@@ -259,24 +278,30 @@ void MouseInterpreter::InterpretMouseButtonEvent(
   }
 
   if (down || up) {
-    ProduceGesture(Gesture(kGestureButtonsChange,
-                           prev_state.timestamp,
-                           hwstate.timestamp,
-                           down,
-                           up,
-                           false)); // is_tap
+    auto button_change = Gesture(kGestureButtonsChange,
+                                 prev_state.timestamp,
+                                 hwstate.timestamp,
+                                 down,
+                                 up,
+                                 false); // is_tap
+    LogGestureProduce(name, button_change);
+    ProduceGesture(button_change);
   }
 }
 
 void MouseInterpreter::InterpretMouseMotionEvent(
     const HardwareState& prev_state,
     const HardwareState& hwstate) {
+  const char name[] = "MouseInterpreter::InterpretMouseMotionEvent";
+
   if (hwstate.rel_x || hwstate.rel_y) {
-    ProduceGesture(Gesture(kGestureMove,
-                           prev_state.timestamp,
-                           hwstate.timestamp,
-                           hwstate.rel_x,
-                           hwstate.rel_y));
+    auto move = Gesture(kGestureMove,
+                        prev_state.timestamp,
+                        hwstate.timestamp,
+                        hwstate.rel_x,
+                        hwstate.rel_y);
+    LogGestureProduce(name, move);
+    ProduceGesture(move);
   }
 }
 

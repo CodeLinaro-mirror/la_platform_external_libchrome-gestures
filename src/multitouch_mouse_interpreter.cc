@@ -62,7 +62,10 @@ void MultitouchMouseInterpreter::ProduceGesture(const Gesture& gesture) {
 
 void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState& hwstate,
                                                        stime_t* timeout) {
-  if (!state_buffer_.Get(0)->fingers) {
+  const char name[] = "MultitouchMouseInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
+  if (!state_buffer_.Get(0).fingers) {
     Err("Must call SetHardwareProperties() before interpreting anything.");
     return;
   }
@@ -107,15 +110,15 @@ void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   // TODO(clchiou): Remove palm and thumb.
   gs_fingers_.clear();
   size_t num_fingers = std::min(kMaxGesturingFingers,
-                                (size_t)state_buffer_.Get(0)->finger_cnt);
-  const FingerState* fs = state_buffer_.Get(0)->fingers;
+                                (size_t)state_buffer_.Get(0).finger_cnt);
+  const FingerState* fs = state_buffer_.Get(0).fingers;
   for (size_t i = 0; i < num_fingers; i++)
     gs_fingers_.insert(fs[i].tracking_id);
 
   InterpretScrollWheelEvent(hwstate, true);
   InterpretScrollWheelEvent(hwstate, false);
-  InterpretMouseButtonEvent(prev_state_, *state_buffer_.Get(0));
-  InterpretMouseMotionEvent(prev_state_, *state_buffer_.Get(0));
+  InterpretMouseButtonEvent(prev_state_, state_buffer_.Get(0));
+  InterpretMouseMotionEvent(prev_state_, state_buffer_.Get(0));
 
   bool should_interpret_multitouch = true;
 
@@ -124,25 +127,23 @@ void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   // was rel data, and the previous finger data exactly matches this finger
   // data, we remove the last hardware state from our buffer. This is okay
   // because we already processed the rel data.
-  if (state_buffer_.Get(0) && state_buffer_.Get(1)) {
-    HardwareState* prev_hs = state_buffer_.Get(1);
-    HardwareState* cur_hs = state_buffer_.Get(0);
-    bool cur_has_rel = cur_hs->rel_x || cur_hs->rel_y ||
-        cur_hs->rel_wheel || cur_hs->rel_hwheel;
-    bool different_fingers = prev_hs->touch_cnt != cur_hs->touch_cnt ||
-        prev_hs->finger_cnt != cur_hs->finger_cnt;
-    if (!different_fingers && cur_has_rel) {
-      // Compare actual fingers themselves
-      for (size_t i = 0; i < cur_hs->finger_cnt; i++) {
-        if (!cur_hs->fingers[i].NonFlagsEquals(prev_hs->fingers[i])) {
-          different_fingers = true;
-          break;
-        }
+  const HardwareState& prev_hs = state_buffer_.Get(1);
+  const HardwareState& cur_hs = state_buffer_.Get(0);
+  bool cur_has_rel = cur_hs.rel_x || cur_hs.rel_y ||
+      cur_hs.rel_wheel || cur_hs.rel_hwheel;
+  bool different_fingers = prev_hs.touch_cnt != cur_hs.touch_cnt ||
+      prev_hs.finger_cnt != cur_hs.finger_cnt;
+  if (!different_fingers && cur_has_rel) {
+    // Compare actual fingers themselves
+    for (size_t i = 0; i < cur_hs.finger_cnt; i++) {
+      if (!cur_hs.fingers[i].NonFlagsEquals(prev_hs.fingers[i])) {
+        different_fingers = true;
+        break;
       }
-      if (!different_fingers) {
-        state_buffer_.PopState();
-        should_interpret_multitouch = false;
-      }
+    }
+    if (!different_fingers) {
+      state_buffer_.PopState();
+      should_interpret_multitouch = false;
     }
   }
 
@@ -156,6 +157,8 @@ void MultitouchMouseInterpreter::SyncInterpretImpl(HardwareState& hwstate,
 
   prev_gs_fingers_ = gs_fingers_;
   prev_gesture_type_ = current_gesture_type_;
+
+  LogHardwareStatePost(name, hwstate);
 }
 
 void MultitouchMouseInterpreter::Initialize(
@@ -168,10 +171,12 @@ void MultitouchMouseInterpreter::Initialize(
 }
 
 void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
+  const char name[] = "MultitouchMouseInterpreter::InterpretMultitouchEvent";
+
   Gesture result;
 
   // If a gesturing finger just left, do fling/lift
-  if (should_fling_ && AnyGesturingFingerLeft(*state_buffer_.Get(0),
+  if (should_fling_ && AnyGesturingFingerLeft(state_buffer_.Get(0),
                                               prev_gs_fingers_)) {
     current_gesture_type_ = kGestureTypeFling;
     scroll_manager_.FillResultFling(state_buffer_, scroll_buffer_, &result);
@@ -207,7 +212,7 @@ void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
       should_fling_ = true;
 
     bool hold_off_scroll = false;
-    const HardwareState& state = *state_buffer_.Get(0);
+    const HardwareState& state = state_buffer_.Get(0);
     // Check small finger movements when button is down
     if (state.buttons_down) {
       float dist_sq, dt;
@@ -236,8 +241,10 @@ void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
   }
   scroll_manager_.UpdateScrollEventBuffer(current_gesture_type_,
                                           &scroll_buffer_);
-  if (result.type != kGestureTypeNull)
+  if (result.type != kGestureTypeNull) {
+    LogGestureProduce(name, result);
     ProduceGesture(result);
+  }
   prev_result_ = result;
 }
 

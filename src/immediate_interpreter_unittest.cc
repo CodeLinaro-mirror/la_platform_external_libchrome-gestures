@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <stdio.h>
+#include <string>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -61,24 +62,22 @@ TEST(ImmediateInterpreterTest, MoveDownTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
 
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    500,  // pixels/TP width
-    500,  // pixels/TP height
-    96,  // screen DPI x
-    96,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 500,
+    .res_y = 500,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -125,24 +124,22 @@ TEST(ImmediateInterpreterTest, MoveUpWithRestingThumbTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
 
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    50,  // pixels/TP width
-    50,  // pixels/TP height
-    96,  // screen DPI x
-    96,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 50,
+    .res_y = 50,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -191,24 +188,22 @@ TEST(ImmediateInterpreterTest, MoveUpWithRestingThumbTest) {
 TEST(ImmediateInterpreterTest, SemiMtScrollUpWithRestingThumbTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    20,  // pixels/TP width
-    20,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    3,  // max touch
-    0,  // tripletap
-    1,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 20,
+    .res_y = 20,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 3,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 1,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -252,24 +247,22 @@ TEST(ImmediateInterpreterTest, SemiMtScrollUpWithRestingThumbTest) {
 void ScrollUpTest(float pressure_a, float pressure_b) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    20,  // pixels/TP width
-    20,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 20,
+    .res_y = 20,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -326,24 +319,22 @@ TEST(ImmediateInterpreterTest, FatFingerScrollUpTest) {
 TEST(ImmediateInterpreterTest, ScrollThenFalseTapTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    20,  // pixels/TP width
-    20,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 20,
+    .res_y = 20,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -397,24 +388,22 @@ TEST(ImmediateInterpreterTest, ScrollThenFalseTapTest) {
 TEST(ImmediateInterpreterTest, FlingTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -511,24 +500,22 @@ TEST(ImmediateInterpreterTest, FlingTest) {
 TEST(ImmediateInterpreterTest, DelayedStartScrollTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -572,24 +559,22 @@ TEST(ImmediateInterpreterTest, DelayedStartScrollTest) {
 TEST(ImmediateInterpreterTest, ScrollReevaluateTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState finger_states[] = {
@@ -647,24 +632,22 @@ TEST(ImmediateInterpreterTest, ScrollReevaluateTest) {
 TEST(ImmediateInterpreterTest, OneFingerThenTwoDelayedStartScrollTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState finger_states[] = {
@@ -729,24 +712,22 @@ struct OneFatFingerScrollTestInputs {
 TEST(ImmediateInterpreterTest, OneFatFingerScrollTest) {
   std::unique_ptr<ImmediateInterpreter> ii;
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    106.666672,  // right edge
-    68.000000,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    25.4,  // screen DPI x
-    25.4,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
   TestInterpreterWrapper wrapper(ii.get(), &hwprops);
   // 4 runs that were failing, but now pass:
@@ -899,24 +880,22 @@ struct NoLiftoffScrollTestInputs {
 TEST(ImmediateInterpreterTest, NoLiftoffScrollTest) {
   std::unique_ptr<ImmediateInterpreter> ii;
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    106.666672,  // right edge
-    68.000000,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    25.4,  // screen DPI x
-    25.4,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
   TestInterpreterWrapper wrapper(ii.get(), &hwprops);
 
@@ -1037,24 +1016,22 @@ struct HardwareStateAnScrollExpectations {
 TEST(ImmediateInterpreterTest, DiagonalSnapTest) {
   std::unique_ptr<ImmediateInterpreter> ii;
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(ii.get(), &hwprops);
 
@@ -1151,24 +1128,22 @@ TEST(ImmediateInterpreterTest, DiagonalSnapTest) {
 TEST(ImmediateInterpreterTest, RestingFingerTest) {
   std::unique_ptr<ImmediateInterpreter> ii;
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(ii.get(), &hwprops);
 
@@ -1221,24 +1196,22 @@ TEST(ImmediateInterpreterTest, RestingFingerTest) {
 TEST(ImmediateInterpreterTest, ThumbRetainTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    1,  // x screen DPI
-    1,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState finger_states[] = {
@@ -1275,24 +1248,22 @@ TEST(ImmediateInterpreterTest, ThumbRetainTest) {
 TEST(ImmediateInterpreterTest, ThumbRetainReevaluateTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    1,  // x screen DPI
-    1,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState finger_states[] = {
@@ -1326,24 +1297,22 @@ TEST(ImmediateInterpreterTest, ThumbRetainReevaluateTest) {
 TEST(ImmediateInterpreterTest, SetHardwarePropertiesTwiceTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    500,  // pixels/TP width
-    500,  // pixels/TP height
-    96,  // screen DPI x
-    96,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 500,
+    .res_y = 500,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   hwprops.max_finger_cnt = 3;
   TestInterpreterWrapper wrapper(&ii, &hwprops);
@@ -1368,24 +1337,22 @@ TEST(ImmediateInterpreterTest, SetHardwarePropertiesTwiceTest) {
 TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // x pixels/TP width
-    1,  // y pixels/TP height
-    1,  // x screen DPI
-    1,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -1453,24 +1420,22 @@ TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest) {
 TEST(ImmediateInterpreterTest, PressureChangeMoveTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    500,  // x pixels/TP width
-    500,  // y pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 500,
+    .res_y = 500,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
@@ -1516,29 +1481,27 @@ TEST(ImmediateInterpreterTest, PressureChangeMoveTest) {
 TEST(ImmediateInterpreterTest, GetGesturingFingersTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    500,  // pixels/TP width
-    500,  // pixels/TP height
-    96,  // screen DPI x
-    96,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 500,
+    .res_y = 500,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
   FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     {0, 0, 0, 0, 1, 0, 61, 70, 91, 0},
     {0, 0, 0, 0, 1, 0, 62, 65, 92, 0},
     {0, 0, 0, 0, 1, 0, 62, 69, 93, 0},
@@ -1599,6 +1562,27 @@ TEST(ImmediateInterpreterTest, GetGesturingFingersTest) {
   EXPECT_TRUE(ids.end() != ids.find(92));
 }
 
+TEST(ImmediateInterpreterTest, GetGesturingFingersWithEmptyStateTest) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  HardwareProperties hwprops = {};
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+
+  FingerState finger_states[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
+    {0, 0, 0, 0, 1, 0, 61, 70, 91, 0},
+    {0, 0, 0, 0, 1, 0, 62, 65, 92, 0},
+    {0, 0, 0, 0, 1, 0, 62, 69, 93, 0},
+    {0, 0, 0, 0, 1, 0, 62, 61, 94, 0},
+    {0, 0, 0, 0, 1, 0, 63, 80, 95, 0},
+  };
+  HardwareState five_finger_hwstate =
+      make_hwstate(200000, 0, 5, 5, &finger_states[0]);
+  HardwareState no_finger_hwstate = make_hwstate(200001, 0, 0, 0, nullptr);
+  ii.ResetSameFingersState(five_finger_hwstate);
+  ii.UpdatePointingFingers(five_finger_hwstate);
+  EXPECT_TRUE(ii.GetGesturingFingers(no_finger_hwstate).empty());
+}
+
 namespace {
 std::set<short> MkSet() {
   return std::set<short>();
@@ -1625,6 +1609,8 @@ std::set<short> MkSet(short id1, short id2, short id3) {
 
 TEST(ImmediateInterpreterTest, TapRecordTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
+  HardwareProperties hwprops = {};
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
   TapRecord tr(&ii);
   EXPECT_FALSE(tr.TapComplete());
   // two finger IDs:
@@ -1650,15 +1636,13 @@ TEST(ImmediateInterpreterTest, TapRecordTest) {
     make_hwstate(0.5, 0, 1, 1, &fs[2]),
   };
 
-  /* Hack: Tap recorder points to immediate interpreter and assummes it contains
-   * valid values, so we need to insert some origin timestamps */
-  const_cast<ImmediateInterpreter*>(tr.immediate_interpreter_)->
-                                                    origin_timestamps_[kF1] = 0;
-  const_cast<ImmediateInterpreter*>(tr.immediate_interpreter_)->
-                                                    origin_timestamps_[kF2] = 0;
+  // Hack: TapRecord uses ImmediateInterpreter's FingerMetrics for origin
+  // timestamps, so we need to populate those.
+  ii.metrics_->Update(hw[0]);
   tr.Update(hw[0], nullstate, MkSet(kF1), MkSet(), MkSet());
   EXPECT_FALSE(tr.Moving(hw[0], kTapMoveDist));
   EXPECT_FALSE(tr.TapComplete());
+  ii.metrics_->Update(hw[1]);
   tr.Update(hw[1], hw[0], MkSet(), MkSet(), MkSet());
   EXPECT_FALSE(tr.Moving(hw[1], kTapMoveDist));
   EXPECT_FALSE(tr.TapComplete());
@@ -1763,13 +1747,18 @@ protected:
       }
 
       if (!hwstate || hwstate->timestamp != 0.0) {
-        same_fingers = ii_->state_buffer_.Get(1)->SameFingersAs(states[i].hws);
+        same_fingers = ii_->state_buffer_.Get(1).SameFingersAs(states[i].hws);
       }
 
       if (hwstate)
         ii_->state_buffer_.PushState(*hwstate);
-      for (auto finger: states[i].gesturing_fingers)
-        ii_->origin_timestamps_.emplace(finger, 0);
+      // TODO(b/307933752): this is unrealistic compared to the actual code that
+      // tracks origin timestamps, but making it more realistic (by calling
+      // ii_->metrics_->Update(*hwstate)) causes
+      // OneFingerTapThenMoveAfterDelayDoesNotDrag to fail.
+      for (auto finger: states[i].gesturing_fingers) {
+        ii_->metrics_->SetFingerOriginTimestampForTesting(finger, 0);
+      }
       ii_->UpdateTapState(
           hwstate, states[i].gesturing_fingers, same_fingers, now,
           &buttons_down, &buttons_up, &timeout);
@@ -1853,12 +1842,12 @@ protected:
   double tap_timeout_ = 0.05;
  private:
   const HardwareProperties hwprops_ = {
-    .left = 0,
-    .top = 0,
     .right = 200,
     .bottom = 200,
     .res_x = 1.0,  // pixels/TP width
     .res_y = 1.0,  // pixels/TP height
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 5,
@@ -1984,6 +1973,11 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapAndDrag) {
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapThenMoveAfterDelayDoesNotDrag) {
+  // TODO(b/307933752): this test fails if more realistic origin timestamps are
+  // set in TapToClickStateMachineTest::check_hwstates (i.e. calling
+  // ii_->metrics_->Update instead of setting the origin timestamps of
+  // gesturing_fingers to 0). Check whether that's a problem with the test or
+  // the code it's testing.
   FingerState tap_fs = {0, 0, 0, 0, 50, 0, 4, 4, 91, 0};
   FingerState move_fs[] = {
     {0, 0, 0, 0, 50, 0, 4, 4, 95, 0},
@@ -2691,24 +2685,22 @@ struct TapToClickLowPressureBeginOrEndInputs {
 TEST(ImmediateInterpreterTest, TapToClickLowPressureBeginOrEndTest) {
   std::unique_ptr<ImmediateInterpreter> ii;
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    106.666672,  // right edge
-    68.000000,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    25.4,  // screen DPI x
-    25.4,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
   TestInterpreterWrapper wrapper(ii.get(), &hwprops);
 
@@ -2781,24 +2773,22 @@ TEST(ImmediateInterpreterTest, TapToClickKeyboardTest) {
   std::unique_ptr<ImmediateInterpreter> ii;
 
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    200,  // right edge
-    200,  // bottom edge
-    1.0,  // pixels/TP width
-    1.0,  // pixels/TP height
-    1.0,  // screen DPI x
-    1.0,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 200,
+    .bottom = 200,
+    .res_x = 1.0,
+    .res_y = 1.0,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(ii.get(), &hwprops);
 
@@ -2836,8 +2826,7 @@ TEST(ImmediateInterpreterTest, TapToClickKeyboardTest) {
       stime_t timeout = NO_DEADLINE;
       std::set<short> gs =
           hwstates[i].finger_cnt == 1 ? MkSet(91) : MkSet();
-      for (auto finger: gs)
-        ii->origin_timestamps_.emplace(finger, 0);
+      ii->metrics_->Update(hwstates[i]);
       ii->UpdateTapState(
           &hwstates[i],
           gs,
@@ -2855,30 +2844,49 @@ TEST(ImmediateInterpreterTest, TapToClickKeyboardTest) {
   }
 }
 
-TEST(ImmediateInterpreterTest, TapToClickEnableTest) {
-  std::unique_ptr<ImmediateInterpreter> ii;
+enum class TtcEnableTestMode {
+  TapEnabled = 0,
+  TapDisabledDuringGesture,
+  TapDisabledBeforeGestureWhileIdle,
+  TapPausedDuringGesture,
+  TapPausedBeforeGestureWhileIdle,
+};
+
+class ImmediateInterpreterTtcEnableTest :
+          public testing::TestWithParam<TtcEnableTestMode> {};
+
+TEST_P(ImmediateInterpreterTtcEnableTest, TapToClickEnableTest) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  ii.drag_lock_enable_.val_ = 1;
+  ii.motion_tap_prevent_timeout_.val_ = 0;
+  ii.tap_drag_timeout_.val_ = 0.05;
+  ii.tap_enable_.val_ = 1;
+  ii.tap_drag_enable_.val_ = 1;
+  ii.tap_paused_.val_ = 0;
+  ii.tap_move_dist_.val_ = 1.0;
+  ii.tap_timeout_.val_ = 0.05;
+  EXPECT_EQ(kIdl, ii.tap_to_click_state_);
+  EXPECT_TRUE(ii.tap_enable_.val_);
 
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    200,  // right edge
-    200,  // bottom edge
-    1.0,  // pixels/TP width
-    1.0,  // pixels/TP height
-    1.0,  // screen DPI x
-    1.0,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    5,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 200,
+    .bottom = 200,
+    .res_x = 1.0,
+    .res_y = 1.0,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
-  TestInterpreterWrapper wrapper(ii.get(), &hwprops);
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
 
   FingerState fs[] = {
     // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
@@ -2906,109 +2914,103 @@ TEST(ImmediateInterpreterTest, TapToClickEnableTest) {
     {make_hwstate(0.99,0,0,0,nullptr),.99,MkSet(),0,kBL,kIdl,false}
   };
 
-  for (int iter = 0; iter < 5; ++iter) {
-    for (size_t i = 0; i < arraysize(hwsgs_list); ++i) {
-      string desc;
-      stime_t disable_time = 0.0;
-      stime_t pause_time = 0.0;
-      switch (iter) {
-        case 0:  // test with tap enabled
-          desc = StringPrintf("State %zu (tap enabled)", i);
-          disable_time = -1;  // unreachable time
-          pause_time = -1;
-          break;
-        case 1:  // test with tap disabled during gesture
-          desc = StringPrintf("State %zu (tap disabled during gesture)", i);
-          disable_time = 0.02;
-          pause_time = -1;
-          break;
-        case 2:  // test with tap disabled before gesture (while Idle)
-          desc = StringPrintf("State %zu (tap disabled while Idle)", i);
-          disable_time = 0.00;
-          pause_time = -1;
-          break;
-        case 3:  // test with tap paused during gesture
-          desc = StringPrintf("State %zu (tap paused during gesture)", i);
-          disable_time = -1;
-          pause_time = 0.02;
-          break;
-        case 4:  // test with tap paused before gesture (while Idle)
-          desc = StringPrintf("State %zu (tap paused while Idle)", i);
-          disable_time = 0.00;
-          pause_time = -1;
-          break;
-      }
+  for (size_t i = 0; i < arraysize(hwsgs_list); ++i) {
+    string desc;
+    stime_t disable_time = 0.0;
+    stime_t pause_time = 0.0;
+    switch (GetParam()) {
+      case TtcEnableTestMode::TapEnabled:
+        desc = "tap enabled";
+        disable_time = -1;  // unreachable time
+        pause_time = -1;
+        break;
+      case TtcEnableTestMode::TapDisabledDuringGesture:
+        desc = "tap disabled during gesture";
+        disable_time = 0.02;
+        pause_time = -1;
+        break;
+      case TtcEnableTestMode::TapDisabledBeforeGestureWhileIdle:
+        desc = "tap disabled while Idle";
+        disable_time = 0.00;
+        pause_time = -1;
+        break;
+      case TtcEnableTestMode::TapPausedDuringGesture:
+        desc = "tap paused during gesture";
+        disable_time = -1;
+        pause_time = 0.02;
+        break;
+      case TtcEnableTestMode::TapPausedBeforeGestureWhileIdle:
+        desc = "tap paused while Idle";
+        disable_time = 0.00;
+        pause_time = -1;
+        break;
+    }
+    SCOPED_TRACE(StringPrintf("State %zu (%s)", i, desc.c_str()));
 
-      HWStateGs &hwsgs = hwsgs_list[i];
-      HardwareState* hwstate = &hwsgs.hws;
-      stime_t now = hwsgs.callback_now;
-      if (hwsgs.callback_now >= 0.0)
-        hwstate = nullptr;
-      else
-        now = hwsgs.hws.timestamp;
+    HWStateGs &hwsgs = hwsgs_list[i];
+    HardwareState* hwstate = &hwsgs.hws;
+    stime_t now = hwsgs.callback_now;
+    if (hwsgs.callback_now >= 0.0)
+      hwstate = nullptr;
+    else
+      now = hwsgs.hws.timestamp;
 
-      bool same_fingers = false;
-      if (hwstate && hwstate->timestamp == 0.0) {
-        // Reset imm interpreter
-        fprintf(stderr, "Resetting imm interpreter, i = %zd\n", i);
-        ii.reset(new ImmediateInterpreter(nullptr, nullptr));
-        wrapper.Reset(ii.get());
-        ii->drag_lock_enable_.val_ = 1;
-        ii->motion_tap_prevent_timeout_.val_ = 0;
-        ii->tap_drag_timeout_.val_ = 0.05;
-        ii->tap_enable_.val_ = 1;
-        ii->tap_drag_enable_.val_ = 1;
-        ii->tap_paused_.val_ = 0;
-        ii->tap_move_dist_.val_ = 1.0;
-        ii->tap_timeout_.val_ = 0.05;
-        EXPECT_EQ(kIdl, ii->tap_to_click_state_);
-        EXPECT_TRUE(ii->tap_enable_.val_);
-      } else {
-        same_fingers = ii->state_buffer_.Get(1)->SameFingersAs(hwsgs.hws);
-      }
+    bool same_fingers = false;
+    if (!hwstate || hwstate->timestamp != 0.0) {
+      same_fingers = ii.state_buffer_.Get(1).SameFingersAs(hwsgs.hws);
+    }
 
-      // Disable tap in the middle of the gesture
-      if (hwstate && hwstate->timestamp == disable_time)
-        ii->tap_enable_.val_ = 0;
+    // Disable tap in the middle of the gesture
+    if (hwstate && hwstate->timestamp == disable_time)
+      ii.tap_enable_.val_ = 0;
 
-      if (hwstate && hwstate->timestamp == pause_time)
-        ii->tap_paused_.val_ = true;
+    if (hwstate && hwstate->timestamp == pause_time)
+      ii.tap_paused_.val_ = true;
 
-      if (hwstate)
-        ii->state_buffer_.PushState(*hwstate);
-      unsigned bdown = 0;
-      unsigned bup = 0;
-      stime_t tm = NO_DEADLINE;
-      for (auto finger: hwsgs.gesturing_fingers)
-        ii->origin_timestamps_.emplace(finger, 0);
-      ii->UpdateTapState(
-          hwstate, hwsgs.gesturing_fingers, same_fingers, now, &bdown, &bup,
-          &tm);
-      ii->prev_gs_fingers_ = hwsgs.gesturing_fingers;
+    if (hwstate) {
+      ii.metrics_->Update(*hwstate);
+      ii.state_buffer_.PushState(*hwstate);
+    }
+    unsigned buttons_down = 0;
+    unsigned buttons_up = 0;
+    stime_t timeout = NO_DEADLINE;
+    ii.UpdateTapState(
+        hwstate, hwsgs.gesturing_fingers, same_fingers, now, &buttons_down,
+        &buttons_up, &timeout);
+    ii.prev_gs_fingers_ = hwsgs.gesturing_fingers;
 
-      switch (iter) {
-        case 0:  // tap should be enabled
-        case 1:
-        case 3:
-          EXPECT_EQ(hwsgs.expected_down, bdown) << desc;
-          EXPECT_EQ(hwsgs.expected_up, bup) << desc;
-          if (hwsgs.timeout)
-            EXPECT_GT(tm, 0.0) << desc;
-          else
-            EXPECT_DOUBLE_EQ(NO_DEADLINE, tm) << desc;
-          EXPECT_EQ(hwsgs.expected_state, ii->tap_to_click_state_) << desc;
-          break;
-        case 2:  // tap should be disabled
-        case 4:
-          EXPECT_EQ(0, bdown) << desc;
-          EXPECT_EQ(0, bup) << desc;
-          EXPECT_DOUBLE_EQ(NO_DEADLINE, tm) << desc;
-          EXPECT_EQ(kIdl, ii->tap_to_click_state_) << desc;
-          break;
-      }
+    switch (GetParam()) {
+      case TtcEnableTestMode::TapEnabled:
+      case TtcEnableTestMode::TapDisabledDuringGesture:
+      case TtcEnableTestMode::TapPausedDuringGesture:
+        // tap should be enabled
+        EXPECT_EQ(hwsgs.expected_down, buttons_down);
+        EXPECT_EQ(hwsgs.expected_up, buttons_up);
+        if (hwsgs.timeout)
+          EXPECT_GT(timeout, 0.0);
+        else
+          EXPECT_DOUBLE_EQ(NO_DEADLINE, timeout);
+        EXPECT_EQ(hwsgs.expected_state, ii.tap_to_click_state_);
+        break;
+      case TtcEnableTestMode::TapDisabledBeforeGestureWhileIdle:
+      case TtcEnableTestMode::TapPausedBeforeGestureWhileIdle:
+        // tap should be disabled
+        EXPECT_EQ(0, buttons_down);
+        EXPECT_EQ(0, buttons_up);
+        EXPECT_DOUBLE_EQ(NO_DEADLINE, timeout);
+        EXPECT_EQ(kIdl, ii.tap_to_click_state_);
+        break;
     }
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    ImmediateInterpreterTtc, ImmediateInterpreterTtcEnableTest,
+    testing::Values(TtcEnableTestMode::TapEnabled,
+                    TtcEnableTestMode::TapDisabledDuringGesture,
+                    TtcEnableTestMode::TapDisabledBeforeGestureWhileIdle,
+                    TtcEnableTestMode::TapPausedDuringGesture,
+                    TtcEnableTestMode::TapPausedBeforeGestureWhileIdle));
 
 struct ClickTestHardwareStateAndExpectations {
   HardwareState hs;
@@ -3020,24 +3022,22 @@ struct ClickTestHardwareStateAndExpectations {
 TEST(ImmediateInterpreterTest, ClickTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // x pixels/mm
-    1,  // y pixels/mm
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
   EXPECT_FLOAT_EQ(10.0, ii.tapping_finger_min_separation_.val_);
@@ -3114,24 +3114,22 @@ struct BigHandsRightClickInputAndExpectations {
 // right click.
 TEST(ImmediateInterpreterTest, BigHandsRightClickTest) {
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    106.666672,  // right edge
-    68.000000,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    25.4,  // screen DPI x
-    25.4,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
   BigHandsRightClickInputAndExpectations records[] = {
     { make_hwstate(1329527921.327647, 0, 2, 2, nullptr), 0, 0,
@@ -3269,24 +3267,22 @@ TEST(ImmediateInterpreterTest, BigHandsRightClickTest) {
 TEST(ImmediateInterpreterTest, ChangeTimeoutTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    500,  // pixels/TP width
-    500,  // pixels/TP height
-    96,  // screen DPI x
-    96,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 500,
+    .res_y = 500,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState finger_states[] = {
@@ -3376,24 +3372,22 @@ TEST(ImmediateInterpreterTest, PinchTests) {
   ImmediateInterpreter ii(nullptr, nullptr);
   ii.pinch_enable_.val_ = 1;
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState finger_states[] = {
@@ -3523,24 +3517,22 @@ struct AvoidAccidentalPinchTestInput {
 TEST(ImmediateInterpreterTest, AvoidAccidentalPinchTest) {
   std::unique_ptr<ImmediateInterpreter> ii;
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    106.666672,  // right edge
-    68.000000,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    25.4,  // screen DPI x
-    25.4,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    15,  // max fingers
-    5,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
   TestInterpreterWrapper wrapper(ii.get(), &hwprops);
 
@@ -3681,24 +3673,22 @@ TEST(ImmediateInterpreterTest, SemiMtActiveAreaTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
 
   HardwareProperties old_hwprops = {
-    0,  // left edge
-    0,  // top edge
-    90.404251,  // right edge
-    48.953846,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    133,  // screen DPI x
-    133,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    3,  // max touch
-    0,  // t5r2
-    1,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 90.404251,
+    .bottom = 48.953846,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 3,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 1,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
 
   const unsigned kNonPalmFlags = GESTURES_FINGER_WARP_X |
@@ -3731,24 +3721,22 @@ TEST(ImmediateInterpreterTest, SemiMtActiveAreaTest) {
   }
 
   HardwareProperties new_hwprops = {
-    0,  // left edge
-    0,  // top edge
-    96.085106,  // right edge
-    57.492310,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    133,  // screen DPI x
-    133,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    3,  // max touch
-    0,  // t5r2
-    1,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 96.085106,
+    .bottom = 57.492310,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 3,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 1,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
 
   FingerState new_finger_states[] = {
@@ -3783,24 +3771,22 @@ TEST(ImmediateInterpreterTest, SemiMtNoPinchTest) {
   ii.pinch_enable_.val_ = 1;
 
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    90.404251,  // right edge
-    48.953846,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    133,  // screen DPI x
-    133,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    3,  // max touch
-    0,  // t5r2
-    0,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 90.404251,
+    .bottom = 48.953846,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 3,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
 
   FingerState finger_state[] = {
@@ -3861,24 +3847,22 @@ TEST(ImmediateInterpreterTest, WarpedFingersTappingTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
 
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    90.404251,  // right edge
-    48.953846,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    133,  // screen DPI x
-    133,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    3,  // max touch
-    0,  // t5r2
-    1,  // semi-mt
-    true,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    false,  // is haptic pad
+    .right = 90.404251,
+    .bottom = 48.953846,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 3,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 1,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
   };
 
   unsigned flags = GESTURES_FINGER_WARP_X_NON_MOVE |
@@ -3923,24 +3907,22 @@ TEST(ImmediateInterpreterTest, WarpedFingersTappingTest) {
 TEST(ImmediateInterpreterTest, FlingDepthTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    100,  // right edge
-    100,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    96,  // x screen DPI
-    96,  // y screen DPI
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    1,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 1,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState finger_states[] = {
@@ -4022,24 +4004,22 @@ TEST(ImmediateInterpreterTest, ScrollResetTapTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
 
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    96.085106,  // right edge
-    57.492310,  // bottom edge
-    1,  // pixels/TP width
-    1,  // pixels/TP height
-    25.4,  // screen DPI x
-    25.4,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    3,  // max touch
-    0,  // t5r2
-    1,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 96.085106,
+    .bottom = 57.492310,
+    .res_x = 1,
+    .res_y = 1,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 3,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 1,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
 
   FingerState finger_state[] = {
@@ -4093,24 +4073,22 @@ TEST(ImmediateInterpreterTest, ZeroClickInitializationTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
 
   HardwareProperties hwprops = {
-    0,  // left edge
-    0,  // top edge
-    1000,  // right edge
-    1000,  // bottom edge
-    500,  // pixels/TP width
-    500,  // pixels/TP height
-    96,  // screen DPI x
-    96,  // screen DPI y
-    -1,  // orientation minimum
-    2,   // orientation maximum
-    2,  // max fingers
-    5,  // max touch
-    0,  // tripletap
-    0,  // semi-mt
-    1,  // is button pad
-    0,  // has_wheel
-    0,  // wheel_is_hi_res
-    0,  // is haptic pad
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 500,
+    .res_y = 500,
+    .screen_x_dpi = 0,
+    .screen_y_dpi = 0,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 

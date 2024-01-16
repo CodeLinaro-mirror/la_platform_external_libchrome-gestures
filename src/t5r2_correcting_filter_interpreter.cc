@@ -20,6 +20,9 @@ T5R2CorrectingFilterInterpreter::T5R2CorrectingFilterInterpreter(
 void T5R2CorrectingFilterInterpreter::SyncInterpretImpl(
     HardwareState& hwstate,
     stime_t* timeout) {
+  const char name[] = "T5R2CorrectingFilterInterpreter::SyncInterpretImpl";
+  LogHardwareStatePre(name, hwstate);
+
   if (touch_cnt_correct_enabled_.val_ &&
       hwstate.finger_cnt == 0 && last_finger_cnt_ == 0 &&
       hwstate.touch_cnt != 0 && hwstate.touch_cnt == last_touch_cnt_) {
@@ -27,6 +30,8 @@ void T5R2CorrectingFilterInterpreter::SyncInterpretImpl(
   }
   last_touch_cnt_ = hwstate.touch_cnt;
   last_finger_cnt_ = hwstate.finger_cnt;
+
+  LogHardwareStatePost(name, hwstate);
   next_->SyncInterpret(hwstate, timeout);
 }
 

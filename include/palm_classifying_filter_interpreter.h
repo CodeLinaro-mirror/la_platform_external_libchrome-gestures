@@ -25,6 +25,7 @@ namespace gestures {
 // bottom area of the pad.
 
 class PalmClassifyingFilterInterpreter : public FilterInterpreter {
+  FRIEND_TEST(PalmClassifyingFilterInterpreterTest, ExternallyMarkedPalmTest);
   FRIEND_TEST(PalmClassifyingFilterInterpreterTest, PalmAtEdgeTest);
   FRIEND_TEST(PalmClassifyingFilterInterpreterTest, PalmReevaluateTest);
   FRIEND_TEST(PalmClassifyingFilterInterpreterTest, PalmTest);
