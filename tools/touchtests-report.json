@@ -1798,6 +1798,13 @@
     "result": "success",
     "score": 1.0
   },
+  "logitech-m650-1.0/fast_initial_scroll": {
+    "description": "",
+    "disabled": false,
+    "error": "",
+    "result": "success",
+    "score": 1.0
+  },
   "logitech-t620/accidental_back_fling": {
     "description": "",
     "disabled": false,

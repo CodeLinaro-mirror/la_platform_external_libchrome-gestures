@@ -6,10 +6,10 @@
 #define GESTURES_FINGER_METRICS_H_
 
 #include <cmath>
+#include <vector>
 
 #include "include/gestures.h"
 #include "include/prop_registry.h"
-#include "include/vector.h"
 
 namespace gestures {
 
@@ -130,7 +130,7 @@ class Metrics {
 
   // A collection of FingerMetrics describing the current hardware state.
   // The collection is sorted to yield the oldest finger first.
-  vector<FingerMetrics, kMaxFingers>& fingers() { return fingers_; }
+  std::vector<FingerMetrics>& fingers() { return fingers_; }
 
   // Find a FingerMetrics instance by it's tracking id.
   // Returns nullptr if not found.
@@ -156,7 +156,7 @@ class Metrics {
   void SetFingerOriginTimestampForTesting(short tracking_id, stime_t time);
 
  private:
-  vector<FingerMetrics, kMaxFingers> fingers_;
+  std::vector<FingerMetrics> fingers_;
 
   MetricsProperties* properties_;
   std::unique_ptr<MetricsProperties> own_properties_;

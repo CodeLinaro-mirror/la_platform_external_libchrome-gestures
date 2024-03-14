@@ -76,14 +76,17 @@ bool Metrics::CloseEnoughToGesture(const Vector2& pos_a,
          < vert_axis_sq * horiz_axis_sq;
 }
 
-Metrics::Metrics(MetricsProperties* properties) : properties_(properties) {}
+Metrics::Metrics(MetricsProperties* properties) : properties_(properties) {
+  fingers_.reserve(kMaxFingers);
+}
 
 const FingerMetrics* Metrics::GetFinger(short tracking_id) const {
-  auto iter = fingers_.find(FingerMetrics(tracking_id));
-  if (iter != fingers_.end())
-    return iter;
-  else
-    return nullptr;
+  for (auto iter = fingers_.cbegin(); iter != fingers_.cend(); ++iter) {
+    if(iter->tracking_id() == tracking_id) {
+      return &(*iter);
+    }
+  }
+  return nullptr;
 }
 
 const FingerMetrics* Metrics::GetFinger(const FingerState& state) const {
@@ -98,8 +101,7 @@ void Metrics::Update(const HardwareState& hwstate) {
   // create metrics for new fingers
   for (int i=0; i<hwstate.finger_cnt; ++i) {
     const FingerState& state = hwstate.fingers[i];
-    auto iter = fingers_.find(FingerMetrics(state.tracking_id));
-    if (iter == fingers_.end()) {
+    if (GetFinger(state.tracking_id) == nullptr) {
       fingers_.push_back(FingerMetrics(state,
                                        hwstate.timestamp));
       ++new_count;
@@ -138,9 +140,11 @@ void Metrics::Clear() {
 
 void Metrics::SetFingerOriginTimestampForTesting(short tracking_id,
                                                  stime_t time) {
-  if (auto iter = fingers_.find(FingerMetrics(tracking_id));
-      iter != fingers_.end()) {
-    fingers_.erase(iter);
+  for (auto iter = fingers_.begin(); iter != fingers_.end(); ++iter) {
+    if(iter->tracking_id() == tracking_id) {
+      fingers_.erase(iter);
+      break;
+    }
   }
   fingers_.push_back(FingerMetrics(tracking_id, time));
 }

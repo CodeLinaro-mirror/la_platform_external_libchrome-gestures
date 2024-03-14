@@ -21,36 +21,9 @@ std::string StringPrintf(const char* format, ...)
 void StringAppendV(std::string* dst, const char* format, va_list ap)
     PRINTF_FORMAT(2, 0);
 
-// Trims any whitespace from either end of the input string.  Returns where
-// whitespace was found.
-// The non-wide version has two functions:
-// * TrimWhitespaceASCII()
-//   This function is for ASCII strings and only looks for ASCII whitespace;
-// Please choose the best one according to your usage.
-// NOTE: Safe to use the same variable for both input and output.
-enum TrimPositions {
-  TRIM_NONE     = 0,
-  TRIM_LEADING  = 1 << 0,
-  TRIM_TRAILING = 1 << 1,
-  TRIM_ALL      = TRIM_LEADING | TRIM_TRAILING,
-};
-TrimPositions TrimWhitespaceASCII(const std::string& input,
-                                              TrimPositions positions,
-                                              std::string* output);
-
-// Returns true if str starts with search, or false otherwise.
-bool StartsWithASCII(const std::string& str,
-                     const std::string& search,
-                     bool case_sensitive);
-
-// |str| should not be in a multi-byte encoding like Shift-JIS or GBK in which
-// the trailing byte of a multi-byte character can be in the ASCII range.
-// UTF-8, and other single/multi-byte ASCII-compatible encodings are OK.
-// Note: |c| must be in the ASCII range.
-void SplitString(const std::string& str,
-                 char c,
-                 std::vector<std::string>* r);
-
+// Trims whitespace from the start and end of the input string.  This function
+// is for ASCII strings and only looks for ASCII whitespace.
+std::string TrimWhitespaceASCII(const std::string& input);
 
 }  // namespace gestures
 

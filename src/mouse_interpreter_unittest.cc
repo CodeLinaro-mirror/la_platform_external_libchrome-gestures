@@ -103,6 +103,7 @@ TEST(MouseInterpreterTest, HighResolutionVerticalScrollTest) {
 
   mi.output_mouse_wheel_gestures_.val_ = true;
   mi.hi_res_scrolling_.val_ = 1;
+  mi.scroll_velocity_buffer_size_.val_ = 1;
 
   gs = wrapper.SyncInterpret(hwstates[0], nullptr);
   EXPECT_EQ(nullptr, gs);
@@ -157,6 +158,7 @@ TEST(MouseInterpreterTest, ScrollAccelerationOnAndOffTest) {
   mi.scroll_acceleration_.val_ = true;
   mi.output_mouse_wheel_gestures_.val_ = true;
   mi.hi_res_scrolling_.val_ = false;
+  mi.scroll_velocity_buffer_size_.val_ = 1;
 
   gs = wrapper.SyncInterpret(hwstates[0], nullptr);
   EXPECT_EQ(nullptr, gs);
@@ -212,6 +214,7 @@ TEST(MouseInterpreterTest, JankyScrollTest) {
   };
 
   mi.output_mouse_wheel_gestures_.val_ = true;
+  mi.scroll_velocity_buffer_size_.val_ = 1;
 
   gs = wrapper.SyncInterpret(hwstates[0], nullptr);
   ASSERT_NE(nullptr, gs);
