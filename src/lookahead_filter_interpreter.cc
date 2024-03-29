@@ -5,6 +5,7 @@
 #include "include/lookahead_filter_interpreter.h"
 
 #include <algorithm>
+#include <memory>
 #include <math.h>
 
 #include "include/tracer.h"
@@ -472,7 +473,8 @@ void LookaheadFilterInterpreter::HandleTimerImpl(stime_t now,
       // SyncInterpret
       last_interpreted_time_ = node->state_.timestamp;
       const size_t finger_cnt = node->state_.finger_cnt;
-      FingerState fs_copy[std::max(finger_cnt,(size_t)1)];
+      auto fs_copy =
+        std::make_unique<FingerState[]>(std::max(finger_cnt, (size_t)1));
       std::copy(&node->state_.fingers[0],
                 &node->state_.fingers[finger_cnt],
                 &fs_copy[0]);
@@ -481,7 +483,7 @@ void LookaheadFilterInterpreter::HandleTimerImpl(stime_t now,
         node->state_.buttons_down,
         node->state_.finger_cnt,
         node->state_.touch_cnt,
-        fs_copy,
+        fs_copy.get(),
         node->state_.rel_x,
         node->state_.rel_y,
         node->state_.rel_wheel,

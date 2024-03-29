@@ -411,6 +411,19 @@ TEST(GesturesTest, StimeFromTimespecTest) {
   EXPECT_DOUBLE_EQ(2000000000.999999999, StimeFromTimespec(&tv));
 }
 
+TEST(GesturesTest, FingerStateFlagsStringTest) {
+  EXPECT_EQ("0", FingerState::FlagsString(0));
+  EXPECT_EQ("GESTURES_FINGER_PALM",
+            FingerState::FlagsString(GESTURES_FINGER_PALM));
+  EXPECT_EQ("GESTURES_FINGER_PALM | GESTURES_FINGER_WARP_X_MOVE",
+            FingerState::FlagsString(
+                GESTURES_FINGER_PALM | GESTURES_FINGER_WARP_X_MOVE));
+  // 1 << 31 probably won't be used as a finger flag value anytime soon, so use
+  // it to test prepending the remaining number.
+  EXPECT_EQ("2147483648 | GESTURES_FINGER_PALM",
+            FingerState::FlagsString(GESTURES_FINGER_PALM | (1 << 31)));
+}
+
 TEST(GesturesTest, HardwareStateGetFingerStateTest) {
   FingerState fs[] = {
     { 0, 0, 0, 0, 1, 0, 150, 4000, 4, 0 },
