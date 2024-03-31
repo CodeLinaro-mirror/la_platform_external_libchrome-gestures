@@ -20,6 +20,42 @@ using std::string;
 
 namespace gestures {
 
+namespace {
+
+template <typename STR>
+void SplitStringT(const STR& str,
+                  const typename STR::value_type s,
+                  bool trim_whitespace,
+                  std::vector<STR>* r) {
+  r->clear();
+  size_t last = 0;
+  size_t c = str.size();
+  for (size_t i = 0; i <= c; ++i) {
+    if (i == c || str[i] == s) {
+      STR tmp(str, last, i - last);
+      if (trim_whitespace)
+        tmp = TrimWhitespaceASCII(tmp);
+      // Avoid converting an empty or all-whitespace source string into a vector
+      // of one empty string.
+      if (i != c || !r->empty() || !tmp.empty())
+        r->push_back(tmp);
+      last = i + 1;
+    }
+  }
+}
+
+// |str| should not be in a multi-byte encoding like Shift-JIS or GBK in which
+// the trailing byte of a multi-byte character can be in the ASCII range.
+// UTF-8, and other single/multi-byte ASCII-compatible encodings are OK.
+// Note: |c| must be in the ASCII range.
+void SplitString(const std::string& str,
+                 char c,
+                 std::vector<std::string>* r) {
+  SplitStringT(str, c, true, r);
+}
+
+}  // namespace
+
 class ActivityReplayTest : public ::testing::Test {};
 
 // This test reads a log file and replays it. This test should be enabled for a

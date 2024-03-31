@@ -31,6 +31,7 @@ MouseInterpreter::MouseInterpreter(PropRegistry* prop_reg, Tracer* tracer)
       scroll_sensitivity_(prop_reg,"Mouse Scroll Sensitivity",
         kMouseScrollSensitivityDefaultValue),
       hi_res_scrolling_(prop_reg, "Mouse High Resolution Scrolling", true),
+      scroll_velocity_buffer_size_(prop_reg, "Scroll Wheel Velocity Buffer", 3),
       scroll_accel_curve_prop_(prop_reg, "Mouse Scroll Accel Curve",
           scroll_accel_curve_, sizeof(scroll_accel_curve_) / sizeof(double)),
       scroll_max_allowed_input_speed_(prop_reg,
@@ -49,8 +50,6 @@ MouseInterpreter::MouseInterpreter(PropRegistry* prop_reg, Tracer* tracer)
                                    "Output Mouse Wheel Gestures", false) {
   InitName();
   memset(&prev_state_, 0, sizeof(prev_state_));
-  memset(&last_wheel_, 0, sizeof(last_wheel_));
-  memset(&last_hwheel_, 0, sizeof(last_hwheel_));
   // Scroll acceleration curve coefficients. See the definition for more
   // details on how to generate them.
   scroll_accel_curve_[0] = 1.0374e+01;
@@ -168,60 +167,81 @@ void MouseInterpreter::InterpretScrollWheelEvent(const HardwareState& hwstate,
                                                  bool is_vertical) {
   const char name[] = "MouseInterpreter::InterpretScrollWheelEvent";
 
-  const float scroll_wheel_event_time_delta_min = 0.008;
+  const size_t max_buffer_size = scroll_velocity_buffer_size_.val_;
+  const float scroll_wheel_event_time_delta_min = 0.008 * max_buffer_size;
   bool use_high_resolution =
       is_vertical && hwprops_->wheel_is_hi_res
       && hi_res_scrolling_.val_;
   // Vertical wheel or horizontal wheel.
-  float current_wheel_value = hwstate.rel_hwheel;
-  int ticks = hwstate.rel_hwheel * REL_WHEEL_HI_RES_UNITS_PER_NOTCH;
-  WheelRecord* last_wheel_record = &last_hwheel_;
+  WheelRecord current_wheel;
+  current_wheel.timestamp = hwstate.timestamp;
+  int ticks;
+  std::vector<WheelRecord>* last_wheels;
   if (is_vertical) {
     // Only vertical high-res scrolling is supported for now.
     if (use_high_resolution) {
-      current_wheel_value = hwstate.rel_wheel_hi_res
+      current_wheel.change = hwstate.rel_wheel_hi_res
           / REL_WHEEL_HI_RES_UNITS_PER_NOTCH;
       ticks = hwstate.rel_wheel_hi_res;
     } else {
-      current_wheel_value = hwstate.rel_wheel;
+      current_wheel.change = hwstate.rel_wheel;
       ticks = hwstate.rel_wheel * REL_WHEEL_HI_RES_UNITS_PER_NOTCH;
     }
-    last_wheel_record = &last_wheel_;
+    last_wheels = &last_vertical_wheels_;
+  } else {
+    last_wheels = &last_horizontal_wheels_;
+    current_wheel.change = hwstate.rel_hwheel;
+    ticks = hwstate.rel_hwheel * REL_WHEEL_HI_RES_UNITS_PER_NOTCH;
   }
 
   // Check if the wheel is scrolled.
-  if (current_wheel_value) {
+  if (current_wheel.change) {
     stime_t start_time, end_time = hwstate.timestamp;
     // Check if this scroll is in same direction as previous scroll event.
-    if ((current_wheel_value < 0 && last_wheel_record->value < 0) ||
-        (current_wheel_value > 0 && last_wheel_record->value > 0)) {
-      start_time = last_wheel_record->timestamp;
+    if (!last_wheels->empty() &&
+        ((current_wheel.change < 0 && last_wheels->back().change < 0) ||
+         (current_wheel.change > 0 && last_wheels->back().change > 0))) {
+      start_time = last_wheels->begin()->timestamp;
     } else {
+      last_wheels->clear();
       start_time = end_time;
     }
 
-    // If start_time == end_time, compute velocity using dt = 1 second.
-    // (this happens when the user initially starts scrolling)
-    stime_t dt = (end_time - start_time) ?: 1.0;
-    if (dt < scroll_wheel_event_time_delta_min) {
-      // the first packet received after BT wakeup may be delayed, causing the
-      // time delta between that and the subsequent packet to be very small.
-      // Prevent small time deltas from triggering large amounts of acceleration
-      // by enforcing a minimum time delta.
-      dt = scroll_wheel_event_time_delta_min;
+    // We will only accelerate scrolls if we have filled our buffer of scroll
+    // events all in the same direction. If the buffer is full, then calculate
+    // scroll velocity using the average velocity of the entire buffer.
+    float velocity;
+    if (last_wheels->size() < max_buffer_size) {
+      velocity = 0.0;
+    } else {
+      stime_t dt = end_time - last_wheels->back().timestamp;
+      if (dt < scroll_wheel_event_time_delta_min) {
+        // The first packets received after BT wakeup may be delayed, causing
+        // the time delta between that and the subsequent packets to be
+        // artificially very small.
+        // Prevent small time deltas from triggering large amounts of
+        // acceleration by enforcing a minimum time delta.
+        dt = scroll_wheel_event_time_delta_min;
+      }
+
+      last_wheels->pop_back();
+      float buffer_scroll_distance = current_wheel.change;
+      for (auto wheel : *last_wheels) {
+        buffer_scroll_distance += wheel.change;
+      }
+
+      velocity = buffer_scroll_distance / dt;
     }
+    last_wheels->insert(last_wheels->begin(), current_wheel);
 
     // When scroll acceleration is off, the scroll factor does not relate to
     // scroll velocity. It's simply a constant multiplier to the wheel value.
     const double unaccel_scroll_factors[] = { 20.0, 36.0, 72.0, 112.0, 164.0 };
 
-    float velocity = current_wheel_value / dt;
-    float offset = current_wheel_value * (
+    float offset = current_wheel.change * (
       scroll_acceleration_.val_?
       ComputeScrollAccelFactor(velocity) :
       unaccel_scroll_factors[scroll_sensitivity_.val_ - 1]);
-    last_wheel_record->timestamp = hwstate.timestamp;
-    last_wheel_record->value = current_wheel_value;
 
     if (is_vertical) {
       // For historical reasons the vertical wheel (REL_WHEEL) is inverted
