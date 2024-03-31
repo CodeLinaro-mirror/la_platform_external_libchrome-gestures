@@ -4,6 +4,8 @@
 
 #include "include/non_linearity_filter_interpreter.h"
 
+#include <cstring>
+
 #include <linux/in.h>
 
 namespace {
@@ -20,7 +22,7 @@ NonLinearityFilterInterpreter::NonLinearityFilterInterpreter(
     : FilterInterpreter(nullptr, next, tracer, false),
       x_range_len_(0), y_range_len_(0), p_range_len_(0),
       enabled_(prop_reg, "Enable non-linearity correction", false),
-      data_location_(prop_reg, "Non-linearity correction data file", "None") {
+      data_location_(prop_reg, "Non-linearity correction data file", "") {
   InitName();
   LoadData();
 }
@@ -67,8 +69,12 @@ bool NonLinearityFilterInterpreter::LoadRange(std::unique_ptr<double[]>& arr,
 }
 
 void NonLinearityFilterInterpreter::LoadData() {
+  if (strlen(data_location_.val_) == 0) {
+    return;
+  }
   FILE* data_fd = fopen(data_location_.val_, "rb");
   if (!data_fd) {
+    // TODO(b/329268257): make this an Err, not a Log.
     Log("Unable to open non-linearity filter data '%s'", data_location_.val_);
     return;
   }

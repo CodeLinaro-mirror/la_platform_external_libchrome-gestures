@@ -42,7 +42,6 @@
 using std::string;
 using std::min;
 using gestures::StringPrintf;
-using gestures::StartsWithASCII;
 
 // C API:
 
@@ -135,9 +134,9 @@ string FingerState::FlagsString(unsigned flags) {
   if (flags) {
     // prepend remaining number
     ret = StringPrintf("%u%s", flags, ret.c_str());
-  } else if (StartsWithASCII(ret, kPipeSeparator, false)) {
+  } else if (ret.rfind(kPipeSeparator, 0) == 0) {
     // strip extra pipe
-    ret = string(ret.c_str() + strlen(kPipeSeparator));
+    ret = ret.substr(strlen(kPipeSeparator));
   } else {
     ret = "0";
   }
@@ -507,7 +506,7 @@ void GestureInterpreter::SetTimerProvider(GesturesTimerProvider* tp,
     interpret_timer_ = nullptr;
   }
   if (interpret_timer_)
-    Log("How was interpret_timer_ not null?!");
+    Err("How was interpret_timer_ not null?!");
   timer_provider_ = tp;
   timer_provider_data_ = data;
   if (timer_provider_)
