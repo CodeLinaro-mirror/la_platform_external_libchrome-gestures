@@ -28,31 +28,31 @@ TEST(ImmediateInterpreterTest, ScrollEventTest) {
   EXPECT_EQ(22.0, ev3.dy);
   EXPECT_EQ(33.0, ev3.dt);
 
-  ScrollEventBuffer* evbuf = new ScrollEventBuffer(2);
-  evbuf->Insert(1.0, 2.0, 3.0);
-  ev1 = evbuf->Get(0);
+  ScrollEventBuffer evbuf(2);
+  evbuf.Insert(1.0, 2.0, 3.0);
+  ev1 = evbuf.Get(0);
   EXPECT_EQ(1.0, ev1.dx);
   EXPECT_EQ(2.0, ev1.dy);
   EXPECT_EQ(3.0, ev1.dt);
-  ev1 = evbuf->Get(3);
+  ev1 = evbuf.Get(3);
   EXPECT_EQ(0.0, ev1.dx);
   EXPECT_EQ(0.0, ev1.dy);
   EXPECT_EQ(0.0, ev1.dt);
 }
 
 TEST(ImmediateInterpreterTest, HardwareStateBufferTest) {
-  HardwareStateBuffer* hsb = new HardwareStateBuffer(10);
-  hsb->Reset(0);
-  EXPECT_EQ(hsb->Size(), 10);
+  HardwareStateBuffer hsb(10);
+  hsb.Reset(0);
+  EXPECT_EQ(hsb.Size(), 10);
 }
 
 TEST(ImmediateInterpreterTest, ScrollManagerTest) {
-  PropRegistry* my_prop_reg = new PropRegistry();
-  ScrollManager* sm = new ScrollManager(my_prop_reg);
-  ScrollEventBuffer* scroll_buffer = new ScrollEventBuffer(2);
+  PropRegistry my_prop_reg;
+  ScrollManager sm(&my_prop_reg);
+  ScrollEventBuffer scroll_buffer(2);
   ScrollEvent ev;
 
-  sm->RegressScrollVelocity(*scroll_buffer, 1, &ev);
+  sm.RegressScrollVelocity(scroll_buffer, 1, &ev);
   EXPECT_EQ(0.0, ev.dx);
   EXPECT_EQ(0.0, ev.dy);
   EXPECT_EQ(1.0, ev.dt);

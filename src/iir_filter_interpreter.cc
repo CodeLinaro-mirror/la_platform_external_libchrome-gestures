@@ -5,6 +5,7 @@
 #include "include/iir_filter_interpreter.h"
 
 #include <utility>
+#include <vector>
 
 namespace gestures {
 
@@ -57,14 +58,15 @@ void IirFilterInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   LogHardwareStatePre(name, hwstate);
 
   // Delete old entries from map
-  short dead_ids[histories_.size() + 1];
-  size_t dead_ids_len = 0;
+  std::vector<short> dead_ids;
+  dead_ids.reserve(histories_.size());
+
   for (std::map<short, IoHistory>::iterator it = histories_.begin(),
            e = histories_.end(); it != e; ++it)
     if (!hwstate.GetFingerState((*it).first))
-      dead_ids[dead_ids_len++] = (*it).first;
-  for (size_t i = 0; i < dead_ids_len; ++i)
-    histories_.erase(dead_ids[i]);
+      dead_ids.push_back((*it).first);
+  for (auto dead_id : dead_ids)
+    histories_.erase(dead_id);
 
   // Modify current hwstate
   for (size_t i = 0; i < hwstate.finger_cnt; i++) {

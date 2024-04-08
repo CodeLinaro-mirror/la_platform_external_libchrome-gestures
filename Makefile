@@ -129,6 +129,15 @@ CXXFLAGS+=\
 	-DGESTURES_INTERNAL=1 \
 	-I.
 
+ifeq (yes,$(SANITIZE_GESTURES))
+CXXFLAGS+=\
+	-fsanitize=address,undefined \
+	-fno-sanitize-recover=all
+LINK_FLAGS+=\
+	-fsanitize=address,undefined \
+	-fno-sanitize-recover=all
+endif
+
 # Local compilation needs these flags, esp for code coverage testing
 ifeq (g++,$(CXX))
 CXXFLAGS+=\
@@ -138,9 +147,6 @@ CXXFLAGS+=\
 	-ftest-coverage \
 	-fprofile-arcs
 LINK_FLAGS+=-lgcov
-else
-CXXFLAGS+=\
-	-DXLOGGING
 endif
 
 PKG_CONFIG ?= pkg-config

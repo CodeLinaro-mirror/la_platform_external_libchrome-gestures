@@ -106,22 +106,24 @@ void BoolProperty::HandleGesturesPropWritten() {
 }
 
 void BoolArrayProperty::CreatePropImpl() {
-  GesturesPropBool orig_vals[count_];
-  memcpy(orig_vals, vals_, sizeof(orig_vals));
+  auto orig_vals = std::make_unique<GesturesPropBool[]>(count_);
+
+  memcpy(orig_vals.get(), vals_, count_ * sizeof(GesturesPropBool));
   gprop_ = parent_->PropProvider()->create_bool_fn(
       parent_->PropProviderData(),
       name(),
       vals_,
       count_,
       vals_);
-  if (delegate_ && memcmp(orig_vals, vals_, sizeof(orig_vals)))
+  if (delegate_ && memcmp(orig_vals.get(), vals_,
+                          count_ * sizeof(GesturesPropBool)))
     delegate_->BoolArrayWasWritten(this);
 }
 
 Json::Value BoolArrayProperty::NewValue() const {
   Json::Value list(Json::arrayValue);
   for (size_t i = 0; i < count_; i++)
-    list.append(new Json::Value(vals_[i] != 0));
+    list.append(Json::Value(vals_[i] != 0));
   return list;
 }
 
@@ -182,15 +184,16 @@ void DoubleProperty::HandleGesturesPropWritten() {
 }
 
 void DoubleArrayProperty::CreatePropImpl() {
-  float orig_vals[count_];
-  memcpy(orig_vals, vals_, sizeof(orig_vals));
+  auto orig_vals = std::make_unique<float[]>(count_);
+
+  memcpy(orig_vals.get(), vals_, count_ * sizeof(float));
   gprop_ = parent_->PropProvider()->create_real_fn(
       parent_->PropProviderData(),
       name(),
       vals_,
       count_,
       vals_);
-  if (delegate_ && memcmp(orig_vals, vals_, sizeof(orig_vals)))
+  if (delegate_ && memcmp(orig_vals.get(), vals_, count_ * sizeof(float)))
     delegate_->DoubleArrayWasWritten(this);
 }
 
@@ -263,15 +266,16 @@ void IntProperty::HandleGesturesPropWritten() {
 }
 
 void IntArrayProperty::CreatePropImpl() {
-  int orig_vals[count_];
-  memcpy(orig_vals, vals_, sizeof(orig_vals));
+  auto orig_vals = std::make_unique<int[]>(count_);
+
+  memcpy(orig_vals.get(), vals_, count_ * sizeof(int));
   gprop_ = parent_->PropProvider()->create_int_fn(
       parent_->PropProviderData(),
       name(),
       vals_,
       count_,
       vals_);
-  if (delegate_ && memcmp(orig_vals, vals_, sizeof(orig_vals)))
+  if (delegate_ && memcmp(orig_vals.get(), vals_, count_ * sizeof(int)))
     delegate_->IntArrayWasWritten(this);
 }
 

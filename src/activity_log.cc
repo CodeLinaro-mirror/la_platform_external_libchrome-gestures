@@ -579,7 +579,7 @@ void ActivityLog::AddEncodeInfo(Json::Value* root) {
   string gestures_version = VCSID;
 
   // Strip tailing whitespace.
-  TrimWhitespaceASCII(gestures_version, TRIM_ALL, &gestures_version);
+  gestures_version = TrimWhitespaceASCII(gestures_version);
   (*root)["gesturesVersion"] = Json::Value(gestures_version);
   (*root)[kKeyProperties] = EncodePropRegistry();
 }

@@ -8,6 +8,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <vector>
 
 #include <math.h>
 
@@ -78,14 +79,14 @@ void RemoveMissingIdsFromMap(std::map<short, Data>* the_map,
 static inline
 void RemoveMissingIdsFromSet(std::set<short>* the_set,
                              const HardwareState& hs) {
-  short old_ids[the_set->size() + 1];
-  size_t old_ids_len = 0;
+  std::vector<short> old_ids;
+  old_ids.reserve(the_set->size() + 1);
   for (typename std::set<short>::const_iterator it = the_set->begin();
        it != the_set->end(); ++it)
     if (!hs.GetFingerState(*it))
-      old_ids[old_ids_len++] = *it;
-  for (size_t i = 0; i < old_ids_len; i++)
-    the_set->erase(old_ids[i]);
+      old_ids.push_back(*it);
+  for (auto id : old_ids)
+    the_set->erase(id);
 }
 
 template<typename Set, typename Elt>

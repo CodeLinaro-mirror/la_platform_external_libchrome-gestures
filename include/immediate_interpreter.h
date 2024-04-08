@@ -13,6 +13,7 @@
 #include "include/macros.h"
 #include "include/prop_registry.h"
 #include "include/tracer.h"
+#include "include/vector.h"
 
 #ifndef GESTURES_IMMEDIATE_INTERPRETER_H_
 #define GESTURES_IMMEDIATE_INTERPRETER_H_
