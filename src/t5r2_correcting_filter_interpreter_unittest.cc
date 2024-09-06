@@ -71,8 +71,6 @@ TEST(T5R2CorrectingFilterInterpreterTest, SimpleTest) {
     .right = 10, .bottom = 10,
     .res_x = 1,
     .res_y = 1,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 2, .max_touch_cnt = 5,

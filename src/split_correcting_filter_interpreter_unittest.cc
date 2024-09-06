@@ -73,8 +73,6 @@ void DoTest(InputEventWithExpectations* events, size_t events_len, bool t5r2) {
     .right = 100, .bottom = 100,
     .res_x = 1,
     .res_y = 1,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 5,
@@ -170,8 +168,6 @@ TEST(SplitCorrectingFilterInterpreterTest, FalseMergeTest) {
     .right = 100, .bottom = 100,
     .res_x = 1,
     .res_y = 1,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 5,
@@ -187,14 +183,15 @@ TEST(SplitCorrectingFilterInterpreterTest, FalseMergeTest) {
 
   for (size_t i = 0; i < arraysize(inputs); i++) {
     const FalseMergeInputs& input = inputs[i];
+    const size_t max_finger_cnt = arraysize(input.in);
     // Get finger count
     unsigned short finger_cnt = 0;
     for (size_t fidx = 0;
-         fidx < arraysize(input.in) && input.in[fidx].id_ >= 0;
+         fidx < max_finger_cnt && input.in[fidx].id_ >= 0;
          fidx++)
       finger_cnt += 1;
     // Set up hardware state
-    FingerState fs[finger_cnt];
+    FingerState fs[max_finger_cnt];
     for (size_t fidx = 0; fidx < finger_cnt; fidx++) {
       memset(&fs[fidx], 0, sizeof(fs[fidx]));
       fs[fidx].position_x  = input.in[fidx].x_;
@@ -327,8 +324,6 @@ TEST(SplitCorrectingFilterInterpreterTest, LumpyThumbSplitTest) {
     .bottom = 68.0,
     .res_x = 1.0,
     .res_y = 1.0,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 15,

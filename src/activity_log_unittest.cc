@@ -39,8 +39,6 @@ TEST(ActivityLogTest, SimpleTest) {
     .bottom = 6014,
     .res_x = 6015,
     .res_y = 6016,
-    .screen_x_dpi = 6017,
-    .screen_y_dpi = 6018,
     .orientation_minimum = 6019,
     .orientation_maximum = 6020,
     .max_finger_cnt = 6021,
@@ -56,8 +54,8 @@ TEST(ActivityLogTest, SimpleTest) {
   log.SetHardwareProperties(hwprops);
 
   const char* expected_strings[] = {
-    "6011", "6012", "6013", "6014", "6015", "6016",
-    "6017", "6018", "6019", "6020", "6021", "6022"
+    "6011", "6012", "6013", "6014", "6015",
+    "6016", "6019", "6020", "6021", "6022"
   };
   string hwprops_log = log.Encode();
   for (size_t i = 0; i < arraysize(expected_strings); i++)
@@ -233,8 +231,6 @@ TEST(ActivityLogTest, HardwareStatePreTest) {
     .bottom = 6014,
     .res_x = 6015,
     .res_y = 6016,
-    .screen_x_dpi = 6017,
-    .screen_y_dpi = 6018,
     .orientation_minimum = 6019,
     .orientation_maximum = 6020,
     .max_finger_cnt = 6021,
@@ -298,8 +294,6 @@ TEST(ActivityLogTest, HardwareStatePostTest) {
     .bottom = 6014,
     .res_x = 6015,
     .res_y = 6016,
-    .screen_x_dpi = 6017,
-    .screen_y_dpi = 6018,
     .orientation_minimum = 6019,
     .orientation_maximum = 6020,
     .max_finger_cnt = 6021,

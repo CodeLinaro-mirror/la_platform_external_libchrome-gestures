@@ -60,12 +60,6 @@ struct HardwareProperties {
   float res_x;
   float res_y;
 
-  // Deprecated: these values are now ignored. Previously, they specified the
-  // DPI of the screen to which gestures output by the library should be
-  // scaled.
-  float screen_x_dpi;
-  float screen_y_dpi;
-
   // The minimum and maximum orientation values.
   float orientation_minimum;
   float orientation_maximum;
