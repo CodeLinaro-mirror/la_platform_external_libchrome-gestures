@@ -133,8 +133,6 @@ TEST(ScalingFilterInterpreterTest, SimpleTest) {
     .left = 133, .top = 728, .right = 10279, .bottom = 5822,
     .res_x = (10279.0 - 133.0) / 100.0,
     .res_y = (5822.0 - 728.0) / 60,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 2, .max_touch_cnt = 5,
@@ -146,8 +144,6 @@ TEST(ScalingFilterInterpreterTest, SimpleTest) {
     .right = 100, .bottom = 60,
     .res_x = 1.0,
     .res_y = 1.0,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -M_PI_4,  // (1 tick above X-axis)
     .orientation_maximum = M_PI_2,
     .max_finger_cnt = 2, .max_touch_cnt = 5,
@@ -283,7 +279,6 @@ TEST(ScalingFilterInterpreterTest, ResolutionFallback) {
   HardwareProperties initial_hwprops = {
     .right = 2000, .bottom = 1000,
     .res_x = 0, .res_y = 0,
-    .screen_x_dpi = 0, .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 2, .max_touch_cnt = 5,
@@ -294,7 +289,6 @@ TEST(ScalingFilterInterpreterTest, ResolutionFallback) {
   HardwareProperties expected_hwprops = {
     .right = 2000 / 32.0, .bottom = 1000 / 32.0,
     .res_x = 1, .res_y = 1,
-    .screen_x_dpi = 0, .screen_y_dpi = 0,
     .orientation_minimum = -M_PI_4,  // (1 tick above X-axis)
     .orientation_maximum = M_PI_2,
     .max_finger_cnt = 2, .max_touch_cnt = 5,
@@ -436,8 +430,6 @@ TEST(ScalingFilterInterpreterTest, TouchMajorAndMinorTest) {
     .right = 500, .bottom = 1000,
     .res_x = 5,
     .res_y = 10,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -31,
     .orientation_maximum = 32,
     .max_finger_cnt = 2, .max_touch_cnt = 5,
@@ -448,7 +440,6 @@ TEST(ScalingFilterInterpreterTest, TouchMajorAndMinorTest) {
   HardwareProperties expected_hwprops = {
     .right = 100, .bottom = 100,
     .res_x = 1.0, .res_y = 1.0,
-    .screen_x_dpi = 0, .screen_y_dpi = 0,
     .orientation_minimum = -M_PI * 31 / 64,  // (1 tick above X-axis)
     .orientation_maximum = M_PI_2,
     .max_finger_cnt = 2, .max_touch_cnt = 5,

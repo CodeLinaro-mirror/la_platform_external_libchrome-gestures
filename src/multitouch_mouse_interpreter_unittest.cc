@@ -21,8 +21,6 @@ TEST(MultitouchMouseInterpreterTest, SimpleTest) {
     .left = 133, .top = 728, .right = 10279, .bottom = 5822,
     .res_x = (10279.0 - 133.0) / 100.0,
     .res_y = (5822.0 - 728.0) / 60,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 2, .max_touch_cnt = 5,

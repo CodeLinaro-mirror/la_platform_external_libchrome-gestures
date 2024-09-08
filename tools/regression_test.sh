@@ -7,6 +7,9 @@
 # Script to run the gesture regression test and check if there is any
 # regression for each submit.
 
+# Exit on errors.
+set -eu
+
 # Set current directory to the project one and load the common script.
 pushd . >/dev/null
 cd "$(dirname "$(readlink -f "$0")")/.."
@@ -31,7 +34,7 @@ update_chroot_library() {
 install_regression_test_suite() {
   info "Install regression test suite first..."
   sudo emerge -q gestures chromeos-base/libevdev utouch-evemu -j3
-  pushd ~/trunk/src/platform/touchpad-tests >/dev/null
+  pushd ~/chromiumos/src/platform/touchpad-tests >/dev/null
   make -j${NUM_JOBS} -s all
   sudo make -s local-install
   popd >/dev/null

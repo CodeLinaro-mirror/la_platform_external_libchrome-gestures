@@ -82,8 +82,6 @@ TEST(StuckButtonInhibitorFilterInterpreterTest, SimpleTest) {
     .right = 100, .bottom = 100,
     .res_x = 10,
     .res_y = 10,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 2, .max_touch_cnt = 5,
