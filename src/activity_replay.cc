@@ -168,10 +168,6 @@ bool ActivityReplay::ParseHardwareProperties(const Json::Value& obj,
            props.res_x, float, true);
   PARSE_HP(obj, ActivityLog::kKeyHardwarePropYResolution, isDouble, asDouble,
            props.res_y, float, true);
-  PARSE_HP(obj, ActivityLog::kKeyHardwarePropXDpi, isDouble, asDouble,
-           props.screen_x_dpi, float, true);
-  PARSE_HP(obj, ActivityLog::kKeyHardwarePropYDpi, isDouble, asDouble,
-           props.screen_y_dpi, float, true);
   PARSE_HP(obj, ActivityLog::kKeyHardwarePropOrientationMinimum,
            isDouble, asDouble, props.orientation_minimum, float, false);
   PARSE_HP(obj, ActivityLog::kKeyHardwarePropOrientationMaximum,
@@ -238,11 +234,12 @@ bool ActivityReplay::ParseHardwareState(const Json::Value& entry) {
   }
   Json::Value fingers = entry[ActivityLog::kKeyHardwareStateFingers];
   // Sanity check
-  if (fingers.size() > 30) {
+  const size_t kMaxFingers = 30;
+  if (fingers.size() > kMaxFingers) {
     Err("Too many fingers in hardware state");
     return false;
   }
-  FingerState fs[fingers.size()];
+  FingerState fs[kMaxFingers];
   for (size_t i = 0; i < fingers.size(); ++i) {
     if (!fingers.isValidIndex(i)) {
       Err("Invalid entry at index %zu", i);

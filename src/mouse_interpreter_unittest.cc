@@ -18,8 +18,6 @@ HardwareProperties make_hwprops_for_mouse(
     .bottom = 0,
     .res_x = 0,
     .res_y = 0,
-    .screen_x_dpi = 0,
-    .screen_y_dpi = 0,
     .orientation_minimum = 0,
     .orientation_maximum = 0,
     .max_finger_cnt = 0,

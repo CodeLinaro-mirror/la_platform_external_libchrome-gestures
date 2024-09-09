@@ -373,8 +373,6 @@ void ScalingFilterInterpreter::Initialize(const HardwareProperties* hwprops,
   friendly_props_.bottom = (hwprops->bottom - hwprops->top) * tp_y_scale_;
   friendly_props_.res_x = 1.0;  // X pixels/mm
   friendly_props_.res_y = 1.0;  // Y pixels/mm
-  friendly_props_.screen_x_dpi = 25.4;
-  friendly_props_.screen_y_dpi = 25.4;
   friendly_props_.orientation_minimum = friendly_orientation_minimum;
   friendly_props_.orientation_maximum = friendly_orientation_maximum;
 

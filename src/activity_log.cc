@@ -174,8 +174,6 @@ Json::Value ActivityLog::EncodeHardwareProperties() const {
   ret[kKeyHardwarePropBottom] = Json::Value(hwprops_.bottom);
   ret[kKeyHardwarePropXResolution] = Json::Value(hwprops_.res_x);
   ret[kKeyHardwarePropYResolution] = Json::Value(hwprops_.res_y);
-  ret[kKeyHardwarePropXDpi] = Json::Value(hwprops_.screen_x_dpi);
-  ret[kKeyHardwarePropYDpi] = Json::Value(hwprops_.screen_y_dpi);
   ret[kKeyHardwarePropOrientationMinimum] =
       Json::Value(hwprops_.orientation_minimum);
   ret[kKeyHardwarePropOrientationMaximum] =

@@ -447,8 +447,6 @@ TEST(GesturesTest, HardwarePropertiesToStringTest) {
   HardwareProperties hp = {
     .left = 1009.5, .top = 1002.4, .right = 1003.9, .bottom = 1004.5,
     .res_x = 1005.4, .res_y = 1006.9,
-    .screen_x_dpi = 1007.4,
-    .screen_y_dpi = 1008.5,
     .orientation_minimum = -1,
     .orientation_maximum = 2,
     .max_finger_cnt = 12,
@@ -467,8 +465,6 @@ TEST(GesturesTest, HardwarePropertiesToStringTest) {
     "1004.5",
     "1005.4",
     "1006.9",
-    "1007.4",
-    "1008.5",
     "12,",
     "11,",
     "0,",
