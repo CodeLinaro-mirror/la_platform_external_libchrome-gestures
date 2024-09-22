@@ -897,10 +897,10 @@
   },
   "gnawty-elan-4.0/baseline/drag": {
     "description": "",
-    "disabled": false,
+    "disabled": true,
     "error": "",
-    "result": "success",
-    "score": 0.997738329781867
+    "result": "incomplete",
+    "score": 0
   },
   "gnawty-elan-4.0/baseline/fling": {
     "description": "",
@@ -3701,5 +3701,54 @@
     "error": "",
     "result": "failure",
     "score": false
+  },
+  "xol-1.0/baseline/click": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "xol-1.0/baseline/drag": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "xol-1.0/baseline/fling": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "xol-1.0/baseline/move": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "xol-1.0/baseline/scroll": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "xol-1.0/baseline/tap": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "xol-1.0/unexpected_flings": {
+    "description": "",
+    "disabled": false,
+    "error": "",
+    "result": "success",
+    "score": 1
   }
 }

@@ -22,7 +22,7 @@ ClickWiggleFilterInterpreter::ClickWiggleFilterInterpreter(
       wiggle_suppress_timeout_(prop_reg, "Wiggle Timeout", 0.075),
       wiggle_button_down_timeout_(prop_reg,
                                   "Wiggle Button Down Timeout",
-                                  0.75),
+                                  0.25),
       one_finger_click_wiggle_timeout_(prop_reg,
                                        "One Finger Click Wiggle Timeout",
                                        0.2) {

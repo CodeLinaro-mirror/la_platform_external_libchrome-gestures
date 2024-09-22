@@ -29,7 +29,7 @@ TEST(ImmediateInterpreterTest, ScrollEventTest) {
   EXPECT_EQ(33.0, ev3.dt);
 
   ScrollEventBuffer evbuf(2);
-  evbuf.Insert(1.0, 2.0, 3.0);
+  evbuf.Insert(1.0, 2.0, 3.0, 0.0);
   ev1 = evbuf.Get(0);
   EXPECT_EQ(1.0, ev1.dx);
   EXPECT_EQ(2.0, ev1.dy);
@@ -3921,7 +3921,7 @@ TEST(ImmediateInterpreterTest, FlingDepthTest) {
       float dx = fs->position_x - prev_fs->position_x;
       float dy = fs->position_y - prev_fs->position_y;
       float dt = hs->timestamp - prev_hs->timestamp;
-      ii.scroll_buffer_.Insert(dx, dy, dt);
+      ii.scroll_buffer_.Insert(dx, dy, hs->timestamp, prev_hs->timestamp);
       // Enforce assumption that all scrolls are positive in Y only
       EXPECT_DOUBLE_EQ(dx, 0);
       EXPECT_GT(dy, 0);
