@@ -268,7 +268,15 @@ ScrollEvent ScrollEvent::Add(const ScrollEvent& evt_a,
   return ret;
 }
 
-void ScrollEventBuffer::Insert(float dx, float dy, float dt) {
+void ScrollEventBuffer::Insert(float dx, float dy, stime_t timestamp,
+                               stime_t prev_timestamp) {
+  float dt;
+  if (size_ > 0) {
+    dt = timestamp - last_scroll_timestamp_;
+  } else {
+    dt = timestamp - prev_timestamp;
+  }
+  last_scroll_timestamp_ = timestamp;
   head_ = (head_ + max_size_ - 1) % max_size_;
   buf_[head_].dx = dx;
   buf_[head_].dy = dy;
@@ -527,7 +535,7 @@ bool ScrollManager::FillResultScroll(
       !FloatEq(dx, 0.0) || !FloatEq(dy, 0.0))
     scroll_buffer->Insert(
         dx, dy,
-        state_buffer.Get(0).timestamp - state_buffer.Get(1).timestamp);
+        state_buffer.Get(0).timestamp, state_buffer.Get(1).timestamp);
   return true;
 }
 
