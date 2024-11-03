@@ -412,15 +412,15 @@ TEST(GesturesTest, StimeFromTimespecTest) {
 }
 
 TEST(GesturesTest, FingerStateFlagsStringTest) {
-  EXPECT_EQ("0", FingerState::FlagsString(0));
-  EXPECT_EQ("GESTURES_FINGER_PALM",
+  EXPECT_EQ("no flags", FingerState::FlagsString(0));
+  EXPECT_EQ("PALM",
             FingerState::FlagsString(GESTURES_FINGER_PALM));
-  EXPECT_EQ("GESTURES_FINGER_PALM | GESTURES_FINGER_WARP_X_MOVE",
+  EXPECT_EQ("PALM | WARP_X_MOVE",
             FingerState::FlagsString(
                 GESTURES_FINGER_PALM | GESTURES_FINGER_WARP_X_MOVE));
   // 1 << 31 probably won't be used as a finger flag value anytime soon, so use
   // it to test prepending the remaining number.
-  EXPECT_EQ("2147483648 | GESTURES_FINGER_PALM",
+  EXPECT_EQ("2147483648 | PALM",
             FingerState::FlagsString(GESTURES_FINGER_PALM | (1 << 31)));
 }
 
@@ -503,8 +503,8 @@ TEST(GesturesTest, HardwareStateToStringTest) {
     "20.0",
     "30.0",
     "14",
-    "GESTURES_FINGER_WARP_Y_NON_MOVE",
-    "GESTURES_FINGER_PALM",
+    "WARP_Y_NON_MOVE",
+    "PALM",
     "1.5",
     "2.5",
     "3.5",
@@ -514,24 +514,31 @@ TEST(GesturesTest, HardwareStateToStringTest) {
     "20.5",
     "30.5",
     "15",
-    "GESTURES_FINGER_WARP_X_NON_MOVE",
+    "WARP_X_NON_MOVE",
     "1.123",
-    "1, 2, 2"
+    "buttons 0x1",
+    "2 f",
+    "2 t",
   };
   const char* short_expected[] = {
     "2.123",
-    "0, 0, 0",
-    "{}"
+    "buttons 0x0",
+    "0 f",
+    "0 t",
+    "{}",
   };
   string long_str = hs[0].String();
   string short_str = hs[1].String();
 
-  for (size_t i = 0; i < arraysize(expected); i++)
+  for (size_t i = 0; i < arraysize(expected); i++) {
     EXPECT_NE(nullptr, strstr(long_str.c_str(), expected[i]))
-        << " str: " << expected[i];
-  for (size_t i = 0; i < arraysize(short_expected); i++)
+        << "\"" << long_str << "\" should contain \"" << expected[i] << "\"";
+  }
+  for (size_t i = 0; i < arraysize(short_expected); i++) {
     EXPECT_NE(nullptr, strstr(short_str.c_str(), short_expected[i]))
-        << " str: " << short_expected[i];
+        << "\"" << short_str << "\" should contain \"" << short_expected[i]
+        << "\"";
+  }
 
   return;
 }
