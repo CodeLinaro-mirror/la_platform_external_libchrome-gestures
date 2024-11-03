@@ -802,6 +802,12 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   DoubleProperty change_move_distance_;
   // Speed [mm/s] a finger must move to lock on to that finger
   DoubleProperty move_lock_speed_;
+  // Speed [mm/s] a finger must move to lock on to that finger, when another
+  // finger is already locked.
+  DoubleProperty move_change_lock_speed_;
+  // How much faster a finger must move than the currently locked finger to
+  // switch the lock.
+  DoubleProperty move_change_lock_ratio_;
   // Distance [mm] a finger must move to report that movement
   DoubleProperty move_report_distance_;
   // Time [s] to block movement after number or identify of fingers change
