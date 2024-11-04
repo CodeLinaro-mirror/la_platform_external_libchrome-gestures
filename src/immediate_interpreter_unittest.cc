@@ -3054,6 +3054,92 @@ TEST(ImmediateInterpreterTest, ClickTest) {
   }
 }
 
+struct ClickDragLockInputAndExpectations {
+  HardwareState hs;
+  stime_t timeout;
+  unsigned expected_down;
+  unsigned expected_up;
+  bool expected_move;
+};
+
+TEST(ImmediateInterpreterTest, ClickDragLockTest) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  HardwareProperties hwprops = {
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
+  };
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+
+  FingerState finger_states[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+    {0, 0, 0, 0, 10, 0, 50, 50, 1, 0},
+    {0, 0, 0, 0, 10, 0, 70, 50, 2, 0},
+    // One finger moves fast enough to lock on.
+    {0, 0, 0, 0, 10, 0, 45, 50, 1, 0},
+    {0, 0, 0, 0, 10, 0, 70, 50, 2, 0},
+    // Second finger moves, but not fast enough to break lock.
+    {0, 0, 0, 0, 10, 0, 45, 50, 1, 0},
+    {0, 0, 0, 0, 10, 0, 71, 50, 2, 0},
+    // Second finger moves fast enough to break lock.
+    {0, 0, 0, 0, 10, 0, 45, 50, 1, 0},
+    {0, 0, 0, 0, 10, 0, 76, 50, 2, 0},
+    // First finger moves, but not fast enough to break lock.
+    {0, 0, 0, 0, 10, 0, 44, 50, 1, 0},
+    {0, 0, 0, 0, 10, 0, 76, 50, 2, 0},
+  };
+  ClickDragLockInputAndExpectations records[] = {
+    // reset
+    {make_hwstate(0,0,0,0,nullptr),NO_DEADLINE,0,0,false},
+
+    {make_hwstate(1,1,0,0,nullptr),NO_DEADLINE,0,0,false},
+    {make_hwstate(1.01,1,2,2,&finger_states[0]), NO_DEADLINE, 0, 0, false},
+    {make_hwstate(2,1,2,2,&finger_states[0]),
+     NO_DEADLINE, GESTURES_BUTTON_RIGHT, 0, false},
+    {make_hwstate(2.1,1,2,2,&finger_states[2]), NO_DEADLINE, 0, 0, true},
+    {make_hwstate(2.2,1,2,2,&finger_states[4]), NO_DEADLINE, 0, 0, false},
+    {make_hwstate(2.3,1,2,2,&finger_states[6]), NO_DEADLINE, 0, 0, true},
+    {make_hwstate(2.4,1,2,2,&finger_states[8]), NO_DEADLINE, 0, 0, false},
+    {make_hwstate(3,0,0,0,nullptr),
+     NO_DEADLINE, 0, GESTURES_BUTTON_RIGHT, false},
+
+    {make_hwstate(10,0,0,0,nullptr), NO_DEADLINE, 0, 0, false}
+  };
+
+  for (size_t i = 0; i < arraysize(records); ++i) {
+    Gesture* result = nullptr;
+    if (records[i].timeout < 0.0)
+      result = wrapper.SyncInterpret(records[i].hs, nullptr);
+    else
+      result = wrapper.HandleTimer(records[i].timeout, nullptr);
+    if (records[i].expected_move) {
+      ASSERT_NE(nullptr, result) << "i=" << i;
+      EXPECT_EQ(result->type, kGestureTypeMove);
+      EXPECT_NE(result->details.move.dx, 0.0);
+    } else if (records[i].expected_down != 0 || records[i].expected_up != 0) {
+      ASSERT_NE(nullptr, result) << "i=" << i;
+      EXPECT_EQ(records[i].expected_down, result->details.buttons.down);
+      EXPECT_EQ(records[i].expected_up, result->details.buttons.up);
+    } else {
+      if (result) {
+        EXPECT_EQ(result->type, kGestureTypeMove);
+        EXPECT_EQ(result->details.move.dx, 0.0);
+      }
+    }
+  }
+}
+
 struct BigHandsRightClickInputAndExpectations {
   HardwareState hs;
   unsigned out_buttons_down;
