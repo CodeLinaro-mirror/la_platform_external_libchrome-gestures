@@ -1033,6 +1033,8 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
                                       false),
       change_move_distance_(prop_reg, "Change Min Move Distance", 3.0),
       move_lock_speed_(prop_reg, "Move Lock Speed", 10.0),
+      move_change_lock_speed_(prop_reg, "Move Change Lock Speed", 20.0),
+      move_change_lock_ratio_(prop_reg, "Move Change Lock Ratio", 2.0),
       move_report_distance_(prop_reg, "Move Report Distance", 0.35),
       change_timeout_(prop_reg, "Change Timeout", 0.2),
       evaluation_timeout_(prop_reg, "Evaluation Timeout", 0.15),
@@ -3156,39 +3158,82 @@ void ImmediateInterpreter::FillResultGesture(
       if (fingers.empty())
         return;
       // Use the finger which has moved the most to compute motion.
-      // First, need to find out which finger that is.
+      // First, check if we have locked onto a fast finger in the past.
       const FingerState* current = nullptr;
       if (moving_finger_id_ >= 0)
         current = hwstate.GetFingerState(moving_finger_id_);
 
+      // Determine which finger is moving fastest.
+      const FingerState* fastest = nullptr;
       const HardwareState& prev_hs = state_buffer_.Get(1);
-      if (!current) {
-        float curr_dist_sq = -1;
-        for (short tracking_id : fingers) {
-          const FingerState* fs = hwstate.GetFingerState(tracking_id);
-          const FingerState* prev_fs = prev_hs.GetFingerState(fs->tracking_id);
-          if (!prev_fs)
-            break;
-          float dist_sq = DistSq(*fs, *prev_fs);
-          if (dist_sq > curr_dist_sq) {
-            current = fs;
-            curr_dist_sq = dist_sq;
-          }
+      float curr_dist_sq = -1;
+      for (short tracking_id : fingers) {
+        const FingerState* fs = hwstate.GetFingerState(tracking_id);
+        const FingerState* prev_fs = prev_hs.GetFingerState(fs->tracking_id);
+        if (!prev_fs)
+          break;
+        float dist_sq = DistSq(*fs, *prev_fs);
+        if (dist_sq > curr_dist_sq) {
+          fastest = fs;
+          curr_dist_sq = dist_sq;
         }
       }
+
+      if (!current)
+        current = fastest;
       if (!current)
         return;
 
-      // Find corresponding finger id in previous state
       const FingerState* prev =
           state_buffer_.Get(1).GetFingerState(current->tracking_id);
+      if (!prev)
+        return;
+
+      float dx = current->position_x - prev->position_x;
+      if (current->flags & GESTURES_FINGER_WARP_X_MOVE)
+        dx = 0.0;
+      float dy = current->position_y - prev->position_y;
+      if (current->flags & GESTURES_FINGER_WARP_Y_MOVE)
+        dy = 0.0;
+      float dsq = dx * dx + dy * dy;
+      stime_t dt = hwstate.timestamp - state_buffer_.Get(1).timestamp;
+
+      // If we are locked on to a finger that is not the fastest moving,
+      // determine if we want to switch the lock to the fastest finger.
+      const FingerState* prev_fastest = nullptr;
+      if (fastest) {
+          prev_fastest =
+              state_buffer_.Get(1).GetFingerState(fastest->tracking_id);
+      }
+      if (prev_fastest && fastest != current) {
+        float fastest_dx = fastest->position_x - prev_fastest->position_x;
+        if (fastest->flags & GESTURES_FINGER_WARP_X_MOVE)
+          fastest_dx = 0.0;
+        float fastest_dy = fastest->position_y - prev_fastest->position_y;
+        if (fastest->flags & GESTURES_FINGER_WARP_Y_MOVE)
+          fastest_dy = 0.0;
+        float fastest_dsq = fastest_dx * fastest_dx + fastest_dy * fastest_dy;
+
+        float change_lock_dsq_thresh =
+            (move_change_lock_speed_.val_ * move_change_lock_speed_.val_) *
+            (dt * dt);
+        if (fastest_dsq > dsq * move_change_lock_ratio_.val_ &&
+            fastest_dsq > change_lock_dsq_thresh) {
+          moving_finger_id_ = fastest->tracking_id;
+          current = fastest;
+          dx = fastest_dx;
+          dy = fastest_dy;
+          dsq = fastest_dsq;
+          prev = prev_fastest;
+        }
+      }
+
       const FingerState* prev2 =
           state_buffer_.Get(2).GetFingerState(current->tracking_id);
       if (!prev || !current)
         return;
       if (current->flags & GESTURES_FINGER_MERGE)
         return;
-      stime_t dt = hwstate.timestamp - state_buffer_.Get(1).timestamp;
       bool suppress_finger_movement =
           scroll_manager_.SuppressStationaryFingerMovement(
               *current, *prev, dt) ||
@@ -3216,13 +3261,6 @@ void ImmediateInterpreter::FillResultGesture(
         return;
       }
       scroll_manager_.prev_result_suppress_finger_movement_ = false;
-      float dx = current->position_x - prev->position_x;
-      if (current->flags & GESTURES_FINGER_WARP_X_MOVE)
-        dx = 0.0;
-      float dy = current->position_y - prev->position_y;
-      if (current->flags & GESTURES_FINGER_WARP_Y_MOVE)
-        dy = 0.0;
-      float dsq = dx * dx + dy * dy;
       float dx_total = current->position_x -
                        start_positions_[current->tracking_id].x_;
       float dy_total = current->position_y -

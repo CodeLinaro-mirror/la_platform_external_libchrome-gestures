@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #define HANDLE_EINTR(x) ({ \
-  typeof(x) eintr_wrapper_result; \
+  decltype(x) eintr_wrapper_result; \
   do { \
     eintr_wrapper_result = (x); \
   } while (eintr_wrapper_result == -1 && errno == EINTR); \
@@ -19,7 +19,7 @@
 })
 
 #define IGNORE_EINTR(x) ({ \
-  typeof(x) eintr_wrapper_result; \
+  decltype(x) eintr_wrapper_result; \
   do { \
     eintr_wrapper_result = (x); \
     if (eintr_wrapper_result == -1 && errno == EINTR) { \

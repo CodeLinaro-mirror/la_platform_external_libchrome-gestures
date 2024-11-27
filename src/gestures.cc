@@ -87,28 +87,28 @@ std::string HardwareProperties::String() const {
 namespace {
 string NameForFingerStateFlag(unsigned flag) {
 #define CASERET(name)                           \
-  case name: return #name
+  case GESTURES_FINGER_##name: return #name
   switch (flag) {
-    CASERET(GESTURES_FINGER_WARP_X_NON_MOVE);
-    CASERET(GESTURES_FINGER_WARP_Y_NON_MOVE);
-    CASERET(GESTURES_FINGER_NO_TAP);
-    CASERET(GESTURES_FINGER_POSSIBLE_PALM);
-    CASERET(GESTURES_FINGER_PALM);
-    CASERET(GESTURES_FINGER_WARP_X_MOVE);
-    CASERET(GESTURES_FINGER_WARP_Y_MOVE);
-    CASERET(GESTURES_FINGER_WARP_X_TAP_MOVE);
-    CASERET(GESTURES_FINGER_WARP_Y_TAP_MOVE);
-    CASERET(GESTURES_FINGER_MERGE);
-    CASERET(GESTURES_FINGER_TREND_INC_X);
-    CASERET(GESTURES_FINGER_TREND_DEC_X);
-    CASERET(GESTURES_FINGER_TREND_INC_Y);
-    CASERET(GESTURES_FINGER_TREND_DEC_Y);
-    CASERET(GESTURES_FINGER_TREND_INC_PRESSURE);
-    CASERET(GESTURES_FINGER_TREND_DEC_PRESSURE);
-    CASERET(GESTURES_FINGER_TREND_INC_TOUCH_MAJOR);
-    CASERET(GESTURES_FINGER_TREND_DEC_TOUCH_MAJOR);
-    CASERET(GESTURES_FINGER_INSTANTANEOUS_MOVING);
-    CASERET(GESTURES_FINGER_WARP_TELEPORTATION);
+    CASERET(WARP_X_NON_MOVE);
+    CASERET(WARP_Y_NON_MOVE);
+    CASERET(NO_TAP);
+    CASERET(POSSIBLE_PALM);
+    CASERET(PALM);
+    CASERET(WARP_X_MOVE);
+    CASERET(WARP_Y_MOVE);
+    CASERET(WARP_X_TAP_MOVE);
+    CASERET(WARP_Y_TAP_MOVE);
+    CASERET(MERGE);
+    CASERET(TREND_INC_X);
+    CASERET(TREND_DEC_X);
+    CASERET(TREND_INC_Y);
+    CASERET(TREND_DEC_Y);
+    CASERET(TREND_INC_PRESSURE);
+    CASERET(TREND_DEC_PRESSURE);
+    CASERET(TREND_INC_TOUCH_MAJOR);
+    CASERET(TREND_DEC_TOUCH_MAJOR);
+    CASERET(INSTANTANEOUS_MOVING);
+    CASERET(WARP_TELEPORTATION);
   }
 #undef CASERET
   return "";
@@ -134,21 +134,21 @@ string FingerState::FlagsString(unsigned flags) {
     // strip extra pipe
     ret = ret.substr(strlen(kPipeSeparator));
   } else {
-    ret = "0";
+    ret = "no flags";
   }
   return ret;
 }
 
 string FingerState::String() const {
-  return StringPrintf("{ %f, %f, %f, %f, %f, %f, %f, %f, %d, %s }",
+  return StringPrintf("{ %d: (%.2f, %.2f), touch %.2fx%.2f, width %.2fx%.2f, "
+                      "pressure %.2f, orient %.2f%s }",
+                      tracking_id,
+                      position_x, position_y,
                       touch_major, touch_minor,
                       width_major, width_minor,
                       pressure,
                       orientation,
-                      position_x,
-                      position_y,
-                      tracking_id,
-                      FlagsString(flags).c_str());
+                      flags ? (", " + FlagsString(flags)).c_str() : "");
 }
 
 FingerState* HardwareState::GetFingerState(short tracking_id) {
@@ -165,7 +165,7 @@ const FingerState* HardwareState::GetFingerState(short tracking_id) const {
 }
 
 string HardwareState::String() const {
-  string ret = StringPrintf("{ %f, %d, %d, %d, {",
+  string ret = StringPrintf("{ %f, buttons 0x%x, %d f, %d t, {",
                             timestamp,
                             buttons_down,
                             finger_cnt,
@@ -245,8 +245,9 @@ string Gesture::String() const {
                           details.pinch.zoom_state);
     case kGestureTypeButtonsChange:
       return StringPrintf("(Gesture type: buttons start: %f stop: "
-                          "%f down: %d up: %d)", start_time, end_time,
-                          details.buttons.down, details.buttons.up);
+                          "%f down: %d up: %d is_tap: %s)", start_time, end_time,
+                          details.buttons.down, details.buttons.up,
+                          details.buttons.is_tap ? "true" : "false");
     case kGestureTypeFling:
       return StringPrintf("(Gesture type: fling start: %f stop: "
                           "%f vx: %f vy: %f ordinal_dx: %f ordinal_dy: %f "

@@ -39,6 +39,7 @@ cc_defaults {
         "-D_FILE_OFFSET_BITS=64",
         "-DGESTURES_INTERNAL=1",
     ],
+    cpp_std: "c++20",
     sanitize: {
         all_undefined: true,
         integer_overflow: true,
