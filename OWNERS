@@ -8,3 +8,4 @@ seobrien@chromium.org
 wmahon@google.com
 
 per-file Android.bp=benm@chromium.org,hcutts@chromium.org
+include platform/system/core:/janitors/OWNERS #{LAST_RESORT_SUGGESTION}
