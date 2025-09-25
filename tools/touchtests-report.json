@@ -2890,6 +2890,55 @@
     "result": "success",
     "score": 0.9962386944621435
   },
+  "screebo-1.0/baseline/click": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "screebo-1.0/baseline/drag": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "screebo-1.0/baseline/fling": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "screebo-1.0/baseline/move": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "screebo-1.0/baseline/scroll": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "screebo-1.0/baseline/tap": {
+    "description": "",
+    "disabled": true,
+    "error": "",
+    "result": "incomplete",
+    "score": 0
+  },
+  "screebo-1.0/check_unexpected_fling": {
+    "description": "",
+    "disabled": false,
+    "error": "",
+    "result": "success",
+    "score": 1.0
+  },
   "snow1.3/2F_TTC_with_1F_on_edge": {
     "description": "",
     "disabled": false,

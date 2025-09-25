@@ -97,9 +97,11 @@ void TapRecord::Update(const HardwareState& hwstate,
                        const std::set<short>& added,
                        const std::set<short>& removed,
                        const std::set<short>& dead) {
-  if (!t5r2_ && (hwstate.finger_cnt != hwstate.touch_cnt ||
-                 prev_hwstate.finger_cnt != prev_hwstate.touch_cnt)) {
-    // switch to T5R2 mode
+  if (!t5r2_ && (hwstate.touch_cnt > hwstate.finger_cnt ||
+                 prev_hwstate.touch_cnt > prev_hwstate.finger_cnt)) {
+    Log("TapRecord::Update: switching to T5R2 mode (%d > %d || %d > %d)",
+        hwstate.touch_cnt, hwstate.finger_cnt, prev_hwstate.touch_cnt,
+        prev_hwstate.finger_cnt);
     t5r2_ = true;
     t5r2_touched_size_ = touched_.size();
     t5r2_released_size_ = released_.size();
@@ -1021,6 +1023,7 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
       tap_drag_timeout_(prop_reg, "Tap Drag Timeout", 0.3),
       tap_drag_enable_(prop_reg, "Tap Drag Enable", false),
       drag_lock_enable_(prop_reg, "Tap Drag Lock Enable", false),
+      drag_scroll_enable_(prop_reg, "Drag and Scroll Enable", false),
       tap_drag_stationary_time_(prop_reg, "Tap Drag Stationary Time", 0),
       tap_move_dist_(prop_reg, "Tap Move Distance", 2.0),
       tap_min_pressure_(prop_reg, "Tap Minimum Pressure", 25.0),
@@ -1100,8 +1103,10 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
                                      "Button Max Distance From Expected", 20.0),
       button_right_click_zone_enable_(prop_reg,
                                       "Button Right Click Zone Enable", false),
-      button_right_click_zone_size_(prop_reg,
-                                    "Button Right Click Zone Size", 20.0),
+      button_right_click_zone_width_(prop_reg,
+                                    "Button Right Click Zone Width", 20.0),
+      button_right_click_zone_height_(prop_reg,
+                                    "Button Right Click Zone Height", 20.0),
       keyboard_touched_timeval_high_(prop_reg, "Keyboard Touched Timeval High",
                                      0),
       keyboard_touched_timeval_low_(prop_reg, "Keyboard Touched Timeval Low",
@@ -1770,6 +1775,39 @@ void ImmediateInterpreter::UpdateCurrentGestureType(
 
   // Physical button or tap overrides current gesture state
   if (sent_button_down_ || tap_to_click_state_ == kTtcDrag) {
+    if (!drag_scroll_enable_.val_) {
+      // Drag-and-Scroll feature is disabled, so force all interactions to
+      // be a Move gesture.
+      current_gesture_type_ = kGestureTypeMove;
+      return;
+    }
+
+    // A scroll/swipe was in progress, but fingers were lifted.
+    if (IsScrollOrSwipe(prev_gesture_type_) && num_gesturing < 2) {
+      current_gesture_type_ = kGestureTypeNull;
+      return;
+    }
+
+    if (num_gesturing >= 2) {
+      vector<short, kMaxGesturingFingers> sorted_ids;
+      SortFingersByProximity(gs_fingers, hwstate, &sorted_ids);
+
+      const FingerState* finger1 = hwstate.GetFingerState(sorted_ids[0]);
+      const FingerState* finger2 = hwstate.GetFingerState(sorted_ids[1]);
+
+      // Verify this pair is performing a valid scrolling gesture.
+      if (finger1 && finger2 &&
+        GetTwoFingerGestureType(*finger1, *finger2) == kGestureTypeScroll) {
+        current_gesture_type_ = kGestureTypeScroll;
+        // Set the two scrolling fingers as the 'active' ones for this gesture.
+        active_gs_fingers->clear();
+        active_gs_fingers->insert(finger1->tracking_id);
+        active_gs_fingers->insert(finger2->tracking_id);
+        return;
+      }
+    }
+
+    // Default case for a held button is a Move gesture.
     current_gesture_type_ = kGestureTypeMove;
     return;
   }
@@ -2965,7 +3003,12 @@ int ImmediateInterpreter::GetButtonTypeFromPosition(
   }
 
   const FingerState& fs = hwstate.fingers[0];
-  if (fs.position_x > hwprops_->right - button_right_click_zone_size_.val_) {
+  bool on_right = fs.position_x >
+      hwprops_->right - button_right_click_zone_width_.val_;
+  bool on_bottom = fs.position_y >
+      hwprops_->bottom - button_right_click_zone_height_.val_;
+  bool height_check_enabled = button_right_click_zone_height_.val_ > 0.0;
+  if (on_right && (!height_check_enabled || on_bottom)) {
     return GESTURES_BUTTON_RIGHT;
   }
 

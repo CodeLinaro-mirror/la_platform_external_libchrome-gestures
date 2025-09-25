@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <set>
 #include <string>
+#include <string_view>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -102,37 +103,37 @@ void ActivityLog::LogPropChange(const PropChangeEntry& prop_change) {
 }
 
 void ActivityLog::LogGestureConsume(
-    const std::string& name, const Gesture& gesture) {
-  GestureConsume gesture_consume { name, gesture };
+    const std::string_view name, const Gesture& gesture) {
+  GestureConsume gesture_consume { std::string(name), gesture };
   Entry* entry = PushBack();
   entry->details = gesture_consume;
 }
 
 void ActivityLog::LogGestureProduce(
-    const std::string& name, const Gesture& gesture) {
-  GestureProduce gesture_produce { name, gesture };
+    const std::string_view name, const Gesture& gesture) {
+  GestureProduce gesture_produce { std::string(name), gesture };
   Entry* entry = PushBack();
   entry->details = gesture_produce;
 }
 
-void ActivityLog::LogHardwareStatePre(const std::string& name,
+void ActivityLog::LogHardwareStatePre(const std::string_view name,
                                       const HardwareState& hwstate) {
-  HardwareStatePre hwstate_pre { name, hwstate };
+  HardwareStatePre hwstate_pre { std::string(name), hwstate };
   Entry* entry = PushBack();
   entry->details = hwstate_pre;
 }
 
-void ActivityLog::LogHardwareStatePost(const std::string& name,
+void ActivityLog::LogHardwareStatePost(const std::string_view name,
                                        const HardwareState& hwstate) {
-  HardwareStatePost hwstate_post { name, hwstate };
+  HardwareStatePost hwstate_post { std::string(name), hwstate };
   Entry* entry = PushBack();
   entry->details = hwstate_post;
 }
 
-void ActivityLog::LogHandleTimerPre(const std::string& name,
+void ActivityLog::LogHandleTimerPre(const std::string_view name,
                                     stime_t now, const stime_t* timeout) {
   HandleTimerPre handle;
-  handle.name = name;
+  handle.name = std::string(name);
   handle.now = now;
   handle.timeout_is_present = (timeout != nullptr);
   handle.timeout = (timeout == nullptr) ? 0 : *timeout;
@@ -140,10 +141,10 @@ void ActivityLog::LogHandleTimerPre(const std::string& name,
   entry->details = handle;
 }
 
-void ActivityLog::LogHandleTimerPost(const std::string& name,
+void ActivityLog::LogHandleTimerPost(const std::string_view name,
                                      stime_t now, const stime_t* timeout) {
   HandleTimerPost handle;
-  handle.name = name;
+  handle.name = std::string(name);
   handle.now = now;
   handle.timeout_is_present = (timeout != nullptr);
   handle.timeout = (timeout == nullptr) ? 0 : *timeout;

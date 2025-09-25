@@ -6,6 +6,7 @@
 
 #include <cxxabi.h>
 #include <string>
+#include <string_view>
 
 #include <json/value.h>
 #include <json/writer.h>
@@ -190,37 +191,37 @@ void Interpreter::LogOutputs(const Gesture* result,
 }
 
 void Interpreter::LogGestureConsume(
-    const std::string& name, const Gesture& gesture) {
+    const std::string_view name, const Gesture& gesture) {
   if (EventDebugLoggingIsEnabled(EventDebug::Gesture))
     log_->LogGestureConsume(name, gesture);
 }
 
 void Interpreter::LogGestureProduce(
-    const std::string& name, const Gesture& gesture) {
+    const std::string_view name, const Gesture& gesture) {
   if (EventDebugLoggingIsEnabled(EventDebug::Gesture))
     log_->LogGestureProduce(name, gesture);
 }
 
 void Interpreter::LogHardwareStatePre(
-    const std::string& name, const HardwareState& hwstate) {
+    const std::string_view name, const HardwareState& hwstate) {
   if (EventDebugLoggingIsEnabled(EventDebug::HardwareState))
     log_->LogHardwareStatePre(name, hwstate);
 }
 
 void Interpreter::LogHardwareStatePost(
-    const std::string& name, const HardwareState& hwstate) {
+    const std::string_view name, const HardwareState& hwstate) {
   if (EventDebugLoggingIsEnabled(EventDebug::HardwareState))
     log_->LogHardwareStatePost(name, hwstate);
 }
 
 void Interpreter::LogHandleTimerPre(
-    const std::string& name, stime_t now, const stime_t* timeout) {
+    const std::string_view name, stime_t now, const stime_t* timeout) {
   if (EventDebugLoggingIsEnabled(EventDebug::HandleTimer))
     log_->LogHandleTimerPre(name, now, timeout);
 }
 
 void Interpreter::LogHandleTimerPost(
-    const std::string& name, stime_t now, const stime_t* timeout) {
+    const std::string_view name, stime_t now, const stime_t* timeout) {
   if (EventDebugLoggingIsEnabled(EventDebug::HandleTimer))
     log_->LogHandleTimerPost(name, now, timeout);
 }
