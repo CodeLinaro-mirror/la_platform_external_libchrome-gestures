@@ -1736,9 +1736,11 @@ protected:
   }
 
   void run_test(const std::vector<HWStateGs>& states,
-                std::optional<std::string> label = std::nullopt) {
+                std::optional<std::string> label = std::nullopt,
+                const HardwareProperties* hwprops = nullptr) {
     ii_.reset(new ImmediateInterpreter(nullptr, nullptr));
-    TestInterpreterWrapper wrapper(ii_.get(), &hwprops_);
+    TestInterpreterWrapper wrapper(ii_.get(),
+                                   hwprops == nullptr ? &hwprops_ : hwprops);
     set_gesture_properties();
     check_hwstates(states, label);
   }
@@ -1793,10 +1795,22 @@ protected:
       state.hws.fingers = &finger_states[i][0];
     }
 
-    ii_.reset(new ImmediateInterpreter(nullptr, nullptr));
-    TestInterpreterWrapper wrapper(ii_.get(), &hwprops);
-    set_gesture_properties();
-    check_hwstates(states_without_pressure, "without pressure data");
+    run_test(states_without_pressure, "without pressure data", &hwprops);
+  }
+
+  // Zeros the touch_cnt field in the states, then tests them. This simulates
+  // a touchpad that doesn't report the current count using the BTN_TOOL_*
+  // "buttons".
+  void run_test_without_touch_cnt(const std::vector<HWStateGs>& states) {
+    HardwareProperties hwprops = hwprops_;
+    hwprops.max_touch_cnt = 0;
+
+    std::vector<HWStateGs> states_without_touch_cnt = states;
+    for (HWStateGs& state : states_without_touch_cnt) {
+      state.hws.touch_cnt = 0;
+    }
+
+    run_test(states_without_touch_cnt, "without touch counts", &hwprops);
   }
 
   std::unique_ptr<ImmediateInterpreter> ii_;
@@ -1831,6 +1845,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapWithoutDraggingEnabled) {
@@ -1843,6 +1858,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapWithoutDraggingEnabled) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapWithClick) {
@@ -1855,6 +1871,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapWithClick) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerSwipe) {
@@ -1872,6 +1889,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerSwipe) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, DoubleOneFingerTap) {
@@ -1889,6 +1907,7 @@ TEST_F(TapToClickStateMachineTest, DoubleOneFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TripleOneFingerTap) {
@@ -1909,6 +1928,7 @@ TEST_F(TapToClickStateMachineTest, TripleOneFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapAndDrag) {
@@ -1930,6 +1950,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapAndDrag) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapThenMoveAfterDelayDoesNotDrag) {
@@ -1956,6 +1977,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapThenMoveAfterDelayDoesNotDrag) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 
@@ -1978,6 +2000,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapAndMoveDrags) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapDragLock) {
@@ -2006,6 +2029,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapDragLock) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerLongPress) {
@@ -2020,6 +2044,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerLongPress) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapThenLongPress) {
@@ -2038,6 +2063,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapThenLongPress) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingerTap) {
@@ -2053,6 +2079,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, ThreeFingerTap) {
@@ -2069,6 +2096,7 @@ TEST_F(TapToClickStateMachineTest, ThreeFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest,
@@ -2084,6 +2112,7 @@ TEST_F(TapToClickStateMachineTest,
   };
   run_test(states);
   run_test_with_added_resting_thumb(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingerScroll) {
@@ -2104,6 +2133,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingerScroll) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapThenTwoFingerTap) {
@@ -2123,6 +2153,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapThenTwoFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapThenMultiFrameTwoFingerTap) {
@@ -2142,6 +2173,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapThenMultiFrameTwoFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingerTapThenOneFingerTap) {
@@ -2160,6 +2192,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingerTapThenOneFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, ThreeFingerTapThenOneFingerTap) {
@@ -2179,6 +2212,7 @@ TEST_F(TapToClickStateMachineTest, ThreeFingerTapThenOneFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, DoubleTwoFingerTap) {
@@ -2198,6 +2232,7 @@ TEST_F(TapToClickStateMachineTest, DoubleTwoFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, DrumrollSeparationOnFastSwipe) {
@@ -2213,6 +2248,7 @@ TEST_F(TapToClickStateMachineTest, DrumrollSeparationOnFastSwipe) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapThenTwoFingerDrag) {
@@ -2236,6 +2272,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapThenTwoFingerDrag) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapThenMultiFrameTwoFingerDrag) {
@@ -2258,6 +2295,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapThenMultiFrameTwoFingerDrag) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerTapAndDragWithExtraFingerLater) {
@@ -2281,6 +2319,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerTapAndDragWithExtraFingerLater) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingerTapThenOneFingerDrag) {
@@ -2304,6 +2343,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingerTapThenOneFingerDrag) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingerTapAndDrag) {
@@ -2330,6 +2370,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingerTapAndDrag) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerDragThenTwoFingerTap) {
@@ -2357,6 +2398,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerDragThenTwoFingerTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, SlowDoubleTap) {
@@ -2375,6 +2417,7 @@ TEST_F(TapToClickStateMachineTest, SlowDoubleTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingerTapWithVeryCloseFingersIgnored) {
@@ -2389,6 +2432,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingerTapWithVeryCloseFingersIgnored) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, VeryLightTapIgnored) {
@@ -2399,6 +2443,7 @@ TEST_F(TapToClickStateMachineTest, VeryLightTapIgnored) {
   };
   run_test(states);
   run_test_with_added_resting_thumb(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, VeryLightTwoFingerTapIgnored) {
@@ -2412,6 +2457,7 @@ TEST_F(TapToClickStateMachineTest, VeryLightTwoFingerTapIgnored) {
   };
   run_test(states);
   run_test_with_added_resting_thumb(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest,
@@ -2426,6 +2472,7 @@ TEST_F(TapToClickStateMachineTest,
   };
   run_test(states);
   run_test_with_added_resting_thumb(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingerTapTooFarApartGivesLeftClick) {
@@ -2441,6 +2488,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingerTapTooFarApartGivesLeftClick) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingersMergingDoesntClick) {
@@ -2458,6 +2506,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingersMergingDoesntClick) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, OneFingerMarkedAsPalmIgnored) {
@@ -2471,6 +2520,7 @@ TEST_F(TapToClickStateMachineTest, OneFingerMarkedAsPalmIgnored) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest,
@@ -2491,6 +2541,7 @@ TEST_F(TapToClickStateMachineTest,
   };
   run_test(states);
   run_test_with_added_resting_thumb(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, TwoFingerClickNotRegisteredAsTap) {
@@ -2507,6 +2558,7 @@ TEST_F(TapToClickStateMachineTest, TwoFingerClickNotRegisteredAsTap) {
   run_test(states);
   run_test_with_added_resting_thumb(states);
   run_test_without_pressure_data(states);
+  run_test_without_touch_cnt(states);
 }
 
 TEST_F(TapToClickStateMachineTest, T5R2TwoFingerTapWithRestingThumb) {
@@ -3139,6 +3191,85 @@ TEST(ImmediateInterpreterTest, ClickDragLockTest) {
     }
   }
 }
+
+struct BottomRightClickAreaParameters {
+  bool enabled;
+  double zone_height;
+  float touch_y;
+  int expected_button;
+};
+
+
+class ImmediateInterpreterBottomRightTest :
+          public testing::TestWithParam<BottomRightClickAreaParameters> {};
+
+TEST_P(ImmediateInterpreterBottomRightTest, BottomRightClickAreaTest) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  BottomRightClickAreaParameters params = GetParam();
+  ii.button_right_click_zone_enable_.val_ = params.enabled;
+  ii.button_right_click_zone_height_.val_ = params.zone_height;
+  HardwareProperties hwprops = {
+    .right = 100,
+    .bottom = 100,
+    .res_x = 1,
+    .res_y = 1,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = 1,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = 0,
+  };
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+
+  // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+  FingerState fs = {0, 0, 0, 0, 10, 0, 90, params.touch_y, 1, 0};
+
+  HardwareState records[] = {
+    make_hwstate(0, 0, 0, 0, nullptr),
+    make_hwstate(1.0, 0, 0, 0, nullptr),
+    make_hwstate(1.1, 0, 1, 1, &fs),
+    make_hwstate(1.2, 1, 1, 1, &fs),
+    make_hwstate(2.2, 1, 1, 1, &fs),
+    make_hwstate(2.3, 0, 1, 1, &fs),
+    make_hwstate(2.4, 0, 0, 0, nullptr),
+  };
+
+  Gesture* result = nullptr;
+  ASSERT_EQ(nullptr, wrapper.SyncInterpret(records[0], nullptr));
+  ASSERT_EQ(nullptr, wrapper.SyncInterpret(records[1], nullptr));
+  ASSERT_EQ(nullptr, wrapper.SyncInterpret(records[2], nullptr));
+  ASSERT_EQ(nullptr, wrapper.SyncInterpret(records[3], nullptr));
+  result = wrapper.SyncInterpret(records[4], nullptr);
+  ASSERT_NE(nullptr, result);
+  EXPECT_EQ(params.expected_button, result->details.buttons.down);
+  EXPECT_EQ(GESTURES_BUTTON_NONE, result->details.buttons.up);
+  result = wrapper.SyncInterpret(records[5], nullptr);
+  ASSERT_NE(nullptr, result);
+  EXPECT_EQ(GESTURES_BUTTON_NONE, result->details.buttons.down);
+  EXPECT_EQ(params.expected_button, result->details.buttons.up);
+  ASSERT_EQ(nullptr, wrapper.SyncInterpret(records[6], nullptr));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ImmediateInterpreterBottomRight,
+    ImmediateInterpreterBottomRightTest,
+    testing::ValuesIn<BottomRightClickAreaParameters>({
+      {.enabled = false, .zone_height = 20, .touch_y = 90,
+        .expected_button = GESTURES_BUTTON_LEFT},
+      {.enabled = true, .zone_height = 20, .touch_y = 90,
+        .expected_button = GESTURES_BUTTON_RIGHT},
+      {.enabled = true, .zone_height = 20, .touch_y = 10,
+        .expected_button = GESTURES_BUTTON_LEFT},
+      {.enabled = true, .zone_height = -1, .touch_y = 90,
+        .expected_button = GESTURES_BUTTON_RIGHT},
+      {.enabled = true, .zone_height = -1, .touch_y = 10,
+        .expected_button = GESTURES_BUTTON_RIGHT},
+    }));
 
 struct BigHandsRightClickInputAndExpectations {
   HardwareState hs;
@@ -4108,7 +4239,7 @@ TEST(ImmediateInterpreterTest, ZeroClickInitializationTest) {
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
-  // Test touchpad with intergrated button switch.
+  // Test touchpad with integrated button switch.
   EXPECT_EQ(0, ii.zero_finger_click_enable_.val_);
   // Test touchpad with separate buttons.
   hwprops.is_button_pad = 0;
@@ -4127,6 +4258,377 @@ TEST(ImmediateInterpreterTest, PointTest) {
   EXPECT_FALSE(point != point_eq);
   EXPECT_TRUE(point != point_ne0);
   EXPECT_TRUE(point != point_ne1);
+}
+
+class DragScrollTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    hwprops_ = {
+      .right = 1000,
+      .bottom = 1000,
+      .res_x = 50,
+      .res_y = 50,
+      .orientation_minimum = 0,
+      .orientation_maximum = 0,
+      .max_finger_cnt = 5,
+      .max_touch_cnt = 5,
+      .supports_t5r2 = false,
+      .support_semi_mt = false,
+      .is_button_pad = false,
+      .has_wheel = false,
+      .wheel_is_hi_res = false,
+      .is_haptic_pad = false,
+    };
+    button_finger_ = {0, 0, 0, 0, 50, 0, 500, 500, 1, 0};
+
+    ii_.reset(new ImmediateInterpreter(nullptr, nullptr));
+    wrapper_.reset(new TestInterpreterWrapper(ii_.get(), &hwprops_));
+  }
+
+  std::unique_ptr<ImmediateInterpreter> ii_;
+  std::unique_ptr<TestInterpreterWrapper> wrapper_;
+  HardwareProperties hwprops_;
+  FingerState button_finger_;
+};
+
+TEST_F(DragScrollTest, DragScrollDisabledDefaultsToMove) {
+  ii_->drag_scroll_enable_.val_ = false;
+
+  // Frame 1: Button down.
+  HardwareState curr_frame =
+    make_hwstate(0.1, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  Gesture* gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Button down timeout reached, button click registered.
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+
+  // Frame 3: Fingers added, no movement detected yet.
+  FingerState button_down_scroll_fingers_appear[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 550, 400, 3, 0},
+  };
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 3, 3,
+    button_down_scroll_fingers_appear);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 4: Fingers move in a scroll-like pattern.
+  // Since the flag is off, it should still be a Move gesture.
+  FingerState button_down_scrolling_1[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 442, 376, 2, 0},
+    {0, 0, 0, 0, 50, 0, 555, 383, 3, 0},
+  };
+  curr_frame = make_hwstate(0.4, GESTURES_BUTTON_LEFT,
+    3, 3, button_down_scrolling_1);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+
+  // Frame 5: Fingers move in a scroll-like pattern.
+  // Since the flag is off, it should still be a Move gesture.
+  FingerState button_down_scrolling_2[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 448, 364, 2, 0},
+    {0, 0, 0, 0, 50, 0, 560, 357, 3, 0},
+  };
+  curr_frame = make_hwstate(0.5, GESTURES_BUTTON_LEFT, 3, 3,
+    button_down_scrolling_2);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+}
+
+TEST_F(DragScrollTest, DragScrollEnabledProducesScroll) {
+  ii_->drag_scroll_enable_.val_ = true;
+
+  // Frame 1: Button down.
+  HardwareState curr_frame =
+    make_hwstate(0.1, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  Gesture* gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Button down timeout reached, button click registered.
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+
+  // Frame 3: Fingers added, no movement detected yet.
+  FingerState fingers_appear[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 550, 400, 3, 0},
+  };
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 3, 3, fingers_appear);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 4: Fingers move in a scroll-like pattern.
+  FingerState scrolling_fingers_1[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 442, 389, 2, 0},
+    {0, 0, 0, 0, 50, 0, 555, 380, 3, 0},
+  };
+  curr_frame =
+    make_hwstate(0.4, GESTURES_BUTTON_LEFT, 3, 3, scrolling_fingers_1);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_EQ(0, gs->details.scroll.dx);
+  EXPECT_EQ(-20, gs->details.scroll.dy);
+
+  // Frame 5: Fingers move in a scroll-like pattern again.
+  FingerState scrolling_fingers_2[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 448, 364, 2, 0},
+    {0, 0, 0, 0, 50, 0, 560, 350, 3, 0},
+  };
+  curr_frame =
+    make_hwstate(0.5, GESTURES_BUTTON_LEFT, 3, 3, scrolling_fingers_2);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_EQ(0, gs->details.scroll.dx);
+  EXPECT_EQ(-30, gs->details.scroll.dy);
+}
+
+
+TEST_F(DragScrollTest, DragScrollTransitionsToFlingOnLift) {
+  ii_->drag_scroll_enable_.val_ = true;
+
+  // Frame 1: Button down.
+  HardwareState curr_frame =
+    make_hwstate(0.1, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  Gesture* gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Button down timeout reached, button click registered.
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+
+  // Frame 3: Fingers are added.
+  FingerState fingers_appear[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 550, 400, 3, 0},
+  };
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 3, 3, fingers_appear);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 4: Scroll occurs.
+  FingerState scrolling_fingers[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 442, 391, 2, 0},
+    {0, 0, 0, 0, 50, 0, 555, 379, 3, 0},
+  };
+  curr_frame = make_hwstate(0.4, GESTURES_BUTTON_LEFT, 3, 3, scrolling_fingers);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_EQ(0, gs->details.scroll.dx);
+  EXPECT_EQ(-21, gs->details.scroll.dy);
+
+  // Frame 5: Fingers 2 & 3 are lifted, which should generate a Fling.
+  curr_frame = make_hwstate(0.5, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeFling, gs->type);
+}
+
+
+TEST_F(DragScrollTest, DragScrollRevertsToMove) {
+  ii_->drag_scroll_enable_.val_ = true;
+
+  // Frame 1: Button down.
+  HardwareState curr_frame =
+    make_hwstate(0.1, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  Gesture* gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Button down timeout reached, button click registered.
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+
+  // Frame 3: Fingers are added.
+  FingerState fingers_appear[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 550, 400, 3, 0},
+  };
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 3, 3, fingers_appear);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 4: Scroll occurs.
+  FingerState scrolling_fingers[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 442, 382, 2, 0},
+    {0, 0, 0, 0, 50, 0, 555, 375, 3, 0},
+  };
+  curr_frame = make_hwstate(0.4, GESTURES_BUTTON_LEFT, 3, 3, scrolling_fingers);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_EQ(0, gs->details.scroll.dx);
+  EXPECT_EQ(-25, gs->details.scroll.dy);
+
+  // Frame 5: One scrolling finger (3) lifts. Scroll ends, fling gesture
+  // is created.
+  FingerState one_finger_lifts[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 444, 382, 2, 0},
+  };
+  curr_frame = make_hwstate(0.5, GESTURES_BUTTON_LEFT, 2, 2, one_finger_lifts);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeFling, gs->type);
+
+  // Frame 6: With only one moving finger left, it continues as a Move.
+  FingerState remaining_finger_moves[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 402, 370, 2, 0},
+  };
+  curr_frame =
+    make_hwstate(0.6, GESTURES_BUTTON_LEFT, 2, 2, remaining_finger_moves);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+}
+
+TEST_F(DragScrollTest, DragScrollWithThreeMovingFingers) {
+  ii_->drag_scroll_enable_.val_ = true;
+
+  // Frame 1: Button down.
+  HardwareState curr_frame =
+    make_hwstate(0.1, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  Gesture* gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Button down timeout reached, button click registered.
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_LEFT, 1, 1, &button_finger_);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+
+  // Frame 3: Fingers 2,3 and 4 just arrived.
+  FingerState fingers_appear[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 550, 400, 3, 0},
+    {0, 0, 0, 0, 50, 0, 650, 400, 4, 0},
+  };
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 4, 4, fingers_appear);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 4: Logic should pick closest pair (2 & 3) for the scroll.
+  FingerState scrolling_fingers[] = {
+    button_finger_,
+    {0, 0, 0, 0, 50, 0, 450, 380, 2, 0},
+    {0, 0, 0, 0, 50, 0, 546, 383, 3, 0},
+    {0, 0, 0, 0, 50, 0, 650, 395, 4, 0},
+  };
+  curr_frame = make_hwstate(0.4, GESTURES_BUTTON_LEFT, 4, 4, scrolling_fingers);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_EQ(-20, gs->details.scroll.dy);
+}
+
+TEST_F(DragScrollTest, DragScrollEnabledNormalDrag) {
+  ii_->drag_scroll_enable_.val_ = true;
+
+  // Frame 1: Button down.
+  FingerState button_drag_finger = {0, 0, 0, 0, 50, 0, 500, 500, 1, 0};
+  HardwareState curr_frame =
+    make_hwstate(0.1, GESTURES_BUTTON_LEFT, 1, 1, &button_drag_finger);
+  Gesture* gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Button down timeout reached, button click registered.
+  curr_frame =
+    make_hwstate(0.2, GESTURES_BUTTON_LEFT, 1, 1, &button_drag_finger);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+
+  // Frame 3: Finger moves, should be a standard Move gesture.
+  FingerState finger_pos_2 = {0, 0, 0, 0, 50, 0, 512, 533, 1, 0};
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 1, 1, &finger_pos_2);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+  EXPECT_EQ(12, gs->details.move.dx);
+  EXPECT_EQ(33, gs->details.move.dy);
+
+  // Frame 4: Finger moves again.
+  FingerState finger_pos_3 = {0, 0, 0, 0, 50, 0, 536, 552, 1, 0};
+  curr_frame = make_hwstate(0.4, GESTURES_BUTTON_LEFT, 1, 1, &finger_pos_3);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+  EXPECT_EQ(24, gs->details.move.dx);
+  EXPECT_EQ(19, gs->details.move.dy);
+
+  // Frame 5: Button released.
+  curr_frame = make_hwstate(0.5, 0, 1, 1, &finger_pos_3);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+  EXPECT_EQ(GESTURES_BUTTON_LEFT, gs->details.buttons.up);
+}
+
+// The test validates a two-finger drag + scroll where the button finger is also
+// one of the two scrolling fingers.
+TEST_F(DragScrollTest, DragScrollTwoFingersOnly) {
+  ii_->drag_scroll_enable_.val_ = true;
+
+  // Frame 1: Button down.
+  FingerState button_finger = {0, 0, 0, 0, 50, 0, 500, 500, 1, 0};
+  HardwareState curr_frame =
+    make_hwstate(0.1, GESTURES_BUTTON_LEFT, 1, 1, &button_finger);
+  Gesture* gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Button down timeout reached, button click registered.
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_LEFT, 1, 1, &button_finger);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+
+  // Frame 3: A second finger is added.
+  FingerState fingers_appear[] = {
+    {0, 0, 0, 0, 50, 0, 500, 480, 1, 0},
+    {0, 0, 0, 0, 50, 0, 600, 480, 2, 0},
+  };
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 2, 2, fingers_appear);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 4: Both fingers now move together in a scroll motion.
+  FingerState scrolling_fingers[] = {
+    {0, 0, 0, 0, 50, 0, 495, 464, 1, 0},
+    {0, 0, 0, 0, 50, 0, 598, 460, 2, 0},
+  };
+  curr_frame = make_hwstate(0.4, GESTURES_BUTTON_LEFT, 2, 2, scrolling_fingers);
+  gs = wrapper_->SyncInterpret(curr_frame, nullptr);
+
+  // The gesture should now be a Scroll.
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_EQ(0, gs->details.scroll.dx);
+  EXPECT_EQ(-20, gs->details.scroll.dy);
 }
 
 }  // namespace gestures

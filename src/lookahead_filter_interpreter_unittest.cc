@@ -1335,12 +1335,22 @@ TEST(LookaheadFilterInterpreterTest, ConsumeGestureTest) {
     .has_wheel = 0, .wheel_is_hi_res = 0,
     .is_haptic_pad = 0,
   };
+
+  FingerState fs[] = {
+    // TM, Tm, WM, Wm, pr, orient, x, y, id
+    { 0, 0, 0, 0, 1, 0, 10, 1, 1, 0 }
+  };
+  HardwareState hs = make_hwstate(1, 0, 1, 1, &fs[0]);
+
   TestInterpreterWrapper wrapper(interpreter.get(), &hwprops);
 
   base_interpreter = new LookaheadFilterInterpreterTestInterpreter;
   interpreter.reset(new LookaheadFilterInterpreter(
       nullptr, base_interpreter, nullptr));
   wrapper.Reset(interpreter.get());
+
+  stime_t timeout = NO_DEADLINE;
+  wrapper.SyncInterpret(hs, &timeout);
 
   // Gesture Consumer that counts each Metrics and Scroll type gesture
   class TestGestureConsumer : public GestureConsumer {
