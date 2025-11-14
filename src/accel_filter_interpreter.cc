@@ -181,12 +181,12 @@ void AccelFilterInterpreter::ConsumeGesture(const Gesture& gs) {
   size_t max_segs;
   CurveSegment* segs;
 
-  if (!get_accel_parameters(gs_copy,
-                            dx, dy,
-                            x_scale, y_scale,
-                            scale_out_x, scale_out_y,
-                            scale_out_x_ordinal, scale_out_y_ordinal,
-                            segs, max_segs)) {
+  if (!GetAccelParameters(gs_copy,
+                          dx, dy,
+                          x_scale, y_scale,
+                          scale_out_x, scale_out_y,
+                          scale_out_x_ordinal, scale_out_y_ordinal,
+                          segs, max_segs)) {
     // It was determined no acceleration was required.
     debug_data.no_accel_for_gesture_type = true;
     LogDebugData(debug_data);
@@ -197,14 +197,14 @@ void AccelFilterInterpreter::ConsumeGesture(const Gesture& gs) {
   debug_data.x_y_are_velocity = (dx == nullptr || dy == nullptr);
   debug_data.x_scale = x_scale;
   debug_data.y_scale = y_scale;
-  debug_data.dt = get_dt(gs);
-  debug_data.adjusted_dt = get_adjusted_dt(gs);
+  debug_data.dt = GetDt(gs);
+  debug_data.adjusted_dt = GetAdjustedDt(gs);
 
   float speed;
-  if (!get_actual_speed(dx, dy,
-                        gs.details.fling.vx, gs.details.fling.vy,
-                        get_adjusted_dt(gs),
-                        speed)) {
+  if (!GetActualSpeed(dx, dy,
+                      gs.details.fling.vx, gs.details.fling.vy,
+                      GetAdjustedDt(gs),
+                      speed)) {
     // dt was too small, don't accelerate.
     debug_data.no_accel_for_small_dt = true;
     LogDebugData(debug_data);
@@ -213,7 +213,7 @@ void AccelFilterInterpreter::ConsumeGesture(const Gesture& gs) {
     return;
   }
   debug_data.speed = speed;
-  smooth_speed(gs, speed);
+  SmoothSpeed(gs, speed);
   debug_data.smoothed_speed = speed;
 
   // Avoid scaling if the speed is too small.
@@ -253,12 +253,12 @@ void AccelFilterInterpreter::ConsumeGesture(const Gesture& gs) {
   }
 }
 
-float AccelFilterInterpreter::get_dt(const Gesture& gs) {
+float AccelFilterInterpreter::GetDt(const Gesture& gs) {
   return gs.end_time - gs.start_time;
 }
 
-float AccelFilterInterpreter::get_adjusted_dt(const Gesture& gs) {
-  float dt = get_dt(gs);
+float AccelFilterInterpreter::GetAdjustedDt(const Gesture& gs) {
+  float dt = GetDt(gs);
 
   // If dt is not reasonable, use the last seen reasonable value
   // Otherwise, save it as the last seen reasonable value
@@ -270,7 +270,7 @@ float AccelFilterInterpreter::get_adjusted_dt(const Gesture& gs) {
   return dt;
 }
 
-bool AccelFilterInterpreter::get_accel_parameters(
+bool AccelFilterInterpreter::GetAccelParameters(
     Gesture& gs,
     float*& dx, float*& dy,
     float& x_scale, float& y_scale,
@@ -395,7 +395,7 @@ bool AccelFilterInterpreter::get_accel_parameters(
   return true;
 }
 
-bool AccelFilterInterpreter::get_actual_speed(
+bool AccelFilterInterpreter::GetActualSpeed(
     float* dx, float* dy,
     float vx, float vy,
     float dt,
@@ -412,7 +412,7 @@ bool AccelFilterInterpreter::get_actual_speed(
   return true;
 }
 
-void AccelFilterInterpreter::smooth_speed(const Gesture& gs, float& speed) {
+void AccelFilterInterpreter::SmoothSpeed(const Gesture& gs, float& speed) {
   // Perform smoothing, if it is enabled.
   if (smooth_accel_.val_) {
     // Check if clock changed backwards.
