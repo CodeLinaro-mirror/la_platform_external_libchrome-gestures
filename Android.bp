@@ -127,8 +127,8 @@ cc_library_static {
     host_supported: true,
 }
 
-cc_test {
-    name: "libchrome-gestures_test",
+cc_defaults {
+    name: "libchrome-gestures_test_defaults",
     defaults: [
         "libchrome-gestures_defaults",
     ],
@@ -184,7 +184,6 @@ cc_test {
     cflags: [
        "-Wno-sign-compare",
     ],
-    host_supported: false,
     sanitize: {
         hwaddress: true,
         diag: {
@@ -192,4 +191,20 @@ cc_test {
         },
     },
     test_suites: ["general-tests"],
+}
+
+cc_test {
+    name: "libchrome-gestures_test",
+    defaults: [
+        "libchrome-gestures_test_defaults",
+    ],
+    host_supported: false,
+}
+
+cc_test_host {
+    name: "libchrome-gestures_test_host",
+    defaults: [
+        "libchrome-gestures_test_defaults",
+    ],
+    test_config: "AndroidTestHost.xml",
 }

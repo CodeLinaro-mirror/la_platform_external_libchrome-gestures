@@ -8,6 +8,7 @@
 #include "include/gestures.h"
 
 #include <string>
+#include <string_view>
 #include <variant>
 
 #include <gtest/gtest.h>  // For FRIEND_TEST
@@ -180,15 +181,15 @@ class ActivityLog {
   void LogPropChange(const PropChangeEntry& prop_change);
 
   // Debug extensions for Log*()
-  void LogGestureConsume(const std::string& name, const Gesture& gesture);
-  void LogGestureProduce(const std::string& name, const Gesture& gesture);
-  void LogHardwareStatePre(const std::string& name,
+  void LogGestureConsume(const std::string_view name, const Gesture& gesture);
+  void LogGestureProduce(const std::string_view name, const Gesture& gesture);
+  void LogHardwareStatePre(const std::string_view name,
                            const HardwareState& hwstate);
-  void LogHardwareStatePost(const std::string& name,
+  void LogHardwareStatePost(const std::string_view name,
                             const HardwareState& hwstate);
-  void LogHandleTimerPre(const std::string& name,
+  void LogHandleTimerPre(const std::string_view name,
                          stime_t now, const stime_t* timeout);
-  void LogHandleTimerPost(const std::string& name,
+  void LogHandleTimerPost(const std::string_view name,
                           stime_t now, const stime_t* timeout);
 
   template<typename T>
