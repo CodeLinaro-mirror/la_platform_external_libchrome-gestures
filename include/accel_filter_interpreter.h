@@ -63,19 +63,19 @@ class AccelFilterInterpreter : public FilterInterpreter {
   };
 
   //**************************************************************************
-  // Worker Funnctions that are used internal to this class as well
+  // Worker Functions that are used internal to this class as well
   // as giving internal information for testing/research purposes.
 
   // Calculate the Delta Time for a given gesture.
   //    in:     gs, provided Gesture
   //    ret:    delta time
-  float get_dt(const Gesture& gs);
+  float GetDt(const Gesture& gs);
 
   // Calculate the Delta Time and adjust the value if the calculation gives
   // an out of bounds value.
   //    in:     gs, provided Gesture
   //    ret:    Reasonable Delta Time
-  float get_adjusted_dt(const Gesture& gs);
+  float GetAdjustedDt(const Gesture& gs);
 
   // The calculations in the ConsumeGestures is generic but works on
   // different fields based on what the gesture is.  This worker will
@@ -93,7 +93,7 @@ class AccelFilterInterpreter : public FilterInterpreter {
   //    out:    max_segs, number of array entries of segs
   //    ret:    true, acceleration expected
   //            false, acceleration not expected
-  bool get_accel_parameters(
+  bool GetAccelParameters(
       Gesture& gs,
       float*& dx, float*& dy,
       float& x_scale, float& y_scale,
@@ -111,7 +111,7 @@ class AccelFilterInterpreter : public FilterInterpreter {
   //    out:    speed, actual distance/delta time
   //    ret:    true, acceleration expected
   //            false, acceleration not expected
-  bool get_actual_speed(
+  bool GetActualSpeed(
       float* dx, float* dy,
       float vx, float vy,
       float dt,
@@ -121,7 +121,7 @@ class AccelFilterInterpreter : public FilterInterpreter {
   // means of the smooth_accel_ Property.
   //    in:     gs, provided Gesture
   //    inout:  speed, actual speed on input and smoothed on output
-  void smooth_speed(const Gesture& gs, float& speed);
+  void SmoothSpeed(const Gesture& gs, float& speed);
 
   // Map a speed on a given CurveSegment array to a ratio multiplier.
   //    in:     segs, address of CurveSegment array being used

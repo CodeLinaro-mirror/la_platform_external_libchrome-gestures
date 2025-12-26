@@ -3397,6 +3397,8 @@ void ImmediateInterpreter::FillResultGesture(
       break;
     }
     case kGestureTypeSwipeLift: {
+      if (!three_finger_swipe_enable_.val_)
+        break;
       result_ = Gesture(kGestureSwipeLift,
                         state_buffer_.Get(1).timestamp,
                         hwstate.timestamp);
@@ -3404,6 +3406,8 @@ void ImmediateInterpreter::FillResultGesture(
     }
 
     case kGestureTypeFourFingerSwipeLift: {
+      if (!three_finger_swipe_enable_.val_)
+        break;
       result_ = Gesture(kGestureFourFingerSwipeLift,
                         state_buffer_.Get(1).timestamp,
                         hwstate.timestamp);

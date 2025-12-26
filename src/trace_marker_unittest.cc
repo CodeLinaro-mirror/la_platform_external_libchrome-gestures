@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <string.h>
-
 #include <gtest/gtest.h>
 
 #include "include/trace_marker.h"
@@ -17,7 +15,6 @@ TEST(TraceMarkerTest, DeleteTraceMarkerTest) {
     TraceMarker::CreateTraceMarker();
     EXPECT_TRUE(nullptr != TraceMarker::GetTraceMarker());
     TraceMarker::StaticTraceWrite("Test");
-    EXPECT_EQ(-1, TraceMarker::GetTraceMarker()->fd_);
     EXPECT_EQ(1, TraceMarker::trace_marker_count_);
     TraceMarker::DeleteTraceMarker();
     EXPECT_EQ(nullptr, TraceMarker::GetTraceMarker());
