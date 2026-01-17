@@ -4,6 +4,10 @@
 
 #include "include/unittest_util.h"
 
+#include <vector>
+
+#include <gtest/gtest.h>
+
 #include "include/gestures.h"
 
 namespace gestures {
@@ -55,24 +59,42 @@ void TestInterpreterWrapper::Reset(Interpreter* interpreter,
 
 Gesture* TestInterpreterWrapper::SyncInterpret(HardwareState& state,
                                                stime_t* timeout) {
-  gesture_ = Gesture();
+  gestures_.clear();
   interpreter_->SyncInterpret(state, timeout);
-  if (gesture_.type == kGestureTypeNull)
+  EXPECT_LT(gestures_.size(), 2)
+      << "Call to SyncInterpret for HardwareState " << state.String()
+      << " returned multiple gestures. If this is expected, use "
+         "TestInterpreterWrapper::SyncInterpretMulti instead.";
+  if (gestures_.empty()) {
     return nullptr;
-  return &gesture_;
+  }
+  return &gestures_.back();
+}
+
+std::vector<Gesture> TestInterpreterWrapper::SyncInterpretMulti(
+    HardwareState& state, stime_t* timeout) {
+  gestures_.clear();
+  interpreter_->SyncInterpret(state, timeout);
+  return gestures_;
 }
 
 Gesture* TestInterpreterWrapper::HandleTimer(stime_t now, stime_t* timeout) {
-  gesture_.type = kGestureTypeNull;
+  gestures_.clear();
   interpreter_->HandleTimer(now, timeout);
-  if (gesture_.type == kGestureTypeNull)
+  // If you are writing a test that needs to check multiple Gestures produced by
+  // HandleTimer, you'll need to implement a HandleTimerMulti method similar to
+  // SyncInterpretMulti above.
+  EXPECT_LT(gestures_.size(), 2)
+      << "Call to HandleTimer for time " << now << " produced "
+      << gestures_.size() << " gestures.";
+  if (gestures_.empty()) {
     return nullptr;
-  return &gesture_;
+  }
+  return &gestures_.back();
 }
 
 void TestInterpreterWrapper::ConsumeGesture(const Gesture& gesture) {
-  Assert(gesture_.type == kGestureTypeNull);
-  gesture_ = gesture;
+  gestures_.push_back(gesture);
 }
 
 

@@ -21,7 +21,7 @@ class MouseInterpreter : public Interpreter, public PropertyDelegate {
   FRIEND_TEST(MouseInterpreterTest, JankyScrollTest);
   FRIEND_TEST(MouseInterpreterTest, WheelTickReportingHighResTest);
   FRIEND_TEST(MouseInterpreterTest, WheelTickReportingLowResTest);
-  FRIEND_TEST(MouseInterpreterTest, EmulateScrollWheelTest);
+  FRIEND_TEST(MouseInterpreterTest, DISABLED_EmulateScrollWheelTest);
  public:
   MouseInterpreter(PropRegistry* prop_reg, Tracer* tracer);
   virtual ~MouseInterpreter() {};

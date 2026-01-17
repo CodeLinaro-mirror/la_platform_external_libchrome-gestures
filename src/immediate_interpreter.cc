@@ -10,6 +10,7 @@
 #include <cstring>
 #include <functional>
 #include <limits>
+#include <optional>
 #include <tuple>
 #include <vector>
 
@@ -666,11 +667,11 @@ bool ScrollManager::SuppressStationaryFingerMovement(const FingerState& fs,
   return true;
 }
 
-void ScrollManager::FillResultFling(const HardwareStateBuffer& state_buffer,
-                                 const ScrollEventBuffer& scroll_buffer,
-                                 Gesture* result) {
+std::optional<Gesture> ScrollManager::FillResultFling(
+    const HardwareStateBuffer& state_buffer,
+    const ScrollEventBuffer& scroll_buffer) {
   if (!did_generate_scroll_)
-    return;
+    return std::nullopt;
   ScrollEvent out = { 0.0, 0.0, 0.0 };
   ScrollEvent zero = { 0.0, 0.0, 0.0 };
   size_t count = 0;
@@ -706,13 +707,9 @@ void ScrollManager::FillResultFling(const HardwareStateBuffer& state_buffer,
 done:
   float vx = out.dt ? (out.dx / out.dt) : 0.0;
   float vy = out.dt ? (out.dy / out.dt) : 0.0;
-  *result = Gesture(kGestureFling,
-                    state_buffer.Get(1).timestamp,
-                    state_buffer.Get(0).timestamp,
-                    vx,
-                    vy,
-                    GESTURES_FLING_START);
   did_generate_scroll_ = false;
+  return Gesture(kGestureFling, state_buffer.Get(1).timestamp,
+                 state_buffer.Get(0).timestamp, vx, vy, GESTURES_FLING_START);
 }
 
 FingerButtonClick::FingerButtonClick(const ImmediateInterpreter* interpreter)
@@ -1921,8 +1918,6 @@ void ImmediateInterpreter::UpdateCurrentGestureType(
                 return;
               }
               current_gesture_type_ = GetMultiFingerGestureType(fingers, 4);
-              if (current_gesture_type_ == kGestureTypeFourFingerSwipe)
-                current_gesture_type_ = kGestureTypeFourFingerSwipe;
             }
             if (current_gesture_type_ != kGestureTypeNull) {
               active_gs_fingers->clear();
@@ -1978,11 +1973,27 @@ bool ImmediateInterpreter::IsScrollOrSwipe(GestureType gesture_type) {
 }
 
 void ImmediateInterpreter::GenerateFingerLiftGesture() {
-  // If we have just finished scrolling, we set current_gesture_type_ to the
-  // appropriate lift gesture.
-  if (IsScrollOrSwipe(prev_gesture_type_) &&
-      current_gesture_type_ != prev_gesture_type_) {
-    current_gesture_type_ = GetFingerLiftGesture(prev_gesture_type_);
+  if (!IsScrollOrSwipe(prev_gesture_type_) ||
+      current_gesture_type_ == prev_gesture_type_) {
+    return;
+  }
+  GestureType lift_gesture_type = GetFingerLiftGesture(prev_gesture_type_);
+  if (lift_gesture_type == kGestureTypeFling) {
+    // In some cases (e.g. b/433623598), scrolling can continue while a button
+    // goes down but before the button down timeout is reached. If we simply
+    // set current_gesture_type_ in this case, we'd never actually produce the
+    // fling gesture because result_ had already been set to the button change
+    // gesture. So, we need to produce it immediately. (The same issue does
+    // not seem to affect 3- and 4-finger swipes.)
+    std::optional<Gesture> fling =
+        scroll_manager_.FillResultFling(state_buffer_, scroll_buffer_);
+    if (fling.has_value()) {
+      LogGestureProduce("ImmediateInterpreter::GenerateFingerLiftGesture",
+                        fling.value());
+      ProduceGesture(fling.value());
+    }
+  } else {
+    current_gesture_type_ = lift_gesture_type;
   }
 }
 
@@ -3340,10 +3351,7 @@ void ImmediateInterpreter::FillResultGesture(
         return;
       break;
     }
-    case kGestureTypeFling: {
-      scroll_manager_.FillResultFling(state_buffer_, scroll_buffer_, &result_);
-      break;
-    }
+    // kGestureTypeFling is handled by GenerateFingerLiftGesture.
     case kGestureTypeSwipe:
     case kGestureTypeFourFingerSwipe: {
       if (!three_finger_swipe_enable_.val_)

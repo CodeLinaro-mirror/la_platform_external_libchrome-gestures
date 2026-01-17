@@ -179,11 +179,12 @@ void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
   if (should_fling_ && AnyGesturingFingerLeft(state_buffer_.Get(0),
                                               prev_gs_fingers_)) {
     current_gesture_type_ = kGestureTypeFling;
-    scroll_manager_.FillResultFling(state_buffer_, scroll_buffer_, &result);
-    if (result.type == kGestureTypeFling)
+    std::optional<Gesture> fling =
+        scroll_manager_.FillResultFling(state_buffer_, scroll_buffer_);
+    if (fling.has_value() && fling->details.fling.vy != 0.0) {
+      result = fling.value();
       result.details.fling.vx = 0.0;
-    if (result.details.fling.vy == 0.0)
-      result.type = kGestureTypeNull;
+    }
     should_fling_ = false;
   } else if (gs_fingers_.size() > 0) {
     // In general, finger movements are interpreted as scroll, but as

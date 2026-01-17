@@ -109,6 +109,8 @@ DEPDIR = .deps
 
 DESTDIR = .
 
+LINK_FLAGS := $(LDFLAGS)
+
 CXXFLAGS+=\
 	-g \
 	-std=gnu++20 \
