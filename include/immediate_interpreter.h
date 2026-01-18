@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <map>
+#include <optional>
 #include <set>
 
 #include <gtest/gtest.h>  // for FRIEND_TEST
@@ -190,9 +191,9 @@ class ScrollManager {
                      ScrollEventBuffer* scroll_buffer);
 
   // Compute a fling and fill result.
-  void FillResultFling(const HardwareStateBuffer& state_buffer,
-                    const ScrollEventBuffer& scroll_buffer,
-                    Gesture* result);
+  [[nodiscard]] std::optional<Gesture> FillResultFling(
+      const HardwareStateBuffer& state_buffer,
+      const ScrollEventBuffer& scroll_buffer);
 
   // Update ScrollEventBuffer when the current gesture type is not scroll.
   void UpdateScrollEventBuffer(GestureType gesture_type,

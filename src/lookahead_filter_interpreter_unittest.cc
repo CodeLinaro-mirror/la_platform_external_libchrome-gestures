@@ -256,9 +256,9 @@ TEST(LookaheadFilterInterpreterTest, VariableDelayTest) {
 
   FingerState fs[] = {
     // TM, Tm, WM, Wm, pr, orient, x, y, id
-    { 0, 0, 0, 0, 1, 0, 10, 10, 10, 1 },
-    { 0, 0, 0, 0, 1, 0, 10, 30, 10, 1 },
-    { 0, 0, 0, 0, 1, 0, 10, 50, 10, 1 },
+    { 0, 0, 0, 0, 1, 0, 10, 10, 10, GESTURES_FINGER_WARP_X_NON_MOVE },
+    { 0, 0, 0, 0, 1, 0, 10, 30, 10, GESTURES_FINGER_WARP_X_NON_MOVE },
+    { 0, 0, 0, 0, 1, 0, 10, 50, 10, GESTURES_FINGER_WARP_X_NON_MOVE },
   };
   HardwareState hs[] = {
     // Expect movement to take

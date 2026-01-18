@@ -12,7 +12,6 @@
 #include "include/immediate_interpreter.h"
 #include "include/string_util.h"
 #include "include/unittest_util.h"
-#include "include/util.h"
 
 namespace gestures {
 
@@ -395,9 +394,8 @@ TEST(ImmediateInterpreterTest, FlingTest) {
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
-    // Consistent movement for 4 frames
+  FingerState consistent_speed_fingers[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     {0, 0, 0, 0, 20, 0, 40, 20, 1, 0},
     {0, 0, 0, 0, 20, 0, 60, 20, 2, 0},
 
@@ -409,8 +407,8 @@ TEST(ImmediateInterpreterTest, FlingTest) {
 
     {0, 0, 0, 0, 20, 0, 40, 50, 1, 0},
     {0, 0, 0, 0, 20, 0, 60, 50, 2, 0},
-
-    // Increasing movement for 4 frames
+  };
+  FingerState increasing_speed_fingers[] = {
     {0, 0, 0, 0, 20, 0, 40, 20, 3, 0},
     {0, 0, 0, 0, 20, 0, 60, 20, 4, 0},
 
@@ -425,58 +423,56 @@ TEST(ImmediateInterpreterTest, FlingTest) {
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(0.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(1.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(1.01, 0, 2, 2, &finger_states[2]),
-    make_hwstate(1.02, 0, 2, 2, &finger_states[4]),
-    make_hwstate(1.03, 0, 2, 2, &finger_states[6]),
-    make_hwstate(1.04, 0, 0, 0, nullptr),
+    make_hwstate(0.00, 0, 2, 2, &consistent_speed_fingers[0]), // 0
+    make_hwstate(1.00, 0, 2, 2, &consistent_speed_fingers[0]), // 1
+    make_hwstate(1.01, 0, 2, 2, &consistent_speed_fingers[2]), // 2
+    make_hwstate(1.02, 0, 2, 2, &consistent_speed_fingers[4]), // 3
+    make_hwstate(1.03, 0, 2, 2, &consistent_speed_fingers[6]), // 4
+    make_hwstate(1.04, 0, 0, 0, nullptr),                      // 5
 
-    make_hwstate(3.00, 0, 2, 2, &finger_states[8]),
-    make_hwstate(4.00, 0, 2, 2, &finger_states[8]),
-    make_hwstate(4.01, 0, 2, 2, &finger_states[10]),
-    make_hwstate(4.02, 0, 2, 2, &finger_states[12]),
-    make_hwstate(4.03, 0, 2, 2, &finger_states[14]),
-    make_hwstate(4.04, 0, 0, 0, nullptr),
+    make_hwstate(3.00, 0, 2, 2, &increasing_speed_fingers[0]), // 6
+    make_hwstate(4.00, 0, 2, 2, &increasing_speed_fingers[0]), // 7
+    make_hwstate(4.01, 0, 2, 2, &increasing_speed_fingers[2]), // 8
+    make_hwstate(4.02, 0, 2, 2, &increasing_speed_fingers[4]), // 9
+    make_hwstate(4.03, 0, 2, 2, &increasing_speed_fingers[6]), // 10
+    make_hwstate(4.04, 0, 0, 0, nullptr),                      // 11
   };
 
-  size_t idx = 0;
-
   // Consistent movement
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[1], nullptr));
 
-  Gesture* gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  Gesture* gs = wrapper.SyncInterpret(hardware_states[2], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[3], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[4], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[5], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeFling, gs->type);
   EXPECT_FLOAT_EQ(0, gs->details.fling.vx);
   EXPECT_FLOAT_EQ(10 / 0.01, gs->details.fling.vy);
 
   // Increasing speed movement
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[6], nullptr);
   EXPECT_EQ(nullptr, gs) << gs->String();
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[7], nullptr);
   EXPECT_EQ(nullptr, gs) << gs->String();
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[8], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[9], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[10], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[11], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeFling, gs->type);
   EXPECT_FLOAT_EQ(0, gs->details.fling.vx);
@@ -519,24 +515,21 @@ TEST(ImmediateInterpreterTest, DelayedStartScrollTest) {
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(1.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(2.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(2.01, 0, 2, 2, &finger_states[2]),
-    make_hwstate(2.02, 0, 2, 2, &finger_states[4]),
-    make_hwstate(2.03, 0, 0, 0, nullptr),
+    make_hwstate(1.00, 0, 2, 2, &finger_states[0]), // 0
+    make_hwstate(2.00, 0, 2, 2, &finger_states[0]), // 1
+    make_hwstate(2.01, 0, 2, 2, &finger_states[2]), // 2
+    make_hwstate(2.02, 0, 2, 2, &finger_states[4]), // 3
   };
 
-  size_t idx = 0;
-
   // Consistent movement
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[1], nullptr));
 
-  Gesture* gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  Gesture* gs = wrapper.SyncInterpret(hardware_states[2], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeMove, gs->type);
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[3], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
 }
@@ -562,7 +555,7 @@ TEST(ImmediateInterpreterTest, ScrollReevaluateTest) {
   };
 
   FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     // Consistent movement for 4 frames
     {0, 0, 0, 0, 20, 0, 10, 95, 1, 0},
     {0, 0, 0, 0, 20, 0, 59, 95, 2, 0},
@@ -572,41 +565,39 @@ TEST(ImmediateInterpreterTest, ScrollReevaluateTest) {
 
     {0, 0, 0, 0, 20, 0, 10, 75, 1, 0},
     {0, 0, 0, 0, 20, 0, 59, 75, 2, 0},
-
+  };
+  FingerState fingers_too_far_apart[] = {
     // Just too far apart to be scrolling
     {0, 0, 0, 0, 20, 0, 10, 65, 1, 0},
     {0, 0, 0, 0, 20, 0, 61, 65, 2, 0},
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(1.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(2.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(2.01, 0, 2, 2, &finger_states[2]),
-    make_hwstate(2.02, 0, 2, 2, &finger_states[4]),
-    make_hwstate(2.03, 0, 2, 2, &finger_states[6]),
+    make_hwstate(1.00, 0, 2, 2, &finger_states[0]),     // 0
+    make_hwstate(2.00, 0, 2, 2, &finger_states[0]),     // 1
+    make_hwstate(2.01, 0, 2, 2, &finger_states[2]),     // 2
+    make_hwstate(2.02, 0, 2, 2, &finger_states[4]),     // 3
+    make_hwstate(2.03, 0, 2, 2, fingers_too_far_apart), // 4
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
-  size_t idx = 0;
-
   // Consistent movement
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[1], nullptr));
 
-  Gesture* gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  Gesture* gs = wrapper.SyncInterpret(hardware_states[2], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[3], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
-  if (gs) {
-    fprintf(stderr, "gs:%si=%zd\n", gs->String().c_str(), idx);
-    EXPECT_NE(kGestureTypeScroll, gs->type);
-  }
+  std::vector<Gesture> gestures =
+      wrapper.SyncInterpretMulti(hardware_states[4], nullptr);
+  ASSERT_GT(gestures.size(), 0);
+  EXPECT_EQ(kGestureTypeFling, gestures[0].type);
 }
 
 
@@ -646,25 +637,22 @@ TEST(ImmediateInterpreterTest, OneFingerThenTwoDelayedStartScrollTest) {
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(1.00, 0, 1, 1, &finger_states[0]),
-    make_hwstate(1.20, 0, 2, 2, &finger_states[1]),
-    make_hwstate(2.00, 0, 2, 2, &finger_states[1]),
-    make_hwstate(2.01, 0, 2, 2, &finger_states[3]),
-    make_hwstate(2.03, 0, 0, 0, nullptr),
+    make_hwstate(1.00, 0, 1, 1, &finger_states[0]), // 0
+    make_hwstate(1.20, 0, 2, 2, &finger_states[1]), // 1
+    make_hwstate(2.00, 0, 2, 2, &finger_states[1]), // 2
+    make_hwstate(2.01, 0, 2, 2, &finger_states[3]), // 3
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
-  size_t idx = 0;
-
   // Consistent movement
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[1], nullptr));
 
-  Gesture* gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  Gesture* gs = wrapper.SyncInterpret(hardware_states[2], nullptr);
   EXPECT_EQ(nullptr, gs);
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[3], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
 }
@@ -985,15 +973,34 @@ TEST(ImmediateInterpreterTest, NoLiftoffScrollTest) {
   }
 }
 
-struct HardwareStateAnScrollExpectations {
-  HardwareState hs;
-  float dx;
-  float dy;
-};
+class DiagonalScrollingSnapTest : public ::testing::Test {
+ protected:
+  Gesture* scroll_with_offset(float x_offset, float y_offset, unsigned flags) {
+    const float kStartX0 = 40;
+    const float kStartX1 = 60;
+    const float kStartY = 50;
+    FingerState start_finger_states[] = {
+      // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
+      {0, 0, 0, 0, 50, 0, kStartX0, kStartY, 1, 0},
+      {0, 0, 0, 0, 50, 0, kStartX1, kStartY, 2, 0},
+    };
+    FingerState end_finger_states[] = {
+      // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
+      {0, 0, 0, 0, 50, 0, kStartX0 + x_offset, kStartY + y_offset, 1, flags},
+      {0, 0, 0, 0, 50, 0, kStartX1 + x_offset, kStartY + y_offset, 2, flags},
+    };
+    HardwareState hardware_states[] = {
+      // time, buttons, finger count, touch count, finger states pointer
+      make_hwstate(0.000, 0, 2, 2, start_finger_states),
+      make_hwstate(1.000, 0, 2, 2, start_finger_states),
+      make_hwstate(1.010, 0, 2, 2, end_finger_states),
+    };
+    EXPECT_EQ(nullptr, wrapper_.SyncInterpret(hardware_states[0], nullptr));
+    EXPECT_EQ(nullptr, wrapper_.SyncInterpret(hardware_states[1], nullptr));
+    return wrapper_.SyncInterpret(hardware_states[2], nullptr);
+  }
 
-TEST(ImmediateInterpreterTest, DiagonalSnapTest) {
-  std::unique_ptr<ImmediateInterpreter> ii;
-  HardwareProperties hwprops = {
+  HardwareProperties hwprops_ = {
     .right = 100,
     .bottom = 100,
     .res_x = 1,
@@ -1009,96 +1016,37 @@ TEST(ImmediateInterpreterTest, DiagonalSnapTest) {
     .wheel_is_hi_res = 0,
     .is_haptic_pad = 0,
   };
-  TestInterpreterWrapper wrapper(ii.get(), &hwprops);
+  ImmediateInterpreter ii_ = ImmediateInterpreter(nullptr, nullptr);
+  TestInterpreterWrapper wrapper_ = TestInterpreterWrapper(&ii_, &hwprops_);
+};
 
-  const float kBig = 5;  // mm
-  const float kSml = 1;  // mm
+TEST_F(DiagonalScrollingSnapTest, PerfectDiagonalMovementScrollsDiagonally) {
+  Gesture* gs = scroll_with_offset(/*x_offset=*/5, /*y_offset=*/5, /*flags=*/0);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_FLOAT_EQ(5, gs->details.scroll.dx);
+  EXPECT_FLOAT_EQ(5, gs->details.scroll.dy);
+}
 
-  const float kX0 = 40;
-  const float kX1 = 60;
-  const float kY = 50;  // heh
+TEST_F(DiagonalScrollingSnapTest, AlmostVerticalMovementSnapsToVertical) {
+  Gesture* gs = scroll_with_offset(/*x_offset=*/1, /*y_offset=*/5, /*flags=*/0);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_FLOAT_EQ(0, gs->details.scroll.dx);
+  EXPECT_FLOAT_EQ(5, gs->details.scroll.dy);
+}
 
-  short fid = 1;
+TEST_F(DiagonalScrollingSnapTest, AlmostHorizontalMovementSnapsToHorizontal) {
+  Gesture* gs = scroll_with_offset(/*x_offset=*/5, /*y_offset=*/1, /*flags=*/0);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_FLOAT_EQ(5, gs->details.scroll.dx);
+  EXPECT_FLOAT_EQ(0, gs->details.scroll.dy);
+}
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
-
-    // Perfect diagonal movement - should scroll diagonally
-    {0, 0, 0, 0, 50, 0, kX0, kY, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1, kY, fid--, 0},
-
-    {0, 0, 0, 0, 50, 0, kX0 + kBig, kY + kBig, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1 + kBig, kY + kBig, fid++, 0},
-
-    // Almost vertical movement - should snap to vertical
-    {0, 0, 0, 0, 50, 0, kX0, kY, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1, kY, fid--, 0},
-
-    {0, 0, 0, 0, 50, 0, kX0 + kSml, kY + kBig, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1 + kSml, kY + kBig, fid++, 0},
-
-    // Almost horizontal movement - should snap to horizontal
-    {0, 0, 0, 0, 50, 0, kX0, kY, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1, kY, fid--, 0},
-
-    {0, 0, 0, 0, 50, 0, kX0 + kBig, kY + kSml, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1 + kBig, kY + kSml, fid++, 0},
-
-    // Vertical movement with Warp - shouldn't scroll
-    {0, 0, 0, 0, 50, 0, kX0, kY, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1, kY, fid--, 0},
-
-    {0, 0, 0, 0, 50, 0, kX0, kY + kBig, fid++, GESTURES_FINGER_WARP_Y},
-    {0, 0, 0, 0, 50, 0, kX1, kY + kBig, fid++, GESTURES_FINGER_WARP_Y},
-  };
-  ssize_t idx = 0;
-  HardwareStateAnScrollExpectations hardware_states[] = {
-    // time, buttons, finger count, touch count, finger states pointer
-    { make_hwstate(0.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.010, 0, 2, 2, &finger_states[idx++ * 4 + 2]),
-      kBig, kBig },
-
-    { make_hwstate(0.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.010, 0, 2, 2, &finger_states[idx++ * 4 + 2]),
-      0, kBig },
-
-    { make_hwstate(0.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.010, 0, 2, 2, &finger_states[idx++ * 4 + 2]),
-      kBig, 0 },
-
-    { make_hwstate(0.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.010, 0, 2, 2, &finger_states[idx++ * 4 + 2]),
-      0, 0 },
-  };
-
-  for (size_t i = 0; i < arraysize(hardware_states); i++) {
-    HardwareStateAnScrollExpectations& hse = hardware_states[i];
-    if (hse.hs.timestamp == 0.0) {
-      ii.reset(new ImmediateInterpreter(nullptr, nullptr));
-      wrapper.Reset(ii.get());
-    }
-    Gesture* gs = wrapper.SyncInterpret(hse.hs, nullptr);
-    if (hse.dx == 0.0 && hse.dy == 0.0) {
-      EXPECT_EQ(nullptr, gs);
-      continue;
-    }
-    ASSERT_NE(nullptr, gs);
-    EXPECT_EQ(kGestureTypeScroll, gs->type);
-    EXPECT_FLOAT_EQ(hse.dx, gs->details.scroll.dx);
-    EXPECT_FLOAT_EQ(hse.dy, gs->details.scroll.dy);
-  }
+TEST_F(DiagonalScrollingSnapTest, VerticalMovementWithWarpDoesntScroll) {
+  ASSERT_EQ(nullptr, scroll_with_offset(/*x_offset=*/0, /*y_offset=*/5,
+                                        GESTURES_FINGER_WARP_Y));
 }
 
 TEST(ImmediateInterpreterTest, RestingFingerTest) {
@@ -1186,22 +1134,18 @@ TEST(ImmediateInterpreterTest, ThumbRetainTest) {
     .is_haptic_pad = 0,
   };
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
-    // id 1 = finger, 2 = thumb
-    {0, 0, 0, 0, 24, 0, 30, 30, 1, 0},
-    {0, 0, 0, 0, 58, 0, 30, 50, 2, 0},
-
-    // thumb, post-move
-    {0, 0, 0, 0, 58, 0, 50, 50, 2, 0},
-  };
+  // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
+  FingerState finger = {0, 0, 0, 0, 24, 0, 30, 30, 1, 0};
+  FingerState thumb = {0, 0, 0, 0, 58, 0, 30, 50, 2, 0};
+  FingerState thumb_moved = {0, 0, 0, 0, 58, 0, 50, 50, 2, 0};
+  FingerState finger_and_thumb[] = { finger, thumb };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(0.000, 0, 2, 2, &finger_states[0]),
-    make_hwstate(0.100, 0, 2, 2, &finger_states[0]),
-    make_hwstate(0.110, 0, 1, 1, &finger_states[1]),  // finger goes away
-    make_hwstate(0.210, 0, 1, 1, &finger_states[1]),
-    make_hwstate(0.220, 0, 1, 1, &finger_states[2]),  // thumb moves
+    make_hwstate(0.000, 0, 2, 2, finger_and_thumb),
+    make_hwstate(0.100, 0, 2, 2, finger_and_thumb),
+    make_hwstate(0.110, 0, 1, 1, &thumb),  // finger goes away
+    make_hwstate(0.210, 0, 1, 1, &thumb),
+    make_hwstate(0.220, 0, 1, 1, &thumb_moved),
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
@@ -1236,23 +1180,26 @@ TEST(ImmediateInterpreterTest, ThumbRetainReevaluateTest) {
     .is_haptic_pad = 0,
   };
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+  FingerState thumb_and_finger[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     // one thumb, one finger (it seems)
     {0, 0, 0, 0, 24, 0, 3.0, 3, 3, 0},
     {0, 0, 0, 0, 58, 0, 13.5, 3, 4, 0},
+  };
+  FingerState two_big_fingers[] = {
     // two big fingers, it turns out!
     {0, 0, 0, 0, 27, 0, 3.0, 6, 3, 0},
     {0, 0, 0, 0, 58, 0, 13.5, 6, 4, 0},
-    // they  move
+  };
+  FingerState moved_fingers[] = {
     {0, 0, 0, 0, 27, 0, 3.0, 7, 3, 0},
     {0, 0, 0, 0, 58, 0, 13.5, 7, 4, 0},
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(1.000, 0, 2, 2, &finger_states[0]),  // 2 fingers arrive
-    make_hwstate(1.010, 0, 2, 2, &finger_states[2]),  // pressures fix
-    make_hwstate(1.100, 0, 2, 2, &finger_states[4]),  // they move
+    make_hwstate(1.000, 0, 2, 2, thumb_and_finger),  // 2 fingers arrive
+    make_hwstate(1.010, 0, 2, 2, two_big_fingers),   // pressures fix
+    make_hwstate(1.100, 0, 2, 2, moved_fingers),     // they move
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
@@ -1326,8 +1273,8 @@ TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest) {
 
   const unsigned kPalmFlags = GESTURES_FINGER_POSSIBLE_PALM;
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+  FingerState stationary_palm_states[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     // stationary palm - movement
     {0, 0, 0, 0, kPr, 0,  0, 40, 1, kPalmFlags},
     {0, 0, 0, 0, kPr, 0, 30, 35, 2, 0},
@@ -1337,7 +1284,8 @@ TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest) {
 
     {0, 0, 0, 0, kPr, 0,  0, 40, 1, kPalmFlags},
     {0, 0, 0, 0, kPr, 0, 30, 45, 2, 0},
-
+  };
+  FingerState moving_palm_states[] = {
     // Same, but moving palm - scroll
     {0, 0, 0, 0, kPr, 0,  0, 35, 3, kPalmFlags},
     {0, 0, 0, 0, kPr, 0, 30, 35, 4, 0},
@@ -1350,12 +1298,12 @@ TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest) {
   };
   HardwareState hardware_state[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(0.0, 0, 2, 2, &finger_states[0]),
-    make_hwstate(0.1, 0, 2, 2, &finger_states[2]),
-    make_hwstate(0.2, 0, 2, 2, &finger_states[4]),
-    make_hwstate(3.0, 0, 2, 2, &finger_states[6]),
-    make_hwstate(3.1, 0, 2, 2, &finger_states[8]),
-    make_hwstate(3.2, 0, 2, 2, &finger_states[10]),
+    make_hwstate(0.0, 0, 2, 2, &stationary_palm_states[0]),
+    make_hwstate(0.1, 0, 2, 2, &stationary_palm_states[2]),
+    make_hwstate(0.2, 0, 2, 2, &stationary_palm_states[4]),
+    make_hwstate(3.0, 0, 2, 2, &moving_palm_states[0]),
+    make_hwstate(3.1, 0, 2, 2, &moving_palm_states[2]),
+    make_hwstate(3.2, 0, 2, 2, &moving_palm_states[4]),
   };
   GestureType expected_gs[] = {
     kGestureTypeNull,
@@ -3050,9 +2998,13 @@ TEST(ImmediateInterpreterTest, ClickTest) {
     // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
     {0, 0, 0, 0, 10, 0, 50, 50, 1, 0},
     {0, 0, 0, 0, 10, 0, 70, 50, 2, 0},
+  };
+  FingerState close_fingers[] = {
     // Fingers very close together - shouldn't right click
     {0, 0, 0, 0, 10, 0, 50, 50, 1, 0},
     {0, 0, 0, 0, 10, 0, 55, 50, 2, 0},
+  };
+  FingerState large_vertical_dist_fingers[] = {
     // Large vertical dist - shouldn right click when timing is good.
     {0, 0, 0, 0, 10, 0,  8.4, 94, 1, 0},
     {0, 0, 0, 0, 10, 0, 51.2, 70, 2, 0},
@@ -3063,29 +3015,29 @@ TEST(ImmediateInterpreterTest, ClickTest) {
 
     // button down, 2 fingers touch, button up, 2 fingers lift
     {make_hwstate(1,1,0,0,nullptr),NO_DEADLINE,0,0},
-    {make_hwstate(1.01,1,2,2,&finger_states[0]), NO_DEADLINE, 0, 0},
-    {make_hwstate(2,0,2,2,&finger_states[0]),
+    {make_hwstate(1.01,1,2,2,finger_states), NO_DEADLINE, 0, 0},
+    {make_hwstate(2,0,2,2,finger_states),
      NO_DEADLINE, GESTURES_BUTTON_RIGHT, GESTURES_BUTTON_RIGHT},
     {make_hwstate(3,0,0,0,nullptr), NO_DEADLINE, 0, 0},
 
     // button down, 2 close fingers touch, fingers lift
     {make_hwstate(7,1,0,0,nullptr), NO_DEADLINE, 0, 0},
-    {make_hwstate(7.01,1,2,2,&finger_states[2]), NO_DEADLINE, 0, 0},
-    {make_hwstate(7.02,0,2,2,&finger_states[2]),
+    {make_hwstate(7.01,1,2,2,close_fingers), NO_DEADLINE, 0, 0},
+    {make_hwstate(7.02,0,2,2,close_fingers),
      NO_DEADLINE, GESTURES_BUTTON_LEFT,GESTURES_BUTTON_LEFT},
     {make_hwstate(8,0,0,0,nullptr), NO_DEADLINE, 0, 0},
 
     // button down with 2 fingers, button up, fingers lift
-    {make_hwstate(9.01,1,2,2,&finger_states[4]),NO_DEADLINE,0,0},
-    {make_hwstate(9.02,1,2,2,&finger_states[4]),NO_DEADLINE,0,0},
-    {make_hwstate(9.5,0,2,2,&finger_states[4]),
+    {make_hwstate(9.01,1,2,2,large_vertical_dist_fingers),NO_DEADLINE,0,0},
+    {make_hwstate(9.02,1,2,2,large_vertical_dist_fingers),NO_DEADLINE,0,0},
+    {make_hwstate(9.5,0,2,2,large_vertical_dist_fingers),
      NO_DEADLINE, GESTURES_BUTTON_RIGHT,GESTURES_BUTTON_RIGHT},
     {make_hwstate(10,0,0,0,nullptr), NO_DEADLINE, 0, 0},
 
     // button down with 2 fingers, timeout, button up, fingers lift
-    {make_hwstate(11,1,2,2,&finger_states[4]), NO_DEADLINE, 0, 0},
+    {make_hwstate(11,1,2,2,large_vertical_dist_fingers), NO_DEADLINE, 0, 0},
     {make_hwstate(0,0,0,0,nullptr),11.5,GESTURES_BUTTON_RIGHT,0},
-    {make_hwstate(12,0,2,2,&finger_states[4]), NO_DEADLINE, 0,
+    {make_hwstate(12,0,2,2,large_vertical_dist_fingers), NO_DEADLINE, 0,
      GESTURES_BUTTON_RIGHT},
     {make_hwstate(10,0,0,0,nullptr), NO_DEADLINE, 0, 0}
   };
@@ -3191,6 +3143,139 @@ TEST(ImmediateInterpreterTest, ClickDragLockTest) {
     }
   }
 }
+
+// Regression test for b/433623598, where a fling gesture was not produced if a
+// scroll gesture continued during the time after we'd received a hardware state
+// with a button down but before the button down timeout was reached, resulting
+// in the fling gesture and the button change gesture needing to be produced by
+// the same call to SyncInterpret.
+TEST(ImmediateInterpreterTest, ScrollEndAndButtonChangeOnSameSync) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  HardwareProperties hwprops = {
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 50,
+    .res_y = 50,
+    .orientation_minimum = 0,
+    .orientation_maximum = 0,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = false,
+    .support_semi_mt = false,
+    .is_button_pad = false,
+    .has_wheel = false,
+    .wheel_is_hi_res = false,
+    .is_haptic_pad = false,
+  };
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+
+  // Frame 1: Fingers are added.
+  FingerState fingers_appear[] = {
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 480, 400, 3, 0},
+  };
+  HardwareState curr_frame =
+      make_hwstate(0.1, GESTURES_BUTTON_NONE, 2, 2, fingers_appear);
+  Gesture* gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Scroll occurs.
+  FingerState scrolling_fingers[] = {
+    {0, 0, 0, 0, 50, 0, 450, 391, 2, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 480, 379, 3, GESTURES_FINGER_TREND_DEC_Y},
+  };
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_NONE, 2, 2, scrolling_fingers);
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+
+  // Frame 3: fingers stay still, but the button gets pressed
+  FingerState scrolling_fingers_2[] = {
+    {0, 0, 0, 0, 50, 0, 450, 381, 2, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 480, 369, 3, GESTURES_FINGER_TREND_DEC_Y},
+  };
+  curr_frame =
+      make_hwstate(0.3, GESTURES_BUTTON_LEFT, 2, 2, scrolling_fingers_2);
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+
+  // Frame 4: Button down timeout reached. A fling should be sent before the
+  // button click is registered.
+  curr_frame =
+      make_hwstate(0.4, GESTURES_BUTTON_LEFT, 2, 2, scrolling_fingers_2);
+  std::vector<Gesture> gestures =
+      wrapper.SyncInterpretMulti(curr_frame, nullptr);
+  ASSERT_EQ(2, gestures.size());
+  EXPECT_EQ(kGestureTypeFling, gestures[0].type);
+  EXPECT_EQ(GESTURES_FLING_START, gestures[0].details.fling.fling_state);
+  EXPECT_EQ(kGestureTypeButtonsChange, gestures[1].type);
+}
+
+TEST(ImmediateInterpreterTest, SwipeEndAndButtonChangeOnSameSync) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  HardwareProperties hwprops = {
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 50,
+    .res_y = 50,
+    .orientation_minimum = 0,
+    .orientation_maximum = 0,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = false,
+    .support_semi_mt = false,
+    .is_button_pad = false,
+    .has_wheel = false,
+    .wheel_is_hi_res = false,
+    .is_haptic_pad = false,
+  };
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+
+  // Frame 1: Fingers are added.
+  FingerState fingers_appear[] = {
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 480, 400, 3, 0},
+    {0, 0, 0, 0, 50, 0, 510, 400, 4, 0},
+  };
+  HardwareState curr_frame =
+      make_hwstate(0.1, GESTURES_BUTTON_NONE, 3, 3, fingers_appear);
+  Gesture* gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Swiping begins.
+  FingerState swiping_fingers[] = {
+    {0, 0, 0, 0, 50, 0, 450, 391, 2, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 480, 379, 3, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 510, 379, 4, GESTURES_FINGER_TREND_DEC_Y},
+  };
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_NONE, 3, 3, swiping_fingers);
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeSwipe, gs->type);
+
+  // Frame 3: fingers keep moving, but the button gets pressed.
+  FingerState swiping_fingers_2[] = {
+    {0, 0, 0, 0, 50, 0, 450, 371, 2, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 480, 359, 3, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 510, 359, 4, GESTURES_FINGER_TREND_DEC_Y},
+  };
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 3, 3, swiping_fingers_2);
+  // It would also be fine if the swipe lift occurred in the next frame, just so
+  // long as it gets reported before the button change, but to keep the test
+  // simple we assert that it specifically happens here.
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeSwipeLift, gs->type);
+  EXPECT_EQ(GESTURES_FLING_START, gs->details.fling.fling_state);
+
+  // Frame 4: Button down timeout reached.
+  curr_frame = make_hwstate(0.4, GESTURES_BUTTON_LEFT, 3, 3, swiping_fingers_2);
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+}
+
 
 struct BottomRightClickAreaParameters {
   bool enabled;
@@ -4171,23 +4256,31 @@ TEST(ImmediateInterpreterTest, ScrollResetTapTest) {
     .is_haptic_pad = 0,
   };
 
+  const unsigned kBothWarpNonMove =
+      GESTURES_FINGER_WARP_X_NON_MOVE | GESTURES_FINGER_WARP_X_NON_MOVE;
+  const unsigned kWarpXNonMove = GESTURES_FINGER_WARP_X_NON_MOVE;
   FingerState finger_state[] = {
     // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
-    { 0, 0, 0, 0, 71.180000, 0, 58.446808, 24.000002, 0, 3 },  // index 0
-    { 0, 0, 0, 0, 71.180000, 0, 75.042549, 23.676924, 1, 3 },
+    // index 0
+    { 0, 0, 0, 0, 71.180000, 0, 58.446808, 24.000002, 0, kBothWarpNonMove },
+    { 0, 0, 0, 0, 71.180000, 0, 75.042549, 23.676924, 1, kBothWarpNonMove },
 
-    { 0, 0, 0, 0, 82.070000, 0, 55.276596, 23.492308, 0, 3 },  // index 2
-    { 0, 0, 0, 0, 82.070000, 0, 70.361702, 23.015387, 1, 3 },
+    // index 2
+    { 0, 0, 0, 0, 82.070000, 0, 55.276596, 23.492308, 0, kBothWarpNonMove },
+    { 0, 0, 0, 0, 82.070000, 0, 70.361702, 23.015387, 1, kBothWarpNonMove },
 
-    { 0, 0, 0, 0, 76.625000, 0, 58.542553, 23.030769, 0, 3 },  // index 4
-    { 0, 0, 0, 0, 76.625000, 0, 59.127659, 22.500002, 1, 1 },
+    // index 4
+    { 0, 0, 0, 0, 76.625000, 0, 58.542553, 23.030769, 0, kBothWarpNonMove },
+    { 0, 0, 0, 0, 76.625000, 0, 59.127659, 22.500002, 1, kWarpXNonMove },
 
     // prev_result will be scroll, we expect the tap state will be idle
     // after the sample is processed.
-    { 0, 0, 0, 0, 71.180000, 0, 61.808510, 22.569231, 0, 3 },  // index 6
-    { 0, 0, 0, 0, 71.180000, 0, 47.893616, 21.984617, 1, 1 },
+    // index 6
+    { 0, 0, 0, 0, 71.180000, 0, 61.808510, 22.569231, 0, kBothWarpNonMove },
+    { 0, 0, 0, 0, 71.180000, 0, 47.893616, 21.984617, 1, kWarpXNonMove },
 
-    { 0, 0, 0, 0, 16.730000, 0, 57.617020, 20.830770, 0, 3 },  // index 8
+    // index 8
+    { 0, 0, 0, 0, 16.730000, 0, 57.617020, 20.830770, 0, kBothWarpNonMove },
   };
 
   HardwareState hardware_states[] = {

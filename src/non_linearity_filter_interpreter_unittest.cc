@@ -7,7 +7,6 @@
 #include "include/gestures.h"
 #include "include/non_linearity_filter_interpreter.h"
 #include "include/unittest_util.h"
-#include "include/util.h"
 
 const char kTestNonlinearData[] =
     "data/non_linearity_data/testing_non_linearity_data.dat";
@@ -26,7 +25,7 @@ class NonLinearityFilterInterpreterTestInterpreter : public Interpreter {
 
 TEST(NonLinearityFilterInterpreterTest, DisablingTest) {
   FingerState finger_state = { 0, 0, 0, 0, 35, 0, 999, 500, 1, 0 };
-  HardwareState hwstate = make_hwstate(200000, 0, 2, 2, &finger_state);
+  HardwareState hwstate = make_hwstate(200000, 0, 1, 1, &finger_state);
 
   NonLinearityFilterInterpreterTestInterpreter* base =
                             new NonLinearityFilterInterpreterTestInterpreter;
