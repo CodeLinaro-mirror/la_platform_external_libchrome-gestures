@@ -181,13 +181,14 @@ class ScrollManager {
       const HardwareStateBuffer& state_buffer,
       const FingerState& current) const;
 
-  // Compute a scroll and fill result.  Return false when something goes wrong.
+  // Compute a scroll and potentially fill result with a scroll gesture. Returns
+  // true if the ScrollEventBuffer should be updated afterwards.
   bool FillResultScroll(const HardwareStateBuffer& state_buffer,
                      const FingerMap& prev_gs_fingers,
                      const FingerMap& gs_fingers,
                      GestureType prev_gesture_type,
-                     const Gesture& prev_result,
-                     Gesture* result,
+                     const std::optional<Gesture>& prev_result,
+                     std::optional<Gesture>& result,
                      ScrollEventBuffer* scroll_buffer);
 
   // Compute a fling and fill result.
@@ -343,7 +344,6 @@ class FingerButtonClick {
 class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   FRIEND_TEST(ImmediateInterpreterBottomRightTest, BottomRightClickAreaTest);
   FRIEND_TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest);
-  FRIEND_TEST(ImmediateInterpreterTest, AvoidAccidentalPinchTest);
   FRIEND_TEST(ImmediateInterpreterTest, ChangeTimeoutTest);
   FRIEND_TEST(ImmediateInterpreterTest, ClickTest);
   FRIEND_TEST(ImmediateInterpreterTest, FlingDepthTest);
@@ -353,6 +353,7 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   FRIEND_TEST(ImmediateInterpreterTest, PalmReevaluateTest);
   FRIEND_TEST(ImmediateInterpreterTest, PalmTest);
   FRIEND_TEST(ImmediateInterpreterTest, PinchTests);
+  FRIEND_TEST(ImmediateInterpreterTest, PinchInterruptedByButtonDown);
   FRIEND_TEST(ImmediateInterpreterTest, ScrollResetTapTest);
   FRIEND_TEST(ImmediateInterpreterTest, ScrollThenFalseTapTest);
   FRIEND_TEST(ImmediateInterpreterTest, SemiMtActiveAreaTest);
@@ -376,6 +377,7 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   FRIEND_TEST(DragScrollTest, DragScrollTwoFingersOnly);
 
   friend class TapRecord;
+  friend class AvoidAccidentalPinchTest;
   friend class TapToClickStateMachineTest;
   friend class FingerButtonClick;
   friend class DragScrollTest;
@@ -568,11 +570,9 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   void SetTapToClickState(TapToClickState state,
                           stime_t now);
 
-  void UpdateTapGesture(const HardwareState* hwstate,
-                        const FingerMap& gs_fingers,
-                        const bool same_fingers,
-                        stime_t now,
-                        stime_t* timeout);
+  [[nodiscard]] std::optional<Gesture> UpdateTapGesture(
+      const HardwareState* hwstate, const FingerMap& gs_fingers,
+      const bool same_fingers, stime_t now, stime_t* timeout);
 
   void UpdateTapState(const HardwareState* hwstate,
                       const FingerMap& gs_fingers,
@@ -606,10 +606,11 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
 
   // Updates the internal button state based on the passed in |hwstate|.
   // Can optionally request a timeout by setting *timeout.
-  void UpdateButtons(const HardwareState& hwstate, stime_t* timeout);
+  [[nodiscard]] std::optional<Gesture> UpdateButtons(
+      const HardwareState& hwstate, stime_t* timeout);
 
   // Called when the timeout is fired for UpdateButtons.
-  void UpdateButtonsTimeout(stime_t now);
+  [[nodiscard]] std::optional<Gesture> UpdateButtonsTimeout(stime_t now);
 
   // By looking at |hwstate| and internal state, determins if a button down
   // at this time would correspond to a left/middle/right click. Returns
@@ -619,8 +620,8 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
 
   // Precondition: current_mode_ is set to the mode based on |hwstate|.
   // Computes the resulting gesture, storing it in result_.
-  void FillResultGesture(const HardwareState& hwstate,
-                         const FingerMap& fingers);
+  [[nodiscard]] std::optional<Gesture> FillResultGesture(
+      const HardwareState& hwstate, const FingerMap& fingers);
 
   virtual void IntWasWritten(IntProperty* prop);
 
@@ -638,8 +639,7 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   FingerMap prev_gs_fingers_;
   FingerMap prev_tap_gs_fingers_;
   HardwareProperties hw_props_;
-  Gesture result_;
-  Gesture prev_result_;
+  std::optional<Gesture> prev_result_;
 
   // Total distance travelled by a finger since its origin timestamp.
   std::map<short, float> distance_walked_;
