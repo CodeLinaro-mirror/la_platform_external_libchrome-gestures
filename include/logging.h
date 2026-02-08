@@ -7,12 +7,6 @@
 
 #include "gestures.h"
 
-#define Assert(condition) \
-  do { \
-    if (!(condition)) \
-      Err("Assertion '" #condition "' failed"); \
-  } while(false)
-
 #define AssertWithReturn(condition) \
   do { \
     if (!(condition)) { \

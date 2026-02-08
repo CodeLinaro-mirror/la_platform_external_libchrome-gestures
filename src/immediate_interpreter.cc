@@ -57,6 +57,19 @@ class FingerOriginCompare {
   const ImmediateInterpreter* interpreter_;
 };
 
+// If the second optional has a value, assigns it to the first optional. If the
+// first optional also has a value, logs a warning.
+void AssignIfNonNull(std::optional<Gesture>& existing,
+                     const std::optional<Gesture>& replacement) {
+  if (replacement.has_value()) {
+    if (existing.has_value()) {
+      Err("Warning: discarding gesture %s in favor of %s.",
+          existing->String().c_str(), replacement->String().c_str());
+    }
+    existing = replacement;
+  }
+}
+
 }  // namespace {}
 
 void TapRecord::NoteTouch(short the_id, const FingerState& fs) {
@@ -454,8 +467,8 @@ bool ScrollManager::FillResultScroll(
     const FingerMap& prev_gs_fingers,
     const FingerMap& gs_fingers,
     GestureType prev_gesture_type,
-    const Gesture& prev_result,
-    Gesture* result,
+    const std::optional<Gesture>& prev_result,
+    std::optional<Gesture>& result,
     ScrollEventBuffer* scroll_buffer) {
   // For now, we take the movement of the biggest moving finger.
   float max_mag_sq = 0.0;  // square of max mag
@@ -511,11 +524,11 @@ bool ScrollManager::FillResultScroll(
     // Since this isn't a "real" scroll event, we don't put it into
     // scroll_buffer_.
     // Also, only use previous gesture if it's in the same direction.
-    if (prev_result.type == kGestureTypeScroll &&
-        prev_result.details.scroll.dy * dy >= 0 &&
-        prev_result.details.scroll.dx * dx >= 0) {
+    if (prev_result.has_value() && prev_result->type == kGestureTypeScroll &&
+        prev_result->details.scroll.dy * dy >= 0 &&
+        prev_result->details.scroll.dx * dx >= 0) {
       did_generate_scroll_ = true;
-      *result = prev_result;
+      result = prev_result;
     }
     return false;
   }
@@ -527,10 +540,10 @@ bool ScrollManager::FillResultScroll(
 
   if (max_mag_sq > 0) {
     did_generate_scroll_ = true;
-    *result = Gesture(kGestureScroll,
-                      state_buffer.Get(1).timestamp,
-                      state_buffer.Get(0).timestamp,
-                      dx, dy);
+    result = Gesture(kGestureScroll,
+                     state_buffer.Get(1).timestamp,
+                     state_buffer.Get(0).timestamp,
+                     dx, dy);
   }
   if (prev_gesture_type != kGestureTypeScroll || prev_gs_fingers != gs_fingers)
     scroll_buffer->Clear();
@@ -1164,7 +1177,7 @@ void ImmediateInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   state_buffer_.PushState(hwstate);
 
   FillOriginInfo(hwstate);
-  result_.type = kGestureTypeNull;
+  std::optional<Gesture> result = std::nullopt;
   const bool same_fingers = state_buffer_.Get(1).SameFingersAs(hwstate) &&
       (hwstate.buttons_down == state_buffer_.Get(1).buttons_down);
   if (!same_fingers) {
@@ -1206,37 +1219,36 @@ void ImmediateInterpreter::SyncInterpretImpl(HardwareState& hwstate,
     gs_changed_time_ = hwstate.timestamp;
   UpdateStartedMovingTime(hwstate.timestamp, gs_fingers, newly_moving_fingers);
 
-  UpdateButtons(hwstate, timeout);
-  UpdateTapGesture(&hwstate,
-                   gs_fingers,
-                   same_fingers,
-                   hwstate.timestamp,
-                   timeout);
+  AssignIfNonNull(result, UpdateButtons(hwstate, timeout));
+  AssignIfNonNull(result, UpdateTapGesture(
+          &hwstate, gs_fingers, same_fingers, hwstate.timestamp, timeout));
 
   FingerMap active_gs_fingers;
   UpdateCurrentGestureType(hwstate, gs_fingers, &active_gs_fingers);
   GenerateFingerLiftGesture();
-  if (result_.type == kGestureTypeNull)
-    FillResultGesture(hwstate, active_gs_fingers);
+  if (!result.has_value()) {
+    result = FillResultGesture(hwstate, active_gs_fingers);
+  }
 
   // Prevent moves while in a tap
   if ((tap_to_click_state_ == kTtcFirstTapBegan ||
        tap_to_click_state_ == kTtcSubsequentTapBegan) &&
-      result_.type == kGestureTypeMove)
-    result_.type = kGestureTypeNull;
+      result.has_value() && result->type == kGestureTypeMove) {
+    result = std::nullopt;
+  }
 
   prev_active_gs_fingers_ = active_gs_fingers;
   prev_gs_fingers_ = gs_fingers;
-  prev_result_ = result_;
+  prev_result_ = result;
   prev_gesture_type_ = current_gesture_type_;
-  if (result_.type != kGestureTypeNull) {
+  if (result.has_value()) {
     non_gs_fingers_.clear();
     std::set_difference(gs_fingers.begin(), gs_fingers.end(),
                         active_gs_fingers.begin(), active_gs_fingers.end(),
                         std::inserter(non_gs_fingers_,
                         non_gs_fingers_.begin()));
-    LogGestureProduce(name, result_);
-    ProduceGesture(result_);
+    LogGestureProduce(name, result.value());
+    ProduceGesture(result.value());
   }
   LogHardwareStatePost(name, hwstate);
 }
@@ -1245,18 +1257,15 @@ void ImmediateInterpreter::HandleTimerImpl(stime_t now, stime_t* timeout) {
   const char name[] = "ImmediateInterpreter::HandleTimerImpl";
   LogHandleTimerPre(name, now, timeout);
 
-  result_.type = kGestureTypeNull;
+  std::optional<Gesture> result = std::nullopt;
   // Tap-to-click always aborts when real button(s) are being used, so we
   // don't need to worry about conflicts with these two types of callback.
-  UpdateButtonsTimeout(now);
-  UpdateTapGesture(nullptr,
-                   FingerMap(),
-                   false,
-                   now,
-                   timeout);
-  if (result_.type != kGestureTypeNull) {
-    LogGestureProduce(name, result_);
-    ProduceGesture(result_);
+  AssignIfNonNull(result, UpdateButtonsTimeout(now));
+  AssignIfNonNull(result,
+                  UpdateTapGesture(nullptr, FingerMap(), false, now, timeout));
+  if (result.has_value()) {
+    LogGestureProduce(name, result.value());
+    ProduceGesture(result.value());
   }
   LogHandleTimerPost(name, now, timeout);
 }
@@ -1625,7 +1634,7 @@ void ImmediateInterpreter::UpdateThumbState(const HardwareState& hwstate) {
     bool non_gs = (hwstate.timestamp > changed_time_ &&
                    (prev_active_gs_fingers_.find(fs.tracking_id) ==
                     prev_active_gs_fingers_.end()) &&
-                   prev_result_.type != kGestureTypeNull);
+                   prev_result_.has_value());
     non_gs |= moving_finger_id_ >= 0 && moving_finger_id_ != fs.tracking_id;
     likely_thumb |= non_gs;
     // We sometimes can't decide the thumb state if some fingers are undergoing
@@ -1982,9 +1991,9 @@ void ImmediateInterpreter::GenerateFingerLiftGesture() {
     // In some cases (e.g. b/433623598), scrolling can continue while a button
     // goes down but before the button down timeout is reached. If we simply
     // set current_gesture_type_ in this case, we'd never actually produce the
-    // fling gesture because result_ had already been set to the button change
-    // gesture. So, we need to produce it immediately. (The same issue does
-    // not seem to affect 3- and 4-finger swipes.)
+    // fling gesture because the result in SyncInterpretImpl had already been
+    // set to the button change gesture. So, we need to produce it immediately.
+    // (The same issue does not seem to affect 3- and 4-finger swipes.)
     std::optional<Gesture> fling =
         scroll_manager_.FillResultFling(state_buffer_, scroll_buffer_);
     if (fling.has_value()) {
@@ -2092,6 +2101,10 @@ bool ImmediateInterpreter::UpdatePinchState(
   // once locked stay locked until reset.
   if (pinch_locked_) {
     pinch_status_ = GESTURES_ZOOM_UPDATE;
+    return false;
+  }
+
+  if (hwstate.buttons_down != 0) {
     return false;
   }
 
@@ -2612,7 +2625,7 @@ void ImmediateInterpreter::SetTapToClickState(TapToClickState state,
   }
 }
 
-void ImmediateInterpreter::UpdateTapGesture(
+std::optional<Gesture> ImmediateInterpreter::UpdateTapGesture(
     const HardwareState* hwstate,
     const FingerMap& gs_fingers,
     const bool same_fingers,
@@ -2622,15 +2635,11 @@ void ImmediateInterpreter::UpdateTapGesture(
   unsigned up = 0;
   UpdateTapState(hwstate, gs_fingers, same_fingers, now, &down, &up, timeout);
   if (down == 0 && up == 0) {
-    return;
+    return std::nullopt;
   }
   Log("UpdateTapGesture: Tap Generated");
-  result_ = Gesture(kGestureButtonsChange,
-                    state_buffer_.Get(1).timestamp,
-                    now,
-                    down,
-                    up,
-                    true); // is_tap
+  return Gesture(kGestureButtonsChange, state_buffer_.Get(1).timestamp, now,
+                 down, up, /*is_tap=*/true);
 }
 
 void ImmediateInterpreter::UpdateTapState(
@@ -2768,7 +2777,7 @@ void ImmediateInterpreter::UpdateTapState(
   if (!hwstate)
     Log("TTC: This is a timer callback");
   if (phys_click_in_progress || KeyboardRecentlyUsed(now) ||
-      prev_result_.type == kGestureTypeScroll ||
+      (prev_result_.has_value() && prev_result_->type == kGestureTypeScroll) ||
       cancel_tapping) {
     Log("TTC: Forced to idle");
     SetTapToClickState(kTtcIdle, now);
@@ -3104,13 +3113,13 @@ void ImmediateInterpreter::UpdateStartedMovingTime(
   }
 }
 
-void ImmediateInterpreter::UpdateButtons(const HardwareState& hwstate,
-                                         stime_t* timeout) {
+std::optional<Gesture> ImmediateInterpreter::UpdateButtons(
+    const HardwareState& hwstate, stime_t* timeout) {
   // TODO(miletus): To distinguish between left/right buttons down
   bool prev_button_down = state_buffer_.Get(1).buttons_down;
   bool button_down = hwstate.buttons_down;
   if (!prev_button_down && !button_down)
-    return;
+    return std::nullopt;
   // For haptic touchpads, we need to minimize latency for physical button
   // events because they are used to signal the touchpad to perform haptic
   // feedback.
@@ -3132,8 +3141,9 @@ void ImmediateInterpreter::UpdateButtons(const HardwareState& hwstate,
     finger_seen_shortly_after_button_down_ = (hwstate.finger_cnt > 0);
   if (!finger_seen_shortly_after_button_down_ &&
       !zero_finger_click_enable_.val_)
-    return;
+    return std::nullopt;
 
+  std::optional<Gesture> result;
   if (!sent_button_down_) {
     stime_t button_down_time = button_down_deadline_ -
                                button_evaluation_timeout;
@@ -3152,14 +3162,8 @@ void ImmediateInterpreter::UpdateButtons(const HardwareState& hwstate,
     if (button_down_deadline_ <= hwstate.timestamp ||
         phys_up_edge) {
       // Send button down
-      if (result_.type == kGestureTypeButtonsChange)
-        Err("Gesture type already button?!");
-      result_ = Gesture(kGestureButtonsChange,
-                        state_buffer_.Get(1).timestamp,
-                        hwstate.timestamp,
-                        button_type_,
-                        0,
-                        false); // is_tap
+      result = Gesture(kGestureButtonsChange, state_buffer_.Get(1).timestamp,
+                       hwstate.timestamp, button_type_, 0, /*is_tap=*/false);
       sent_button_down_ = true;
     } else if (timeout) {
       *timeout = button_down_deadline_ - hwstate.timestamp;
@@ -3167,15 +3171,13 @@ void ImmediateInterpreter::UpdateButtons(const HardwareState& hwstate,
   }
   if (phys_up_edge) {
     // Send button up
-    if (result_.type != kGestureTypeButtonsChange)
-      result_ = Gesture(kGestureButtonsChange,
-                        state_buffer_.Get(1).timestamp,
-                        hwstate.timestamp,
-                        0,
-                        button_type_,
-                        false); // is_tap
-    else
-      result_.details.buttons.up = button_type_;
+    if (!result.has_value()) {
+      result = Gesture(kGestureButtonsChange, state_buffer_.Get(1).timestamp,
+                       hwstate.timestamp, 0, button_type_,
+                       /*is_tap=*/false);
+    } else {
+      result->details.buttons.up = button_type_;
+    }
     // Reset button state
     button_type_ = GESTURES_BUTTON_NONE;
     button_down_deadline_ = 0;
@@ -3185,32 +3187,30 @@ void ImmediateInterpreter::UpdateButtons(const HardwareState& hwstate,
     // right after it.
     finger_leave_time_ = hwstate.timestamp;
   }
+  return result;
 }
 
-void ImmediateInterpreter::UpdateButtonsTimeout(stime_t now) {
+std::optional<Gesture> ImmediateInterpreter::UpdateButtonsTimeout(stime_t now) {
   if (sent_button_down_) {
     Err("How is sent_button_down_ set?");
-    return;
+    return std::nullopt;
   }
   if (button_type_ == GESTURES_BUTTON_NONE)
-    return;
+    return std::nullopt;
   sent_button_down_ = true;
-  result_ = Gesture(kGestureButtonsChange,
-                    state_buffer_.Get(1).timestamp,
-                    now,
-                    button_type_,
-                    0,
-                    false); // is_tap
+  return Gesture(kGestureButtonsChange, state_buffer_.Get(1).timestamp, now,
+                 button_type_, 0, /*is_tap=*/false);
 }
 
-void ImmediateInterpreter::FillResultGesture(
+std::optional<Gesture> ImmediateInterpreter::FillResultGesture(
     const HardwareState& hwstate,
     const FingerMap& fingers) {
   bool zero_move = false;
+  std::optional<Gesture> result;
   switch (current_gesture_type_) {
     case kGestureTypeMove: {
       if (fingers.empty())
-        return;
+        return std::nullopt;
       // Use the finger which has moved the most to compute motion.
       // First, check if we have locked onto a fast finger in the past.
       const FingerState* current = nullptr;
@@ -3236,12 +3236,12 @@ void ImmediateInterpreter::FillResultGesture(
       if (!current)
         current = fastest;
       if (!current)
-        return;
+        return std::nullopt;
 
       const FingerState* prev =
           state_buffer_.Get(1).GetFingerState(current->tracking_id);
       if (!prev)
-        return;
+        return std::nullopt;
 
       float dx = current->position_x - prev->position_x;
       if (current->flags & GESTURES_FINGER_WARP_X_MOVE)
@@ -3285,9 +3285,9 @@ void ImmediateInterpreter::FillResultGesture(
       const FingerState* prev2 =
           state_buffer_.Get(2).GetFingerState(current->tracking_id);
       if (!prev || !current)
-        return;
+        return std::nullopt;
       if (current->flags & GESTURES_FINGER_MERGE)
-        return;
+        return std::nullopt;
       bool suppress_finger_movement =
           scroll_manager_.SuppressStationaryFingerMovement(
               *current, *prev, dt) ||
@@ -3302,17 +3302,13 @@ void ImmediateInterpreter::FillResultGesture(
             dist_sq2 * dt * dt *
             quick_acceleration_factor_.val_ * quick_acceleration_factor_.val_ <
             dist_sq * dt2 * dt2) {
-          return;
+          return std::nullopt;
         }
       }
       if (suppress_finger_movement) {
         scroll_manager_.prev_result_suppress_finger_movement_ = true;
-        result_ = Gesture(kGestureMove,
-                          state_buffer_.Get(1).timestamp,
-                          hwstate.timestamp,
-                          0,
-                          0);
-        return;
+        return Gesture(kGestureMove, state_buffer_.Get(1).timestamp,
+                       hwstate.timestamp, 0, 0);
       }
       scroll_manager_.prev_result_suppress_finger_movement_ = false;
       float dx_total = current->position_x -
@@ -3332,11 +3328,8 @@ void ImmediateInterpreter::FillResultGesture(
           move_report_distance_.val_ * move_report_distance_.val_;
       if (dsq_total >= dsq_total_thresh) {
         zero_move = dsq == 0.0;
-        result_ = Gesture(kGestureMove,
-                          state_buffer_.Get(1).timestamp,
-                          hwstate.timestamp,
-                          dx,
-                          dy);
+        result = Gesture(kGestureMove, state_buffer_.Get(1).timestamp,
+                         hwstate.timestamp, dx, dy);
       }
       break;
     }
@@ -3346,9 +3339,11 @@ void ImmediateInterpreter::FillResultGesture(
                                          fingers,
                                          prev_gesture_type_,
                                          prev_result_,
-                                         &result_,
-                                         &scroll_buffer_))
-        return;
+                                         result,
+                                         &scroll_buffer_)) {
+        // Return result immediately to avoid updating the scroll buffer below.
+        return result;
+      }
       break;
     }
     // kGestureTypeFling is handled by GenerateFingerLiftGesture.
@@ -3386,7 +3381,7 @@ void ImmediateInterpreter::FillResultGesture(
         }
       }
       if (current_gesture_type_ == kGestureTypeSwipe) {
-        result_ = Gesture(
+        result = Gesture(
             kGestureSwipe, state_buffer_.Get(1).timestamp,
             hwstate.timestamp,
             (!swipe_is_vertical_ && finger_cnt[0]) ?
@@ -3394,7 +3389,7 @@ void ImmediateInterpreter::FillResultGesture(
             (swipe_is_vertical_ && finger_cnt[1]) ?
             sum_delta[1] / finger_cnt[1] : 0.0);
       } else if (current_gesture_type_ == kGestureTypeFourFingerSwipe) {
-        result_ = Gesture(
+        result = Gesture(
             kGestureFourFingerSwipe, state_buffer_.Get(1).timestamp,
             hwstate.timestamp,
             (!swipe_is_vertical_ && finger_cnt[0]) ?
@@ -3407,26 +3402,24 @@ void ImmediateInterpreter::FillResultGesture(
     case kGestureTypeSwipeLift: {
       if (!three_finger_swipe_enable_.val_)
         break;
-      result_ = Gesture(kGestureSwipeLift,
-                        state_buffer_.Get(1).timestamp,
-                        hwstate.timestamp);
+      result = Gesture(kGestureSwipeLift, state_buffer_.Get(1).timestamp,
+                       hwstate.timestamp);
       break;
     }
 
     case kGestureTypeFourFingerSwipeLift: {
       if (!three_finger_swipe_enable_.val_)
         break;
-      result_ = Gesture(kGestureFourFingerSwipeLift,
-                        state_buffer_.Get(1).timestamp,
-                        hwstate.timestamp);
+      result = Gesture(kGestureFourFingerSwipeLift,
+                       state_buffer_.Get(1).timestamp, hwstate.timestamp);
       break;
     }
     case kGestureTypePinch: {
       if (pinch_status_ == GESTURES_ZOOM_START ||
           (pinch_status_ == GESTURES_ZOOM_END &&
            prev_gesture_type_ == kGestureTypePinch)) {
-        result_ = Gesture(kGesturePinch, changed_time_, hwstate.timestamp,
-                          1.0, pinch_status_);
+        result = Gesture(kGesturePinch, changed_time_, hwstate.timestamp, 1.0,
+                         pinch_status_);
         pinch_prev_time_ = hwstate.timestamp;
         if (pinch_status_ == GESTURES_ZOOM_END) {
           current_gesture_type_ = kGestureTypeNull;
@@ -3455,9 +3448,9 @@ void ImmediateInterpreter::FillResultGesture(
              current_dist_sq > jitter_threshold * pinch_prev_distance_sq_);
 
         if (above_jitter_threshold) {
-          result_ = Gesture(kGesturePinch, changed_time_, hwstate.timestamp,
-                            sqrt(current_dist_sq / pinch_prev_distance_sq_),
-                            GESTURES_ZOOM_UPDATE);
+          result = Gesture(kGesturePinch, changed_time_, hwstate.timestamp,
+                           sqrt(current_dist_sq / pinch_prev_distance_sq_),
+                           GESTURES_ZOOM_UPDATE);
           pinch_prev_direction_ =
               current_dist_sq > pinch_prev_distance_sq_ ? 1 : -1;
           pinch_prev_distance_sq_ = current_dist_sq;
@@ -3482,13 +3475,14 @@ void ImmediateInterpreter::FillResultGesture(
       break;
     }
     default:
-      result_.type = kGestureTypeNull;
+      result = std::nullopt;
   }
   scroll_manager_.UpdateScrollEventBuffer(current_gesture_type_,
                                           &scroll_buffer_);
-  if ((result_.type == kGestureTypeMove && !zero_move) ||
-      result_.type == kGestureTypeScroll)
+  if (result.has_value() && ((result->type == kGestureTypeMove && !zero_move) ||
+      result->type == kGestureTypeScroll))
     last_movement_timestamp_ = hwstate.timestamp;
+  return result;
 }
 
 void ImmediateInterpreter::IntWasWritten(IntProperty* prop) {

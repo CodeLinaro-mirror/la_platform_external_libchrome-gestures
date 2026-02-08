@@ -5,6 +5,7 @@
 #include "include/multitouch_mouse_interpreter.h"
 
 #include <algorithm>
+#include <optional>
 
 #include "include/tracer.h"
 #include "include/util.h"
@@ -173,7 +174,7 @@ void MultitouchMouseInterpreter::Initialize(
 void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
   const char name[] = "MultitouchMouseInterpreter::InterpretMultitouchEvent";
 
-  Gesture result;
+  std::optional<Gesture> result;
 
   // If a gesturing finger just left, do fling/lift
   if (should_fling_ && AnyGesturingFingerLeft(state_buffer_.Get(0),
@@ -182,8 +183,8 @@ void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
     std::optional<Gesture> fling =
         scroll_manager_.FillResultFling(state_buffer_, scroll_buffer_);
     if (fling.has_value() && fling->details.fling.vy != 0.0) {
-      result = fling.value();
-      result.details.fling.vx = 0.0;
+      result = fling;
+      result->details.fling.vx = 0.0;
     }
     should_fling_ = false;
   } else if (gs_fingers_.size() > 0) {
@@ -206,9 +207,10 @@ void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
                                       gs_fingers_,
                                       prev_gesture_type_,
                                       prev_result_,
-                                      &result,
+                                      result,
                                       &scroll_buffer_);
-    current_gesture_type_ = result.type;
+    current_gesture_type_ =
+        result.has_value() ? result->type : kGestureTypeNull;
     if (current_gesture_type_ == kGestureTypeScroll)
       should_fling_ = true;
 
@@ -231,9 +233,10 @@ void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
         (button_left_age < click_left_button_going_up_lead_time_.val_) ||
         (button_right_age < click_right_button_going_up_lead_time_.val_);
 
-    if (hold_off_scroll && result.type == kGestureTypeScroll) {
+    if (hold_off_scroll && result.has_value() &&
+        result->type == kGestureTypeScroll) {
       current_gesture_type_ = kGestureTypeNull;
-      result.type = kGestureTypeNull;
+      result = std::nullopt;
     }
     if (current_gesture_type_ == kGestureTypeScroll &&
         !update_scroll_buffer) {
@@ -242,9 +245,9 @@ void MultitouchMouseInterpreter::InterpretMultitouchEvent() {
   }
   scroll_manager_.UpdateScrollEventBuffer(current_gesture_type_,
                                           &scroll_buffer_);
-  if (result.type != kGestureTypeNull) {
-    LogGestureProduce(name, result);
-    ProduceGesture(result);
+  if (result.has_value()) {
+    LogGestureProduce(name, result.value());
+    ProduceGesture(result.value());
   }
   prev_result_ = result;
 }

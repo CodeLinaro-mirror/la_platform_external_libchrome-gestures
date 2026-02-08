@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <optional>
+
 #include <gtest/gtest.h>  // For FRIEND_TEST
 
 #include "include/gestures.h"
@@ -63,7 +65,7 @@ class MultitouchMouseInterpreter : public MouseInterpreter {
   bool should_fling_;
 
   ScrollManager scroll_manager_;
-  Gesture prev_result_;
+  std::optional<Gesture> prev_result_;
   Origin origin_;
 
   // This keeps track of where fingers started. Usually this is their original
