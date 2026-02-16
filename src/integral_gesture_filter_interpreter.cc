@@ -45,6 +45,8 @@ void IntegralGestureFilterInterpreter::HandleTimerImpl(
   LogHandleTimerPre(name, now, timeout);
 
   stime_t next_timeout;
+  // TODO(b/483321024): deduplicate this logic with other filter interpreters
+  // and write unit tests for it.
   if (ShouldCallNextTimer(remainder_reset_deadline_)) {
     if (next_timer_deadline_ > now) {
       Err("Spurious callback. now: %f, next deadline: %f",
@@ -64,10 +66,7 @@ void IntegralGestureFilterInterpreter::HandleTimerImpl(
           hscroll_remainder_ = vscroll_remainder_ = 0.0;
 
     remainder_reset_deadline_ = NO_DEADLINE;
-    next_timeout = next_timer_deadline_ == NO_DEADLINE ||
-                   next_timer_deadline_ <= now
-                      ? NO_DEADLINE
-                      : next_timer_deadline_ - now;
+    next_timeout = MaybeCallNextTimer(now);
   }
   *timeout = SetNextDeadlineAndReturnTimeoutVal(now,
                                                 remainder_reset_deadline_,

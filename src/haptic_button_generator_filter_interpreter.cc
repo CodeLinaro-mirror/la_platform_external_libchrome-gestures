@@ -172,6 +172,8 @@ void HapticButtonGeneratorFilterInterpreter::HandleTimerImpl(
   LogHandleTimerPre(name, now, timeout);
 
   stime_t next_timeout;
+  // TODO(b/483321024): deduplicate this logic with other filter interpreters
+  // and write unit tests for it.
   if (ShouldCallNextTimer(active_gesture_deadline_)) {
     next_timeout = NO_DEADLINE;
     next_->HandleTimer(now, &next_timeout);
@@ -186,10 +188,7 @@ void HapticButtonGeneratorFilterInterpreter::HandleTimerImpl(
     // stuck down.
     active_gesture_ = false;
     active_gesture_deadline_ = NO_DEADLINE;
-    next_timeout = next_timer_deadline_ == NO_DEADLINE ||
-                   next_timer_deadline_ <= now
-                      ? NO_DEADLINE
-                      : next_timer_deadline_ - now;
+    next_timeout = MaybeCallNextTimer(now);
   }
   *timeout = SetNextDeadlineAndReturnTimeoutVal(now,
                                                 active_gesture_deadline_,

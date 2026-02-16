@@ -58,6 +58,8 @@ class FilterInterpreter : public Interpreter, public GestureConsumer {
   // interpreter or one further down the chain.
   bool ShouldCallNextTimer(stime_t local_deadline);
 
+  stime_t MaybeCallNextTimer(stime_t now);
+
   std::unique_ptr<Interpreter> next_;
 
  private:
