@@ -5,7 +5,6 @@
 #include <gtest/gtest.h>
 
 #include "include/gestures.h"
-#include "include/string_util.h"
 #include "include/timestamp_filter_interpreter.h"
 #include "include/unittest_util.h"
 #include "include/util.h"
@@ -30,10 +29,17 @@ class TimestampFilterInterpreterTestInterpreter : public Interpreter {
 
 };
 
-static HardwareState make_hwstate_times(stime_t timestamp,
-                                        stime_t msc_timestamp) {
-  return { timestamp, 0, 1, 1, nullptr, 0, 0, 0, 0, 0, msc_timestamp };
+namespace {
+
+// TimestampFilterInterpreter doesn't look at the fingers, so we can just pass a
+// pointer to a zeroed FingerState in HardwareStates.
+FingerState kEmptyFingerState = {};
+
+HardwareState make_hwstate_times(stime_t timestamp, stime_t msc_timestamp) {
+  return {timestamp, 0, 1, 1, &kEmptyFingerState, 0, 0, 0, 0, 0, msc_timestamp};
 }
+
+}  // namespace
 
 TEST(TimestampFilterInterpreterTest, SimpleTest) {
   TimestampFilterInterpreterTestInterpreter* base_interpreter =

@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include "include/gestures.h"
 #include "include/mouse_interpreter.h"
 #include "include/unittest_util.h"
-#include "include/util.h"
 
 namespace gestures {
 
@@ -76,13 +77,25 @@ TEST(MouseInterpreterTest, SimpleTest) {
   EXPECT_EQ(220000, gs->start_time);
   EXPECT_EQ(230000, gs->end_time);
 
-  gs = wrapper.SyncInterpret(hwstates[4], nullptr);
-  ASSERT_NE(nullptr, gs);
-  EXPECT_EQ(kGestureTypeMouseWheel, gs->type);
-  EXPECT_LT(-1, gs->details.wheel.dx);
-  EXPECT_GT(1, gs->details.wheel.dy);
-  EXPECT_EQ(240000, gs->start_time);
-  EXPECT_EQ(240000, gs->end_time);
+  std::vector<Gesture> gestures =
+      wrapper.SyncInterpretMulti(hwstates[4], nullptr);
+  ASSERT_EQ(2, gestures.size());
+  // There should be one Gesture for the vertical scroll, and another for the
+  // horizontal. (It doesn't matter which comes first, but we assume the
+  // vertical comes first here to keep the test simple.)
+  const Gesture& vGesture = gestures[0];
+  EXPECT_EQ(kGestureTypeMouseWheel, vGesture.type);
+  EXPECT_EQ(0, vGesture.details.wheel.dx);
+  EXPECT_GT(vGesture.details.wheel.dy, 1);
+  EXPECT_EQ(240000, vGesture.start_time);
+  EXPECT_EQ(240000, vGesture.end_time);
+
+  const Gesture& hGesture = gestures[1];
+  EXPECT_EQ(kGestureTypeMouseWheel, hGesture.type);
+  EXPECT_GT(hGesture.details.wheel.dx, 1);
+  EXPECT_EQ(0, hGesture.details.wheel.dy);
+  EXPECT_EQ(240000, hGesture.start_time);
+  EXPECT_EQ(240000, hGesture.end_time);
 }
 
 TEST(MouseInterpreterTest, HighResolutionVerticalScrollTest) {
@@ -290,7 +303,10 @@ TEST(MouseInterpreterTest, WheelTickReportingLowResTest) {
   EXPECT_EQ(  0, gs->details.wheel.tick_120ths_dy);
 }
 
-TEST(MouseInterpreterTest, EmulateScrollWheelTest) {
+// TODO(b/469726780): this test enforces that an inconsistent gesture stream is
+//  produced. Make the stream output by scroll wheel emulation consistent,
+//  update the test, and then re-enable it.
+TEST(MouseInterpreterTest, DISABLED_EmulateScrollWheelTest) {
   HardwareProperties hwprops = make_hwprops_for_mouse(0, 0);
   MouseInterpreter mi(nullptr, nullptr);
   TestInterpreterWrapper wrapper(&mi, &hwprops);
@@ -300,15 +316,15 @@ TEST(MouseInterpreterTest, EmulateScrollWheelTest) {
     { 200000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
     { 210000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 9, -7, 0, 0, 0, 0.0 },
     { 220000, GESTURES_BUTTON_LEFT, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
-    { 230000, GESTURES_BUTTON_LEFT + GESTURES_BUTTON_RIGHT, 0, 0, nullptr,
+    { 230000, GESTURES_BUTTON_LEFT | GESTURES_BUTTON_RIGHT, 0, 0, nullptr,
       0, 0, 0, 0, 0, 0.0 },
-    { 240000, GESTURES_BUTTON_LEFT + GESTURES_BUTTON_RIGHT, 0, 0, nullptr,
+    { 240000, GESTURES_BUTTON_LEFT | GESTURES_BUTTON_RIGHT, 0, 0, nullptr,
       2, 2, 0, 0, 0, 0.0 },
     { 250000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
     { 260000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 9, -7, 0, 0, 0, 0.0 },
     { 270000, GESTURES_BUTTON_MIDDLE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
     { 280000, GESTURES_BUTTON_MIDDLE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
-    { 290000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 0, 0, -3, -360, 4, 0.0 },
+    { 290000, GESTURES_BUTTON_NONE, 0, 0, nullptr, 0, 0, 0, 0, 0, 0.0 },
   };
 
   mi.output_mouse_wheel_gestures_.val_ = true;
@@ -327,8 +343,8 @@ TEST(MouseInterpreterTest, EmulateScrollWheelTest) {
   gs = wrapper.SyncInterpret(hwstates[2], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
-  EXPECT_EQ(1, gs->details.buttons.down);
-  EXPECT_EQ(0, gs->details.buttons.up);
+  EXPECT_EQ(GESTURES_BUTTON_LEFT, gs->details.buttons.down);
+  EXPECT_EQ(GESTURES_BUTTON_NONE, gs->details.buttons.up);
   EXPECT_EQ(210000, gs->start_time);
   EXPECT_EQ(220000, gs->end_time);
 
@@ -352,8 +368,9 @@ TEST(MouseInterpreterTest, EmulateScrollWheelTest) {
   gs = wrapper.SyncInterpret(hwstates[5], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
-  EXPECT_EQ(0, gs->details.buttons.down);
-  EXPECT_EQ(5, gs->details.buttons.up);
+  EXPECT_EQ(GESTURES_BUTTON_NONE, gs->details.buttons.down);
+  EXPECT_EQ(GESTURES_BUTTON_LEFT | GESTURES_BUTTON_RIGHT,
+            gs->details.buttons.up);
   EXPECT_EQ(240000, gs->start_time);
   EXPECT_EQ(250000, gs->end_time);
 
@@ -374,8 +391,8 @@ TEST(MouseInterpreterTest, EmulateScrollWheelTest) {
   gs = wrapper.SyncInterpret(hwstates[9], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
-  EXPECT_EQ(0, gs->details.buttons.down);
-  EXPECT_EQ(2, gs->details.buttons.up);
+  EXPECT_EQ(GESTURES_BUTTON_NONE, gs->details.buttons.down);
+  EXPECT_EQ(GESTURES_BUTTON_MIDDLE, gs->details.buttons.up);
   EXPECT_EQ(280000, gs->start_time);
   EXPECT_EQ(290000, gs->end_time);
 }

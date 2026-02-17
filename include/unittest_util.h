@@ -5,6 +5,8 @@
 #ifndef GESTURES_UNITTEST_UTIL_H_
 #define GESTURES_UNITTEST_UTIL_H_
 
+#include <vector>
+
 #include "include/finger_metrics.h"
 #include "include/gestures.h"
 #include "include/interpreter.h"
@@ -23,7 +25,22 @@ class TestInterpreterWrapper : public GestureConsumer {
   // Takes ownership of mprops
   void Reset(Interpreter* interpreter, MetricsProperties* mprops);
   void Reset(Interpreter* interpreter, const HardwareProperties* hwprops);
+
+  // Sends a HardwareState to the wrapped interpreter, and returns a pointer to
+  // up to one Gesture that it produces in response. If no Gestures are
+  // produced, returns null. If more than one Gesture is produced, returns the
+  // most recent but adds a test failure.
   Gesture* SyncInterpret(HardwareState& state, stime_t* timeout);
+
+  // Sends a HardwareState to the wrapped interpreter, and returns a copy of all
+  // Gestures produced in response.
+  std::vector<Gesture> SyncInterpretMulti(HardwareState& state,
+                                          stime_t* timeout);
+
+  // Calls HandleTimer on the wrapped interpreter, and returns a pointer to up
+  // to one Gesture that it produces in response. If no Gestures are produced,
+  // returns null. If more than one Gesture is produced, returns the most recent
+  // but adds a test failure.
   Gesture* HandleTimer(stime_t now, stime_t* timeout);
   virtual void ConsumeGesture(const Gesture& gs);
 
@@ -31,7 +48,7 @@ class TestInterpreterWrapper : public GestureConsumer {
   Interpreter* interpreter_;
   const HardwareProperties* hwprops_;
   HardwareProperties dummy_;
-  Gesture gesture_;
+  std::vector<Gesture> gestures_;
   std::unique_ptr<PropRegistry> prop_reg_;
   std::unique_ptr<MetricsProperties> mprops_;
 };

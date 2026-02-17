@@ -12,7 +12,6 @@
 #include "include/immediate_interpreter.h"
 #include "include/string_util.h"
 #include "include/unittest_util.h"
-#include "include/util.h"
 
 namespace gestures {
 
@@ -395,9 +394,8 @@ TEST(ImmediateInterpreterTest, FlingTest) {
   };
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
-    // Consistent movement for 4 frames
+  FingerState consistent_speed_fingers[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     {0, 0, 0, 0, 20, 0, 40, 20, 1, 0},
     {0, 0, 0, 0, 20, 0, 60, 20, 2, 0},
 
@@ -409,8 +407,8 @@ TEST(ImmediateInterpreterTest, FlingTest) {
 
     {0, 0, 0, 0, 20, 0, 40, 50, 1, 0},
     {0, 0, 0, 0, 20, 0, 60, 50, 2, 0},
-
-    // Increasing movement for 4 frames
+  };
+  FingerState increasing_speed_fingers[] = {
     {0, 0, 0, 0, 20, 0, 40, 20, 3, 0},
     {0, 0, 0, 0, 20, 0, 60, 20, 4, 0},
 
@@ -425,58 +423,56 @@ TEST(ImmediateInterpreterTest, FlingTest) {
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(0.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(1.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(1.01, 0, 2, 2, &finger_states[2]),
-    make_hwstate(1.02, 0, 2, 2, &finger_states[4]),
-    make_hwstate(1.03, 0, 2, 2, &finger_states[6]),
-    make_hwstate(1.04, 0, 0, 0, nullptr),
+    make_hwstate(0.00, 0, 2, 2, &consistent_speed_fingers[0]), // 0
+    make_hwstate(1.00, 0, 2, 2, &consistent_speed_fingers[0]), // 1
+    make_hwstate(1.01, 0, 2, 2, &consistent_speed_fingers[2]), // 2
+    make_hwstate(1.02, 0, 2, 2, &consistent_speed_fingers[4]), // 3
+    make_hwstate(1.03, 0, 2, 2, &consistent_speed_fingers[6]), // 4
+    make_hwstate(1.04, 0, 0, 0, nullptr),                      // 5
 
-    make_hwstate(3.00, 0, 2, 2, &finger_states[8]),
-    make_hwstate(4.00, 0, 2, 2, &finger_states[8]),
-    make_hwstate(4.01, 0, 2, 2, &finger_states[10]),
-    make_hwstate(4.02, 0, 2, 2, &finger_states[12]),
-    make_hwstate(4.03, 0, 2, 2, &finger_states[14]),
-    make_hwstate(4.04, 0, 0, 0, nullptr),
+    make_hwstate(3.00, 0, 2, 2, &increasing_speed_fingers[0]), // 6
+    make_hwstate(4.00, 0, 2, 2, &increasing_speed_fingers[0]), // 7
+    make_hwstate(4.01, 0, 2, 2, &increasing_speed_fingers[2]), // 8
+    make_hwstate(4.02, 0, 2, 2, &increasing_speed_fingers[4]), // 9
+    make_hwstate(4.03, 0, 2, 2, &increasing_speed_fingers[6]), // 10
+    make_hwstate(4.04, 0, 0, 0, nullptr),                      // 11
   };
 
-  size_t idx = 0;
-
   // Consistent movement
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[1], nullptr));
 
-  Gesture* gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  Gesture* gs = wrapper.SyncInterpret(hardware_states[2], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[3], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[4], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[5], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeFling, gs->type);
   EXPECT_FLOAT_EQ(0, gs->details.fling.vx);
   EXPECT_FLOAT_EQ(10 / 0.01, gs->details.fling.vy);
 
   // Increasing speed movement
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[6], nullptr);
   EXPECT_EQ(nullptr, gs) << gs->String();
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[7], nullptr);
   EXPECT_EQ(nullptr, gs) << gs->String();
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[8], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[9], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[10], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[11], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeFling, gs->type);
   EXPECT_FLOAT_EQ(0, gs->details.fling.vx);
@@ -519,24 +515,21 @@ TEST(ImmediateInterpreterTest, DelayedStartScrollTest) {
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(1.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(2.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(2.01, 0, 2, 2, &finger_states[2]),
-    make_hwstate(2.02, 0, 2, 2, &finger_states[4]),
-    make_hwstate(2.03, 0, 0, 0, nullptr),
+    make_hwstate(1.00, 0, 2, 2, &finger_states[0]), // 0
+    make_hwstate(2.00, 0, 2, 2, &finger_states[0]), // 1
+    make_hwstate(2.01, 0, 2, 2, &finger_states[2]), // 2
+    make_hwstate(2.02, 0, 2, 2, &finger_states[4]), // 3
   };
 
-  size_t idx = 0;
-
   // Consistent movement
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[1], nullptr));
 
-  Gesture* gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  Gesture* gs = wrapper.SyncInterpret(hardware_states[2], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeMove, gs->type);
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[3], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
 }
@@ -562,7 +555,7 @@ TEST(ImmediateInterpreterTest, ScrollReevaluateTest) {
   };
 
   FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     // Consistent movement for 4 frames
     {0, 0, 0, 0, 20, 0, 10, 95, 1, 0},
     {0, 0, 0, 0, 20, 0, 59, 95, 2, 0},
@@ -572,41 +565,39 @@ TEST(ImmediateInterpreterTest, ScrollReevaluateTest) {
 
     {0, 0, 0, 0, 20, 0, 10, 75, 1, 0},
     {0, 0, 0, 0, 20, 0, 59, 75, 2, 0},
-
+  };
+  FingerState fingers_too_far_apart[] = {
     // Just too far apart to be scrolling
     {0, 0, 0, 0, 20, 0, 10, 65, 1, 0},
     {0, 0, 0, 0, 20, 0, 61, 65, 2, 0},
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(1.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(2.00, 0, 2, 2, &finger_states[0]),
-    make_hwstate(2.01, 0, 2, 2, &finger_states[2]),
-    make_hwstate(2.02, 0, 2, 2, &finger_states[4]),
-    make_hwstate(2.03, 0, 2, 2, &finger_states[6]),
+    make_hwstate(1.00, 0, 2, 2, &finger_states[0]),     // 0
+    make_hwstate(2.00, 0, 2, 2, &finger_states[0]),     // 1
+    make_hwstate(2.01, 0, 2, 2, &finger_states[2]),     // 2
+    make_hwstate(2.02, 0, 2, 2, &finger_states[4]),     // 3
+    make_hwstate(2.03, 0, 2, 2, fingers_too_far_apart), // 4
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
-  size_t idx = 0;
-
   // Consistent movement
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[1], nullptr));
 
-  Gesture* gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  Gesture* gs = wrapper.SyncInterpret(hardware_states[2], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[3], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
-  if (gs) {
-    fprintf(stderr, "gs:%si=%zd\n", gs->String().c_str(), idx);
-    EXPECT_NE(kGestureTypeScroll, gs->type);
-  }
+  std::vector<Gesture> gestures =
+      wrapper.SyncInterpretMulti(hardware_states[4], nullptr);
+  ASSERT_GT(gestures.size(), 0);
+  EXPECT_EQ(kGestureTypeFling, gestures[0].type);
 }
 
 
@@ -646,220 +637,63 @@ TEST(ImmediateInterpreterTest, OneFingerThenTwoDelayedStartScrollTest) {
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(1.00, 0, 1, 1, &finger_states[0]),
-    make_hwstate(1.20, 0, 2, 2, &finger_states[1]),
-    make_hwstate(2.00, 0, 2, 2, &finger_states[1]),
-    make_hwstate(2.01, 0, 2, 2, &finger_states[3]),
-    make_hwstate(2.03, 0, 0, 0, nullptr),
+    make_hwstate(1.00, 0, 1, 1, &finger_states[0]), // 0
+    make_hwstate(1.20, 0, 2, 2, &finger_states[1]), // 1
+    make_hwstate(2.00, 0, 2, 2, &finger_states[1]), // 2
+    make_hwstate(2.01, 0, 2, 2, &finger_states[3]), // 3
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
-  size_t idx = 0;
-
   // Consistent movement
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
-  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[idx++], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
+  EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[1], nullptr));
 
-  Gesture* gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  Gesture* gs = wrapper.SyncInterpret(hardware_states[2], nullptr);
   EXPECT_EQ(nullptr, gs);
 
-  gs = wrapper.SyncInterpret(hardware_states[idx++], nullptr);
+  gs = wrapper.SyncInterpret(hardware_states[3], nullptr);
   ASSERT_NE(nullptr, gs);
   EXPECT_EQ(kGestureTypeScroll, gs->type);
 }
 
-namespace {
-
-enum TestCaseStartOrContinueFlag {
-  kS,  // start
-  kC  // continue
-};
-
-enum OneFatFingerScrollTestExpectation {
-  kAnything,
-  kScroll
-};
-
-struct OneFatFingerScrollTestInputs {
-  TestCaseStartOrContinueFlag start;
-  stime_t now;
-  float x0, y0, p0, x1, y1, p1;  // (x, y) coordinate and pressure
-  OneFatFingerScrollTestExpectation expectation;
-};
-
-}  // namespace {}
-
 // Tests two scroll operations with data from actual logs from Ryan Tabone.
-TEST(ImmediateInterpreterTest, OneFatFingerScrollTest) {
-  std::unique_ptr<ImmediateInterpreter> ii;
-  HardwareProperties hwprops = {
-    .right = 106.666672,
-    .bottom = 68.000000,
-    .res_x = 1,
-    .res_y = 1,
-    .orientation_minimum = -1,
-    .orientation_maximum = 2,
-    .max_finger_cnt = 15,
-    .max_touch_cnt = 5,
-    .supports_t5r2 = 0,
-    .support_semi_mt = 0,
-    .is_button_pad = true,
-    .has_wheel = 0,
-    .wheel_is_hi_res = 0,
-    .is_haptic_pad = false,
+class OneFatFingerScrollTest : public ::testing::Test {
+ protected:
+  enum Expectation { kAnything, kScroll };
+
+  struct TestInputs {
+    stime_t now;
+    float x0, y0, p0, x1, y1, p1;  // (x, y) coordinate and pressure
+    Expectation expectation;
   };
-  TestInterpreterWrapper wrapper(ii.get(), &hwprops);
-  // 4 runs that were failing, but now pass:
-  OneFatFingerScrollTestInputs inputs[] = {
-    { kS, 54.6787, 49.83, 33.20,  3.71, 73.25, 22.80, 32.82, kAnything },
-    { kC, 54.6904, 49.83, 33.20, 61.93, 73.25, 22.80, 40.58, kAnything },
-    { kC, 54.7022, 49.83, 33.20, 67.75, 73.25, 22.90, 40.58, kAnything },
-    { kC, 54.7140, 49.83, 33.20, 67.75, 73.25, 22.90, 42.52, kAnything },
-    { kC, 54.7256, 49.66, 33.20, 71.63, 73.25, 21.90, 38.64, kAnything },
-    { kC, 54.7373, 49.00, 32.90, 75.51, 72.91, 20.80, 40.58, kAnything },
-    { kC, 54.7492, 48.50, 31.70, 77.45, 72.75, 19.90, 40.58, kScroll },
-    { kC, 54.7613, 47.91, 30.30, 77.45, 73.08, 17.90, 44.46, kScroll },
-    { kC, 54.7734, 47.58, 26.80, 79.39, 73.08, 16.10, 46.40, kScroll },
-    { kC, 54.7855, 47.33, 24.30, 85.21, 73.08, 13.40, 42.52, kScroll },
-    { kC, 54.7976, 47.08, 21.30, 83.27, 73.25, 11.00, 46.40, kScroll },
-    { kC, 54.8099, 47.08, 18.30, 87.15, 73.16,  9.00, 44.46, kScroll },
-    { kC, 54.8222, 46.75, 15.90, 83.27, 73.16,  6.80, 42.52, kScroll },
-    { kC, 54.8344, 46.66, 13.50, 85.21, 73.33,  4.80, 46.40, kScroll },
-    { kC, 54.8469, 46.50, 11.80, 83.27, 73.33,  3.70, 44.46, kScroll },
-    { kC, 54.8598, 46.41, 10.80, 85.21, 73.33,  3.00, 46.40, kScroll },
-    { kC, 54.8726, 46.00,  9.50, 79.39, 73.33,  1.70, 40.58, kScroll },
-    { kC, 54.8851, 46.00,  8.60, 81.33, 73.33,  1.50, 40.58, kScroll },
-    { kC, 54.8975, 46.00,  7.90, 83.27, 73.33,  1.20, 38.64, kScroll },
-    { kC, 54.9099, 46.00,  7.20, 85.21, 73.33,  1.20, 38.64, kScroll },
-    { kC, 54.9224, 46.00,  7.00, 81.33, 73.33,  1.00, 34.76, kScroll },
-    { kC, 54.9350, 46.00,  7.00, 81.33, 73.66,  0.90, 34.76, kScroll },
-    { kC, 54.9473, 46.00,  6.80, 83.27, 73.66,  0.50, 34.76, kScroll },
-    { kC, 54.9597, 46.00,  6.70, 77.45, 73.66,  0.40, 32.82, kScroll },
-    { kC, 54.9721, 46.00,  6.60, 56.10, 73.50,  0.40, 28.94, kScroll },
-    { kC, 54.9844, 46.41,  6.20, 32.82, 73.16,  0.40, 19.24, kScroll },
-    { kC, 54.9967, 46.08,  6.20, 17.30, 72.41,  0.40,  7.60, kScroll },
-    { kC, 55.0067, 47.16,  6.30,  3.71,  0.00,  0.00,  0.00, kAnything },
 
-    { kS, 91.6606, 48.08, 31.20,  9.54,  0.00,  0.00,  0.00, kAnything },
-    { kC, 91.6701, 48.08, 31.20, 23.12,  0.00,  0.00,  0.00, kAnything },
-    { kC, 91.6821, 48.25, 31.20, 38.64, 69.50, 23.20,  7.60, kAnything },
-    { kC, 91.6943, 48.25, 31.20, 50.28, 69.50, 23.20, 19.24, kAnything },
-    { kC, 91.7062, 48.25, 31.20, 58.04, 69.41, 23.00, 23.12, kAnything },
-    { kC, 91.7182, 48.25, 31.20, 63.87, 69.41, 23.00, 27.00, kAnything },
-    { kC, 91.7303, 48.25, 31.20, 65.81, 69.16, 23.00, 30.88, kAnything },
-    { kC, 91.7423, 48.25, 31.20, 65.81, 69.08, 23.00, 30.88, kAnything },
-    { kC, 91.7541, 48.25, 31.20, 67.75, 69.83, 21.90, 25.06, kAnything },
-    { kC, 91.7660, 48.25, 30.80, 67.75, 69.75, 21.90, 27.00, kAnything },
-    { kC, 91.7778, 48.25, 30.00, 63.87, 69.75, 21.60, 30.88, kAnything },
-    { kC, 91.7895, 48.25, 29.00, 63.87, 69.75, 21.30, 30.88, kAnything },
-    { kC, 91.8016, 48.25, 27.60, 65.81, 69.50, 19.90, 34.76, kAnything },
-    { kC, 91.8138, 48.16, 26.00, 67.75, 69.41, 18.70, 36.70, kScroll },
-    { kC, 91.8259, 47.83, 24.30, 69.69, 69.16, 17.50, 40.58, kScroll },
-    { kC, 91.8382, 47.66, 22.50, 69.69, 69.16, 15.50, 36.70, kScroll },
-    { kC, 91.8503, 47.58, 19.20, 71.63, 69.16, 13.20, 34.76, kScroll },
-    { kC, 91.8630, 47.41, 17.10, 71.63, 69.16, 10.80, 40.58, kScroll },
-    { kC, 91.8751, 47.16, 14.70, 73.57, 69.16,  8.40, 34.76, kScroll },
-    { kC, 91.8871, 47.16, 12.70, 73.57, 69.50,  7.10, 36.70, kScroll },
-    { kC, 91.8994, 47.16, 11.30, 71.63, 69.75,  5.90, 36.70, kScroll },
-    { kC, 91.9119, 47.16, 10.10, 67.75, 69.75,  4.40, 40.58, kScroll },
-    { kC, 91.9243, 47.58,  8.70, 69.69, 69.75,  3.50, 42.52, kScroll },
-    { kC, 91.9367, 48.00,  7.80, 63.87, 70.08,  2.70, 38.64, kScroll },
-    { kC, 91.9491, 48.33,  6.90, 59.99, 70.58,  2.10, 34.76, kScroll },
-    { kC, 91.9613, 48.66,  6.50, 56.10, 70.58,  1.50, 32.82, kScroll },
-    { kC, 91.9732, 48.91,  6.00, 48.34, 70.66,  1.10, 28.94, kScroll },
-    { kC, 91.9854, 49.00,  5.90, 38.64, 71.00,  1.10, 23.12, kScroll },
-    { kC, 91.9975, 49.41,  5.60, 27.00, 71.33,  1.10, 15.36, kScroll },
-    { kC, 92.0094, 49.41,  5.30, 13.42, 71.33,  0.90,  9.54, kScroll },
-    { kC, 92.0215, 49.33,  4.20,  7.60, 71.33,  0.50,  3.71, kScroll },
+  void run_test(const std::vector<TestInputs>& inputs) {
+    for (size_t i = 0; i < inputs.size(); i++) {
+      SCOPED_TRACE(StringPrintf("Input %zu", i));
+      const TestInputs& input = inputs[i];
+      FingerState fs[] = {
+        { 0, 0, 0, 0, input.p0, 0.0, input.x0, input.y0, 1, 0 },
+        { 0, 0, 0, 0, input.p1, 0.0, input.x1, input.y1, 2, 0 },
+      };
+      unsigned short finger_cnt = input.p1 == 0.0 ? 1 : 2;
+      HardwareState hs = make_hwstate(input.now, 0, finger_cnt, finger_cnt, fs);
 
-    { kS, 93.3635, 43.58, 31.40, 36.70, 60.75, 19.00, 11.48, kAnything },
-    { kC, 93.3757, 43.58, 31.40, 73.57, 60.58, 18.80, 27.00, kAnything },
-    { kC, 93.3880, 43.58, 31.40, 75.51, 60.41, 17.90, 32.82, kAnything },
-    { kC, 93.4004, 43.33, 31.20, 77.45, 60.33, 17.40, 38.64, kAnything },
-    { kC, 93.4126, 43.00, 30.70, 79.39, 60.33, 16.50, 42.52, kAnything },
-    { kC, 93.4245, 42.75, 28.90, 81.33, 60.33, 15.70, 46.40, kScroll },
-    { kC, 93.4364, 42.41, 27.00, 79.39, 60.33, 14.30, 48.34, kScroll },
-    { kC, 93.4485, 42.16, 25.80, 87.15, 60.33, 12.50, 50.28, kScroll },
-    { kC, 93.4609, 42.08, 24.20, 89.09, 60.33, 11.10, 56.10, kScroll },
-    { kC, 93.4733, 41.66, 21.70, 81.33, 60.33,  9.70, 52.22, kScroll },
-    { kC, 93.4855, 41.66, 18.50, 85.21, 60.33,  7.80, 52.22, kScroll },
-    { kC, 93.4978, 41.66, 16.29, 85.21, 60.66,  5.40, 54.16, kScroll },
-    { kC, 93.5104, 41.66, 13.20, 79.39, 60.75,  3.80, 54.16, kScroll },
-    { kC, 93.5227, 41.66, 11.80, 79.39, 62.33,  2.00, 42.52, kScroll },
-    { kC, 93.5350, 41.91, 10.60, 71.63, 61.58,  1.80, 42.52, kScroll },
-    { kC, 93.5476, 42.00,  9.10, 67.75, 61.83,  1.20, 38.64, kScroll },
-    { kC, 93.5597, 42.41,  7.70, 58.04, 61.83,  0.80, 32.82, kScroll },
-    { kC, 93.5718, 42.41,  7.20, 48.34, 61.83,  0.80, 27.00, kScroll },
-    { kC, 93.5837, 42.33,  6.80, 34.76, 62.08,  0.50, 19.24, kScroll },
-    { kC, 93.5957, 42.00,  6.10, 19.24, 62.08,  0.50, 15.36, kScroll },
-    { kC, 93.6078, 41.91,  6.30,  7.60, 62.08,  0.50,  5.65, kAnything },
-
-    { kS, 95.4803, 65.66, 34.90, 13.42,  0.00,  0.00,  0.00, kAnything },
-    { kC, 95.4901, 66.00, 35.00, 36.70,  0.00,  0.00,  0.00, kAnything },
-    { kC, 95.5024, 66.00, 35.10, 40.58, 44.66, 45.29, 59.99, kAnything },
-    { kC, 95.5144, 66.00, 35.40, 38.64, 44.66, 45.29, 81.33, kAnything },
-    { kC, 95.5267, 66.00, 35.40, 38.64, 44.50, 45.29, 87.15, kAnything },
-    { kC, 95.5388, 66.00, 35.40, 40.58, 44.50, 45.29, 87.15, kAnything },
-    { kC, 95.5507, 66.00, 33.60, 38.64, 44.50, 45.29, 91.03, kAnything },
-    { kC, 95.5625, 65.75, 32.00, 34.76, 44.08, 43.60, 91.03, kScroll },
-    { kC, 95.5747, 66.75, 30.00, 42.52, 43.83, 42.00, 89.09, kScroll },
-    { kC, 95.5866, 66.75, 27.50, 38.64, 43.58, 38.90, 87.15, kScroll },
-    { kC, 95.5986, 66.75, 25.00, 44.46, 43.58, 36.50, 92.97, kScroll },
-    { kC, 95.6111, 66.75, 22.70, 42.52, 43.33, 33.70, 89.09, kScroll },
-    { kC, 95.6230, 67.16, 20.40, 42.52, 43.33, 31.30, 94.91, kScroll },
-    { kC, 95.6351, 67.33, 18.70, 44.46, 43.33, 28.90, 96.85, kScroll },
-    { kC, 95.6476, 67.50, 17.30, 48.34, 43.33, 26.10, 92.97, kScroll },
-    { kC, 95.6596, 67.83, 16.20, 46.40, 43.33, 25.00, 92.97, kScroll },
-    { kC, 95.6717, 67.83, 15.60, 42.52, 43.33, 24.20, 94.91, kScroll },
-    { kC, 95.6837, 68.00, 13.80, 46.40, 43.33, 23.90, 92.97, kScroll },
-    { kC, 95.6959, 68.00, 13.80, 44.46, 43.33, 23.70, 92.97, kScroll },
-    { kC, 95.7080, 68.00, 13.80, 44.46, 43.33, 23.50, 94.91, kScroll },
-    { kC, 95.7199, 68.00, 13.60, 44.46, 43.33, 23.10, 96.85, kScroll },
-    { kC, 95.7321, 68.00, 13.60, 44.46, 43.33, 23.00, 98.79, kScroll },
-    { kC, 95.7443, 68.25, 13.60, 44.46, 43.25, 23.00, 98.79, kScroll },
-  };
-  for (size_t i = 0; i < arraysize(inputs); i++) {
-    if (inputs[i].start == kS) {
-      ii.reset(new ImmediateInterpreter(nullptr, nullptr));
-      wrapper.Reset(ii.get());
-    }
-
-    FingerState fs[] = {
-      { 0, 0, 0, 0, inputs[i].p0, 0.0, inputs[i].x0, inputs[i].y0, 1, 0 },
-      { 0, 0, 0, 0, inputs[i].p1, 0.0, inputs[i].x1, inputs[i].y1, 2, 0 },
-    };
-    unsigned short finger_cnt = inputs[i].p1 == 0.0 ? 1 : 2;
-    HardwareState hs =
-        make_hwstate(inputs[i].now, 0, finger_cnt, finger_cnt, fs);
-
-    stime_t timeout = NO_DEADLINE;
-    Gesture* gs = wrapper.SyncInterpret(hs, &timeout);
-    switch (inputs[i].expectation) {
-      case kAnything:
-        // Anything goes
-        break;
-      case kScroll:
-        EXPECT_NE(nullptr, gs) << "i=" << i;
-        if (!gs)
+      stime_t timeout = NO_DEADLINE;
+      Gesture* gs = wrapper_.SyncInterpret(hs, &timeout);
+      switch (input.expectation) {
+        case kAnything:
+          // Anything goes
           break;
-        EXPECT_EQ(kGestureTypeScroll, gs->type);
-        break;
+        case kScroll:
+          ASSERT_NE(nullptr, gs);
+          EXPECT_EQ(kGestureTypeScroll, gs->type);
+          break;
+      }
     }
   }
-};
 
-struct NoLiftoffScrollTestInputs {
-  bool reset;
-  stime_t now;
-  float x0, y0, p0, x1, y1, p1;  // (x, y) coordinate and pressure per finger
-};
-
-// Tests that if one scrolls backwards a bit before lifting fingers off, we
-// don't scroll backwards. Based on an actual log
-TEST(ImmediateInterpreterTest, NoLiftoffScrollTest) {
-  std::unique_ptr<ImmediateInterpreter> ii;
-  HardwareProperties hwprops = {
+  const HardwareProperties hwprops_ = {
     .right = 106.666672,
     .bottom = 68.000000,
     .res_x = 1,
@@ -875,125 +709,308 @@ TEST(ImmediateInterpreterTest, NoLiftoffScrollTest) {
     .wheel_is_hi_res = 0,
     .is_haptic_pad = false,
   };
-  TestInterpreterWrapper wrapper(ii.get(), &hwprops);
+  ImmediateInterpreter ii_ = ImmediateInterpreter(nullptr, nullptr);
+  TestInterpreterWrapper wrapper_ = TestInterpreterWrapper(&ii_, &hwprops_);
+};
 
-  NoLiftoffScrollTestInputs inputs[] = {
-    // These logs are examples of scrolling up that may have some accidental
-    // reverse-scroll when fingers lift-off
-    {  true, 4.9621, 59.5, 55.9, 17.30, 43.2, 62.5, 19.24 },
-    { false, 4.9745, 59.5, 55.9, 30.88, 43.2, 62.5, 25.06 },
-    { false, 4.9862, 59.3, 55.9, 34.76, 43.3, 61.7, 28.94 },
-    { false, 4.9974, 59.3, 55.4, 36.70, 43.0, 60.7, 32.82 },
-    { false, 5.0085, 59.0, 54.4, 40.58, 43.0, 58.7, 36.70 },
-    { false, 5.0194, 59.0, 50.9, 44.46, 42.5, 55.7, 42.52 },
-    { false, 5.0299, 59.0, 48.2, 46.40, 42.2, 52.7, 44.46 },
-    { false, 5.0412, 58.7, 44.5, 46.40, 41.6, 49.7, 48.34 },
-    { false, 5.0518, 57.3, 39.6, 48.34, 41.2, 45.7, 54.16 },
-    { false, 5.0626, 57.1, 35.2, 48.34, 41.0, 42.0, 61.93 },
-    { false, 5.0739, 56.7, 30.8, 56.10, 41.1, 36.6, 69.69 },
-    { false, 5.0848, 56.3, 26.4, 58.04, 39.7, 32.3, 63.87 },
-    { false, 5.0957, 56.3, 23.4, 61.93, 39.7, 27.8, 67.75 },
-    { false, 5.1068, 56.3, 19.9, 67.75, 39.7, 24.1, 71.63 },
-    { false, 5.1177, 56.7, 18.1, 71.63, 39.7, 20.4, 75.51 },
-    { false, 5.1287, 57.1, 15.9, 71.63, 39.7, 18.7, 75.51 },
-    { false, 5.1398, 57.5, 14.2, 77.45, 39.7, 17.3, 79.39 },
-    { false, 5.1508, 57.6, 13.3, 75.51, 39.7, 16.1, 77.45 },
-    { false, 5.1619, 57.7, 12.9, 79.39, 40.0, 15.5, 83.27 },
-    { false, 5.1734, 58.1, 12.8, 79.39, 40.0, 15.4, 83.27 },
-    { false, 5.1847, 58.1, 12.7, 79.39, 40.0, 15.3, 83.27 },
-    { false, 5.1963, 58.1, 12.7, 78.42, 40.0, 15.3, 83.27 },
-    { false, 5.2078, 58.1, 12.7, 77.45, 40.0, 15.3, 83.27 },
-    { false, 5.2191, 58.1, 12.7, 79.39, 40.0, 15.3, 83.27 },
-    { false, 5.2306, 58.1, 12.7, 78.42, 40.0, 15.3, 82.30 },
-    { false, 5.2421, 58.1, 12.7, 77.45, 40.0, 15.3, 81.33 },
-    { false, 5.2533, 58.1, 12.7, 77.45, 40.0, 15.3, 77.45 },
-    { false, 5.2642, 58.1, 12.7, 63.87, 40.0, 15.4, 58.04 },
-    { false, 5.2752, 57.9, 12.7, 34.76, 40.0, 15.8, 25.06 },
-
-    {  true, 4.1501, 66.25, 19.10, 46.40, 83.50, 15.10, 46.40 },
-    { false, 4.1610, 66.25, 19.00, 48.34, 83.58, 15.10, 46.40 },
-    { false, 4.1721, 66.58, 18.50, 48.34, 83.58, 15.00, 44.46 },
-    { false, 4.1830, 67.00, 18.50, 48.34, 83.66, 14.90, 44.46 },
-    { false, 4.1943, 67.08, 18.40, 50.28, 83.66, 14.80, 46.40 },
-    { false, 4.2053, 67.08, 18.40, 50.28, 83.66, 14.80, 46.40 },
-    { false, 4.2163, 67.08, 18.40, 50.28, 83.66, 14.80, 46.40 },
-    { false, 4.2274, 67.08, 18.40, 48.34, 83.66, 14.80, 46.40 },
-    { false, 4.2385, 67.08, 18.30, 50.28, 83.83, 14.60, 46.40 },
-    { false, 4.2494, 67.08, 18.10, 48.34, 83.91, 14.30, 46.40 },
-    { false, 4.2602, 67.08, 17.60, 46.40, 84.08, 14.10, 44.46 },
-    { false, 4.2712, 67.08, 17.40, 48.34, 84.25, 13.70, 46.40 },
-    { false, 4.2822, 67.25, 17.20, 48.34, 84.50, 13.40, 48.34 },
-    { false, 4.2932, 67.33, 16.90, 46.40, 84.75, 13.20, 46.40 },
-    { false, 4.3044, 67.33, 16.60, 46.40, 84.91, 13.00, 48.34 },
-    { false, 4.3153, 67.41, 16.50, 46.40, 84.91, 12.90, 46.40 },
-    { false, 4.3264, 67.50, 16.29, 46.40, 84.91, 12.90, 46.40 },
-    { false, 4.3372, 67.58, 16.29, 46.40, 85.08, 12.90, 48.34 },
-    { false, 4.3481, 67.58, 16.10, 44.46, 85.08, 12.90, 48.34 },
-    { false, 4.3591, 67.58, 16.00, 44.46, 85.08, 12.90, 48.34 },
-    { false, 4.3699, 67.58, 15.95, 44.46, 85.08, 12.85, 48.34 },
-    { false, 4.3808, 67.58, 15.90, 44.46, 85.08, 12.80, 48.34 },
-    { false, 4.3922, 67.58, 15.90, 44.46, 85.25, 12.50, 48.34 },
-    { false, 4.4035, 67.75, 15.80, 46.40, 85.25, 12.40, 46.40 },
-    { false, 4.4146, 67.75, 15.30, 46.40, 85.33, 12.20, 48.34 },
-    { false, 4.4260, 67.91, 15.20, 48.34, 85.75, 12.20, 50.28 },
-    { false, 4.4373, 67.91, 15.20, 46.40, 85.75, 12.10, 48.34 },
-    { false, 4.4485, 67.91, 15.10, 46.40, 85.75, 12.10, 48.34 },
-    { false, 4.4712, 67.91, 15.05, 46.40, 85.75, 12.05, 48.34 },
-    { false, 4.4940, 67.91, 15.00, 46.40, 85.75, 12.00, 48.34 },
-    { false, 4.5052, 67.91, 14.80, 48.34, 85.75, 11.80, 48.34 },
-    { false, 4.5163, 68.00, 14.60, 48.34, 85.83, 11.70, 48.34 },
-    { false, 4.5276, 68.08, 14.50, 48.34, 85.91, 11.60, 50.28 },
-    { false, 4.5390, 68.08, 14.30, 46.40, 85.91, 11.50, 48.34 },
-    { false, 4.5499, 68.08, 14.30, 48.34, 85.91, 11.50, 48.34 },
-    { false, 4.5613, 68.08, 14.30, 47.37, 85.91, 11.45, 48.34 },
-    { false, 4.5726, 68.08, 14.30, 46.40, 85.91, 11.40, 48.34 },
-    { false, 4.5837, 68.08, 14.20, 46.40, 85.91, 11.40, 48.34 },
-    { false, 4.5949, 68.08, 14.10, 46.40, 85.91, 11.40, 48.34 },
-    { false, 4.6061, 68.16, 14.10, 46.40, 85.91, 11.40, 48.34 },
-    { false, 4.6172, 68.16, 14.00, 48.34, 86.00, 11.30, 48.34 },
-    { false, 4.6285, 68.25, 13.90, 48.34, 86.00, 11.20, 48.34 },
-    { false, 4.6399, 68.25, 13.90, 48.34, 86.00, 11.20, 48.34 },
-    { false, 4.6514, 68.33, 13.80, 48.34, 86.00, 11.10, 48.34 },
-    { false, 4.6741, 68.33, 13.80, 47.37, 86.00, 11.05, 47.37 },
-    { false, 4.6968, 68.33, 13.80, 46.40, 86.00, 11.00, 46.40 },
-    { false, 4.7079, 68.33, 13.80, 42.52, 86.00, 11.00, 44.46 },
-    { false, 4.7191, 68.33, 13.80, 38.64, 86.00, 11.00, 42.52 },
-    { false, 4.7304, 68.33, 13.80, 34.76, 86.00, 11.00, 42.52 },
-    { false, 4.7417, 68.41, 13.80, 27.00, 86.41, 11.00, 36.70 },
-    { false, 4.7528, 68.83, 13.60, 21.18, 86.25, 10.90, 32.82 },
-    { false, 4.7638, 68.83, 13.60, 13.42, 86.25, 10.80, 25.06 },
-    { false, 4.7749, 68.83, 13.60,  5.65, 86.25, 10.50, 15.36 },
-    { false, 4.7862, 68.75, 14.00,  1.77, 85.91, 10.50,  7.60 },
+TEST_F(OneFatFingerScrollTest, TestCase1) {
+  const std::vector<TestInputs> inputs = {
+      {54.6787, 49.83, 33.20, 3.71, 73.25, 22.80, 32.82, kAnything},
+      {54.6904, 49.83, 33.20, 61.93, 73.25, 22.80, 40.58, kAnything},
+      {54.7022, 49.83, 33.20, 67.75, 73.25, 22.90, 40.58, kAnything},
+      {54.7140, 49.83, 33.20, 67.75, 73.25, 22.90, 42.52, kAnything},
+      {54.7256, 49.66, 33.20, 71.63, 73.25, 21.90, 38.64, kAnything},
+      {54.7373, 49.00, 32.90, 75.51, 72.91, 20.80, 40.58, kAnything},
+      {54.7492, 48.50, 31.70, 77.45, 72.75, 19.90, 40.58, kScroll},
+      {54.7613, 47.91, 30.30, 77.45, 73.08, 17.90, 44.46, kScroll},
+      {54.7734, 47.58, 26.80, 79.39, 73.08, 16.10, 46.40, kScroll},
+      {54.7855, 47.33, 24.30, 85.21, 73.08, 13.40, 42.52, kScroll},
+      {54.7976, 47.08, 21.30, 83.27, 73.25, 11.00, 46.40, kScroll},
+      {54.8099, 47.08, 18.30, 87.15, 73.16, 9.00, 44.46, kScroll},
+      {54.8222, 46.75, 15.90, 83.27, 73.16, 6.80, 42.52, kScroll},
+      {54.8344, 46.66, 13.50, 85.21, 73.33, 4.80, 46.40, kScroll},
+      {54.8469, 46.50, 11.80, 83.27, 73.33, 3.70, 44.46, kScroll},
+      {54.8598, 46.41, 10.80, 85.21, 73.33, 3.00, 46.40, kScroll},
+      {54.8726, 46.00, 9.50, 79.39, 73.33, 1.70, 40.58, kScroll},
+      {54.8851, 46.00, 8.60, 81.33, 73.33, 1.50, 40.58, kScroll},
+      {54.8975, 46.00, 7.90, 83.27, 73.33, 1.20, 38.64, kScroll},
+      {54.9099, 46.00, 7.20, 85.21, 73.33, 1.20, 38.64, kScroll},
+      {54.9224, 46.00, 7.00, 81.33, 73.33, 1.00, 34.76, kScroll},
+      {54.9350, 46.00, 7.00, 81.33, 73.66, 0.90, 34.76, kScroll},
+      {54.9473, 46.00, 6.80, 83.27, 73.66, 0.50, 34.76, kScroll},
+      {54.9597, 46.00, 6.70, 77.45, 73.66, 0.40, 32.82, kScroll},
+      {54.9721, 46.00, 6.60, 56.10, 73.50, 0.40, 28.94, kScroll},
+      {54.9844, 46.41, 6.20, 32.82, 73.16, 0.40, 19.24, kScroll},
+      {54.9967, 46.08, 6.20, 17.30, 72.41, 0.40, 7.60, kScroll},
+      {55.0067, 47.16, 6.30, 3.71, 0.00, 0.00, 0.00, kAnything},
   };
-  for (size_t i = 0; i < arraysize(inputs); i++) {
-    if (inputs[i].reset) {
-      ii.reset(new ImmediateInterpreter(nullptr, nullptr));
-      wrapper.Reset(ii.get());
-    }
-    FingerState fs[] = {
-      { 0, 0, 0, 0, inputs[i].p0, 0.0, inputs[i].x0, inputs[i].y0, 1, 0 },
-      { 0, 0, 0, 0, inputs[i].p1, 0.0, inputs[i].x1, inputs[i].y1, 2, 0 },
-    };
-    HardwareState hs = make_hwstate(inputs[i].now, 0, 2, 2, fs);
-
-    stime_t timeout = NO_DEADLINE;
-    Gesture* gs = wrapper.SyncInterpret(hs, &timeout);
-    if (gs) {
-      EXPECT_EQ(kGestureTypeScroll, gs->type);
-      EXPECT_LE(gs->details.scroll.dy, 0.0);
-    }
-  }
+  run_test(inputs);
 }
 
-struct HardwareStateAnScrollExpectations {
-  HardwareState hs;
-  float dx;
-  float dy;
+TEST_F(OneFatFingerScrollTest, TestCase2) {
+  const std::vector<TestInputs> inputs = {
+      {91.6606, 48.08, 31.20, 9.54, 0.00, 0.00, 0.00, kAnything},
+      {91.6701, 48.08, 31.20, 23.12, 0.00, 0.00, 0.00, kAnything},
+      {91.6821, 48.25, 31.20, 38.64, 69.50, 23.20, 7.60, kAnything},
+      {91.6943, 48.25, 31.20, 50.28, 69.50, 23.20, 19.24, kAnything},
+      {91.7062, 48.25, 31.20, 58.04, 69.41, 23.00, 23.12, kAnything},
+      {91.7182, 48.25, 31.20, 63.87, 69.41, 23.00, 27.00, kAnything},
+      {91.7303, 48.25, 31.20, 65.81, 69.16, 23.00, 30.88, kAnything},
+      {91.7423, 48.25, 31.20, 65.81, 69.08, 23.00, 30.88, kAnything},
+      {91.7541, 48.25, 31.20, 67.75, 69.83, 21.90, 25.06, kAnything},
+      {91.7660, 48.25, 30.80, 67.75, 69.75, 21.90, 27.00, kAnything},
+      {91.7778, 48.25, 30.00, 63.87, 69.75, 21.60, 30.88, kAnything},
+      {91.7895, 48.25, 29.00, 63.87, 69.75, 21.30, 30.88, kAnything},
+      {91.8016, 48.25, 27.60, 65.81, 69.50, 19.90, 34.76, kAnything},
+      {91.8138, 48.16, 26.00, 67.75, 69.41, 18.70, 36.70, kScroll},
+      {91.8259, 47.83, 24.30, 69.69, 69.16, 17.50, 40.58, kScroll},
+      {91.8382, 47.66, 22.50, 69.69, 69.16, 15.50, 36.70, kScroll},
+      {91.8503, 47.58, 19.20, 71.63, 69.16, 13.20, 34.76, kScroll},
+      {91.8630, 47.41, 17.10, 71.63, 69.16, 10.80, 40.58, kScroll},
+      {91.8751, 47.16, 14.70, 73.57, 69.16, 8.40, 34.76, kScroll},
+      {91.8871, 47.16, 12.70, 73.57, 69.50, 7.10, 36.70, kScroll},
+      {91.8994, 47.16, 11.30, 71.63, 69.75, 5.90, 36.70, kScroll},
+      {91.9119, 47.16, 10.10, 67.75, 69.75, 4.40, 40.58, kScroll},
+      {91.9243, 47.58, 8.70, 69.69, 69.75, 3.50, 42.52, kScroll},
+      {91.9367, 48.00, 7.80, 63.87, 70.08, 2.70, 38.64, kScroll},
+      {91.9491, 48.33, 6.90, 59.99, 70.58, 2.10, 34.76, kScroll},
+      {91.9613, 48.66, 6.50, 56.10, 70.58, 1.50, 32.82, kScroll},
+      {91.9732, 48.91, 6.00, 48.34, 70.66, 1.10, 28.94, kScroll},
+      {91.9854, 49.00, 5.90, 38.64, 71.00, 1.10, 23.12, kScroll},
+      {91.9975, 49.41, 5.60, 27.00, 71.33, 1.10, 15.36, kScroll},
+      {92.0094, 49.41, 5.30, 13.42, 71.33, 0.90, 9.54, kScroll},
+      {92.0215, 49.33, 4.20, 7.60, 71.33, 0.50, 3.71, kScroll},
+  };
+  run_test(inputs);
+}
+
+TEST_F(OneFatFingerScrollTest, TestCase3) {
+  const std::vector<TestInputs> inputs = {
+      {93.3635, 43.58, 31.40, 36.70, 60.75, 19.00, 11.48, kAnything},
+      {93.3757, 43.58, 31.40, 73.57, 60.58, 18.80, 27.00, kAnything},
+      {93.3880, 43.58, 31.40, 75.51, 60.41, 17.90, 32.82, kAnything},
+      {93.4004, 43.33, 31.20, 77.45, 60.33, 17.40, 38.64, kAnything},
+      {93.4126, 43.00, 30.70, 79.39, 60.33, 16.50, 42.52, kAnything},
+      {93.4245, 42.75, 28.90, 81.33, 60.33, 15.70, 46.40, kScroll},
+      {93.4364, 42.41, 27.00, 79.39, 60.33, 14.30, 48.34, kScroll},
+      {93.4485, 42.16, 25.80, 87.15, 60.33, 12.50, 50.28, kScroll},
+      {93.4609, 42.08, 24.20, 89.09, 60.33, 11.10, 56.10, kScroll},
+      {93.4733, 41.66, 21.70, 81.33, 60.33, 9.70, 52.22, kScroll},
+      {93.4855, 41.66, 18.50, 85.21, 60.33, 7.80, 52.22, kScroll},
+      {93.4978, 41.66, 16.29, 85.21, 60.66, 5.40, 54.16, kScroll},
+      {93.5104, 41.66, 13.20, 79.39, 60.75, 3.80, 54.16, kScroll},
+      {93.5227, 41.66, 11.80, 79.39, 62.33, 2.00, 42.52, kScroll},
+      {93.5350, 41.91, 10.60, 71.63, 61.58, 1.80, 42.52, kScroll},
+      {93.5476, 42.00, 9.10, 67.75, 61.83, 1.20, 38.64, kScroll},
+      {93.5597, 42.41, 7.70, 58.04, 61.83, 0.80, 32.82, kScroll},
+      {93.5718, 42.41, 7.20, 48.34, 61.83, 0.80, 27.00, kScroll},
+      {93.5837, 42.33, 6.80, 34.76, 62.08, 0.50, 19.24, kScroll},
+      {93.5957, 42.00, 6.10, 19.24, 62.08, 0.50, 15.36, kScroll},
+      {93.6078, 41.91, 6.30, 7.60, 62.08, 0.50, 5.65, kAnything},
+  };
+  run_test(inputs);
+}
+
+TEST_F(OneFatFingerScrollTest, TestCase4) {
+  const std::vector<TestInputs> inputs = {
+      {95.4803, 65.66, 34.90, 13.42, 0.00, 0.00, 0.00, kAnything},
+      {95.4901, 66.00, 35.00, 36.70, 0.00, 0.00, 0.00, kAnything},
+      {95.5024, 66.00, 35.10, 40.58, 44.66, 45.29, 59.99, kAnything},
+      {95.5144, 66.00, 35.40, 38.64, 44.66, 45.29, 81.33, kAnything},
+      {95.5267, 66.00, 35.40, 38.64, 44.50, 45.29, 87.15, kAnything},
+      {95.5388, 66.00, 35.40, 40.58, 44.50, 45.29, 87.15, kAnything},
+      {95.5507, 66.00, 33.60, 38.64, 44.50, 45.29, 91.03, kAnything},
+      {95.5625, 65.75, 32.00, 34.76, 44.08, 43.60, 91.03, kScroll},
+      {95.5747, 66.75, 30.00, 42.52, 43.83, 42.00, 89.09, kScroll},
+      {95.5866, 66.75, 27.50, 38.64, 43.58, 38.90, 87.15, kScroll},
+      {95.5986, 66.75, 25.00, 44.46, 43.58, 36.50, 92.97, kScroll},
+      {95.6111, 66.75, 22.70, 42.52, 43.33, 33.70, 89.09, kScroll},
+      {95.6230, 67.16, 20.40, 42.52, 43.33, 31.30, 94.91, kScroll},
+      {95.6351, 67.33, 18.70, 44.46, 43.33, 28.90, 96.85, kScroll},
+      {95.6476, 67.50, 17.30, 48.34, 43.33, 26.10, 92.97, kScroll},
+      {95.6596, 67.83, 16.20, 46.40, 43.33, 25.00, 92.97, kScroll},
+      {95.6717, 67.83, 15.60, 42.52, 43.33, 24.20, 94.91, kScroll},
+      {95.6837, 68.00, 13.80, 46.40, 43.33, 23.90, 92.97, kScroll},
+      {95.6959, 68.00, 13.80, 44.46, 43.33, 23.70, 92.97, kScroll},
+      {95.7080, 68.00, 13.80, 44.46, 43.33, 23.50, 94.91, kScroll},
+      {95.7199, 68.00, 13.60, 44.46, 43.33, 23.10, 96.85, kScroll},
+      {95.7321, 68.00, 13.60, 44.46, 43.33, 23.00, 98.79, kScroll},
+      {95.7443, 68.25, 13.60, 44.46, 43.25, 23.00, 98.79, kScroll},
+  };
+  run_test(inputs);
+}
+
+// Tests that if one scrolls backwards a bit before lifting fingers off, we
+// don't scroll backwards. These logs are examples of scrolling up that may have
+// some accidental reverse-scroll when fingers lift-off. Based on an actual log.
+class NoLiftoffScrollTest : public ::testing::Test {
+ protected:
+  struct TestInputs {
+    stime_t now;
+    float x0, y0, p0, x1, y1, p1;  // (x, y) coordinate and pressure per finger
+  };
+
+  void run_test(const std::vector<TestInputs>& inputs) {
+    for (size_t i = 0; i < inputs.size(); i++) {
+      SCOPED_TRACE(StringPrintf("Input %zu", i));
+      const TestInputs& input = inputs[i];
+      FingerState fs[] = {
+        { 0, 0, 0, 0, input.p0, 0.0, input.x0, input.y0, 1, 0 },
+        { 0, 0, 0, 0, input.p1, 0.0, input.x1, input.y1, 2, 0 },
+      };
+      HardwareState hs = make_hwstate(input.now, 0, 2, 2, fs);
+
+      stime_t timeout = NO_DEADLINE;
+      if (Gesture* gs = wrapper_.SyncInterpret(hs, &timeout); gs != nullptr) {
+        EXPECT_EQ(kGestureTypeScroll, gs->type);
+        EXPECT_LE(gs->details.scroll.dy, 0.0);
+      }
+    }
+  }
+
+  const HardwareProperties hwprops_ = {
+    .right = 106.666672,
+    .bottom = 68.000000,
+    .res_x = 1,
+    .res_y = 1,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 15,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = 0,
+    .support_semi_mt = 0,
+    .is_button_pad = true,
+    .has_wheel = 0,
+    .wheel_is_hi_res = 0,
+    .is_haptic_pad = false,
+  };
+  ImmediateInterpreter ii_ = ImmediateInterpreter(nullptr, nullptr);
+  TestInterpreterWrapper wrapper_ = TestInterpreterWrapper(&ii_, &hwprops_);
 };
 
-TEST(ImmediateInterpreterTest, DiagonalSnapTest) {
-  std::unique_ptr<ImmediateInterpreter> ii;
-  HardwareProperties hwprops = {
+TEST_F(NoLiftoffScrollTest, TestCase1) {
+  const std::vector<TestInputs> inputs = {
+      {4.9621, 59.5, 55.9, 17.30, 43.2, 62.5, 19.24},
+      {4.9745, 59.5, 55.9, 30.88, 43.2, 62.5, 25.06},
+      {4.9862, 59.3, 55.9, 34.76, 43.3, 61.7, 28.94},
+      {4.9974, 59.3, 55.4, 36.70, 43.0, 60.7, 32.82},
+      {5.0085, 59.0, 54.4, 40.58, 43.0, 58.7, 36.70},
+      {5.0194, 59.0, 50.9, 44.46, 42.5, 55.7, 42.52},
+      {5.0299, 59.0, 48.2, 46.40, 42.2, 52.7, 44.46},
+      {5.0412, 58.7, 44.5, 46.40, 41.6, 49.7, 48.34},
+      {5.0518, 57.3, 39.6, 48.34, 41.2, 45.7, 54.16},
+      {5.0626, 57.1, 35.2, 48.34, 41.0, 42.0, 61.93},
+      {5.0739, 56.7, 30.8, 56.10, 41.1, 36.6, 69.69},
+      {5.0848, 56.3, 26.4, 58.04, 39.7, 32.3, 63.87},
+      {5.0957, 56.3, 23.4, 61.93, 39.7, 27.8, 67.75},
+      {5.1068, 56.3, 19.9, 67.75, 39.7, 24.1, 71.63},
+      {5.1177, 56.7, 18.1, 71.63, 39.7, 20.4, 75.51},
+      {5.1287, 57.1, 15.9, 71.63, 39.7, 18.7, 75.51},
+      {5.1398, 57.5, 14.2, 77.45, 39.7, 17.3, 79.39},
+      {5.1508, 57.6, 13.3, 75.51, 39.7, 16.1, 77.45},
+      {5.1619, 57.7, 12.9, 79.39, 40.0, 15.5, 83.27},
+      {5.1734, 58.1, 12.8, 79.39, 40.0, 15.4, 83.27},
+      {5.1847, 58.1, 12.7, 79.39, 40.0, 15.3, 83.27},
+      {5.1963, 58.1, 12.7, 78.42, 40.0, 15.3, 83.27},
+      {5.2078, 58.1, 12.7, 77.45, 40.0, 15.3, 83.27},
+      {5.2191, 58.1, 12.7, 79.39, 40.0, 15.3, 83.27},
+      {5.2306, 58.1, 12.7, 78.42, 40.0, 15.3, 82.30},
+      {5.2421, 58.1, 12.7, 77.45, 40.0, 15.3, 81.33},
+      {5.2533, 58.1, 12.7, 77.45, 40.0, 15.3, 77.45},
+      {5.2642, 58.1, 12.7, 63.87, 40.0, 15.4, 58.04},
+      {5.2752, 57.9, 12.7, 34.76, 40.0, 15.8, 25.06},
+  };
+  run_test(inputs);
+}
+
+TEST_F(NoLiftoffScrollTest, TestCase2) {
+  const std::vector<TestInputs> inputs = {
+      {4.1501, 66.25, 19.10, 46.40, 83.50, 15.10, 46.40},
+      {4.1610, 66.25, 19.00, 48.34, 83.58, 15.10, 46.40},
+      {4.1721, 66.58, 18.50, 48.34, 83.58, 15.00, 44.46},
+      {4.1830, 67.00, 18.50, 48.34, 83.66, 14.90, 44.46},
+      {4.1943, 67.08, 18.40, 50.28, 83.66, 14.80, 46.40},
+      {4.2053, 67.08, 18.40, 50.28, 83.66, 14.80, 46.40},
+      {4.2163, 67.08, 18.40, 50.28, 83.66, 14.80, 46.40},
+      {4.2274, 67.08, 18.40, 48.34, 83.66, 14.80, 46.40},
+      {4.2385, 67.08, 18.30, 50.28, 83.83, 14.60, 46.40},
+      {4.2494, 67.08, 18.10, 48.34, 83.91, 14.30, 46.40},
+      {4.2602, 67.08, 17.60, 46.40, 84.08, 14.10, 44.46},
+      {4.2712, 67.08, 17.40, 48.34, 84.25, 13.70, 46.40},
+      {4.2822, 67.25, 17.20, 48.34, 84.50, 13.40, 48.34},
+      {4.2932, 67.33, 16.90, 46.40, 84.75, 13.20, 46.40},
+      {4.3044, 67.33, 16.60, 46.40, 84.91, 13.00, 48.34},
+      {4.3153, 67.41, 16.50, 46.40, 84.91, 12.90, 46.40},
+      {4.3264, 67.50, 16.29, 46.40, 84.91, 12.90, 46.40},
+      {4.3372, 67.58, 16.29, 46.40, 85.08, 12.90, 48.34},
+      {4.3481, 67.58, 16.10, 44.46, 85.08, 12.90, 48.34},
+      {4.3591, 67.58, 16.00, 44.46, 85.08, 12.90, 48.34},
+      {4.3699, 67.58, 15.95, 44.46, 85.08, 12.85, 48.34},
+      {4.3808, 67.58, 15.90, 44.46, 85.08, 12.80, 48.34},
+      {4.3922, 67.58, 15.90, 44.46, 85.25, 12.50, 48.34},
+      {4.4035, 67.75, 15.80, 46.40, 85.25, 12.40, 46.40},
+      {4.4146, 67.75, 15.30, 46.40, 85.33, 12.20, 48.34},
+      {4.4260, 67.91, 15.20, 48.34, 85.75, 12.20, 50.28},
+      {4.4373, 67.91, 15.20, 46.40, 85.75, 12.10, 48.34},
+      {4.4485, 67.91, 15.10, 46.40, 85.75, 12.10, 48.34},
+      {4.4712, 67.91, 15.05, 46.40, 85.75, 12.05, 48.34},
+      {4.4940, 67.91, 15.00, 46.40, 85.75, 12.00, 48.34},
+      {4.5052, 67.91, 14.80, 48.34, 85.75, 11.80, 48.34},
+      {4.5163, 68.00, 14.60, 48.34, 85.83, 11.70, 48.34},
+      {4.5276, 68.08, 14.50, 48.34, 85.91, 11.60, 50.28},
+      {4.5390, 68.08, 14.30, 46.40, 85.91, 11.50, 48.34},
+      {4.5499, 68.08, 14.30, 48.34, 85.91, 11.50, 48.34},
+      {4.5613, 68.08, 14.30, 47.37, 85.91, 11.45, 48.34},
+      {4.5726, 68.08, 14.30, 46.40, 85.91, 11.40, 48.34},
+      {4.5837, 68.08, 14.20, 46.40, 85.91, 11.40, 48.34},
+      {4.5949, 68.08, 14.10, 46.40, 85.91, 11.40, 48.34},
+      {4.6061, 68.16, 14.10, 46.40, 85.91, 11.40, 48.34},
+      {4.6172, 68.16, 14.00, 48.34, 86.00, 11.30, 48.34},
+      {4.6285, 68.25, 13.90, 48.34, 86.00, 11.20, 48.34},
+      {4.6399, 68.25, 13.90, 48.34, 86.00, 11.20, 48.34},
+      {4.6514, 68.33, 13.80, 48.34, 86.00, 11.10, 48.34},
+      {4.6741, 68.33, 13.80, 47.37, 86.00, 11.05, 47.37},
+      {4.6968, 68.33, 13.80, 46.40, 86.00, 11.00, 46.40},
+      {4.7079, 68.33, 13.80, 42.52, 86.00, 11.00, 44.46},
+      {4.7191, 68.33, 13.80, 38.64, 86.00, 11.00, 42.52},
+      {4.7304, 68.33, 13.80, 34.76, 86.00, 11.00, 42.52},
+      {4.7417, 68.41, 13.80, 27.00, 86.41, 11.00, 36.70},
+      {4.7528, 68.83, 13.60, 21.18, 86.25, 10.90, 32.82},
+      {4.7638, 68.83, 13.60, 13.42, 86.25, 10.80, 25.06},
+      {4.7749, 68.83, 13.60, 5.65, 86.25, 10.50, 15.36},
+      {4.7862, 68.75, 14.00, 1.77, 85.91, 10.50, 7.60},
+  };
+  run_test(inputs);
+}
+
+class DiagonalScrollingSnapTest : public ::testing::Test {
+ protected:
+  Gesture* scroll_with_offset(float x_offset, float y_offset, unsigned flags) {
+    const float kStartX0 = 40;
+    const float kStartX1 = 60;
+    const float kStartY = 50;
+    FingerState start_finger_states[] = {
+      // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
+      {0, 0, 0, 0, 50, 0, kStartX0, kStartY, 1, 0},
+      {0, 0, 0, 0, 50, 0, kStartX1, kStartY, 2, 0},
+    };
+    FingerState end_finger_states[] = {
+      // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
+      {0, 0, 0, 0, 50, 0, kStartX0 + x_offset, kStartY + y_offset, 1, flags},
+      {0, 0, 0, 0, 50, 0, kStartX1 + x_offset, kStartY + y_offset, 2, flags},
+    };
+    HardwareState hardware_states[] = {
+      // time, buttons, finger count, touch count, finger states pointer
+      make_hwstate(0.000, 0, 2, 2, start_finger_states),
+      make_hwstate(1.000, 0, 2, 2, start_finger_states),
+      make_hwstate(1.010, 0, 2, 2, end_finger_states),
+    };
+    EXPECT_EQ(nullptr, wrapper_.SyncInterpret(hardware_states[0], nullptr));
+    EXPECT_EQ(nullptr, wrapper_.SyncInterpret(hardware_states[1], nullptr));
+    return wrapper_.SyncInterpret(hardware_states[2], nullptr);
+  }
+
+  HardwareProperties hwprops_ = {
     .right = 100,
     .bottom = 100,
     .res_x = 1,
@@ -1009,96 +1026,37 @@ TEST(ImmediateInterpreterTest, DiagonalSnapTest) {
     .wheel_is_hi_res = 0,
     .is_haptic_pad = 0,
   };
-  TestInterpreterWrapper wrapper(ii.get(), &hwprops);
+  ImmediateInterpreter ii_ = ImmediateInterpreter(nullptr, nullptr);
+  TestInterpreterWrapper wrapper_ = TestInterpreterWrapper(&ii_, &hwprops_);
+};
 
-  const float kBig = 5;  // mm
-  const float kSml = 1;  // mm
+TEST_F(DiagonalScrollingSnapTest, PerfectDiagonalMovementScrollsDiagonally) {
+  Gesture* gs = scroll_with_offset(/*x_offset=*/5, /*y_offset=*/5, /*flags=*/0);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_FLOAT_EQ(5, gs->details.scroll.dx);
+  EXPECT_FLOAT_EQ(5, gs->details.scroll.dy);
+}
 
-  const float kX0 = 40;
-  const float kX1 = 60;
-  const float kY = 50;  // heh
+TEST_F(DiagonalScrollingSnapTest, AlmostVerticalMovementSnapsToVertical) {
+  Gesture* gs = scroll_with_offset(/*x_offset=*/1, /*y_offset=*/5, /*flags=*/0);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_FLOAT_EQ(0, gs->details.scroll.dx);
+  EXPECT_FLOAT_EQ(5, gs->details.scroll.dy);
+}
 
-  short fid = 1;
+TEST_F(DiagonalScrollingSnapTest, AlmostHorizontalMovementSnapsToHorizontal) {
+  Gesture* gs = scroll_with_offset(/*x_offset=*/5, /*y_offset=*/1, /*flags=*/0);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+  EXPECT_FLOAT_EQ(5, gs->details.scroll.dx);
+  EXPECT_FLOAT_EQ(0, gs->details.scroll.dy);
+}
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
-
-    // Perfect diagonal movement - should scroll diagonally
-    {0, 0, 0, 0, 50, 0, kX0, kY, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1, kY, fid--, 0},
-
-    {0, 0, 0, 0, 50, 0, kX0 + kBig, kY + kBig, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1 + kBig, kY + kBig, fid++, 0},
-
-    // Almost vertical movement - should snap to vertical
-    {0, 0, 0, 0, 50, 0, kX0, kY, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1, kY, fid--, 0},
-
-    {0, 0, 0, 0, 50, 0, kX0 + kSml, kY + kBig, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1 + kSml, kY + kBig, fid++, 0},
-
-    // Almost horizontal movement - should snap to horizontal
-    {0, 0, 0, 0, 50, 0, kX0, kY, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1, kY, fid--, 0},
-
-    {0, 0, 0, 0, 50, 0, kX0 + kBig, kY + kSml, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1 + kBig, kY + kSml, fid++, 0},
-
-    // Vertical movement with Warp - shouldn't scroll
-    {0, 0, 0, 0, 50, 0, kX0, kY, fid++, 0},
-    {0, 0, 0, 0, 50, 0, kX1, kY, fid--, 0},
-
-    {0, 0, 0, 0, 50, 0, kX0, kY + kBig, fid++, GESTURES_FINGER_WARP_Y},
-    {0, 0, 0, 0, 50, 0, kX1, kY + kBig, fid++, GESTURES_FINGER_WARP_Y},
-  };
-  ssize_t idx = 0;
-  HardwareStateAnScrollExpectations hardware_states[] = {
-    // time, buttons, finger count, touch count, finger states pointer
-    { make_hwstate(0.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.010, 0, 2, 2, &finger_states[idx++ * 4 + 2]),
-      kBig, kBig },
-
-    { make_hwstate(0.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.010, 0, 2, 2, &finger_states[idx++ * 4 + 2]),
-      0, kBig },
-
-    { make_hwstate(0.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.010, 0, 2, 2, &finger_states[idx++ * 4 + 2]),
-      kBig, 0 },
-
-    { make_hwstate(0.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.000, 0, 2, 2, &finger_states[idx * 4 ]),
-      0, 0 },
-    { make_hwstate(1.010, 0, 2, 2, &finger_states[idx++ * 4 + 2]),
-      0, 0 },
-  };
-
-  for (size_t i = 0; i < arraysize(hardware_states); i++) {
-    HardwareStateAnScrollExpectations& hse = hardware_states[i];
-    if (hse.hs.timestamp == 0.0) {
-      ii.reset(new ImmediateInterpreter(nullptr, nullptr));
-      wrapper.Reset(ii.get());
-    }
-    Gesture* gs = wrapper.SyncInterpret(hse.hs, nullptr);
-    if (hse.dx == 0.0 && hse.dy == 0.0) {
-      EXPECT_EQ(nullptr, gs);
-      continue;
-    }
-    ASSERT_NE(nullptr, gs);
-    EXPECT_EQ(kGestureTypeScroll, gs->type);
-    EXPECT_FLOAT_EQ(hse.dx, gs->details.scroll.dx);
-    EXPECT_FLOAT_EQ(hse.dy, gs->details.scroll.dy);
-  }
+TEST_F(DiagonalScrollingSnapTest, VerticalMovementWithWarpDoesntScroll) {
+  ASSERT_EQ(nullptr, scroll_with_offset(/*x_offset=*/0, /*y_offset=*/5,
+                                        GESTURES_FINGER_WARP_Y));
 }
 
 TEST(ImmediateInterpreterTest, RestingFingerTest) {
@@ -1186,22 +1144,18 @@ TEST(ImmediateInterpreterTest, ThumbRetainTest) {
     .is_haptic_pad = 0,
   };
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
-    // id 1 = finger, 2 = thumb
-    {0, 0, 0, 0, 24, 0, 30, 30, 1, 0},
-    {0, 0, 0, 0, 58, 0, 30, 50, 2, 0},
-
-    // thumb, post-move
-    {0, 0, 0, 0, 58, 0, 50, 50, 2, 0},
-  };
+  // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
+  FingerState finger = {0, 0, 0, 0, 24, 0, 30, 30, 1, 0};
+  FingerState thumb = {0, 0, 0, 0, 58, 0, 30, 50, 2, 0};
+  FingerState thumb_moved = {0, 0, 0, 0, 58, 0, 50, 50, 2, 0};
+  FingerState finger_and_thumb[] = { finger, thumb };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(0.000, 0, 2, 2, &finger_states[0]),
-    make_hwstate(0.100, 0, 2, 2, &finger_states[0]),
-    make_hwstate(0.110, 0, 1, 1, &finger_states[1]),  // finger goes away
-    make_hwstate(0.210, 0, 1, 1, &finger_states[1]),
-    make_hwstate(0.220, 0, 1, 1, &finger_states[2]),  // thumb moves
+    make_hwstate(0.000, 0, 2, 2, finger_and_thumb),
+    make_hwstate(0.100, 0, 2, 2, finger_and_thumb),
+    make_hwstate(0.110, 0, 1, 1, &thumb),  // finger goes away
+    make_hwstate(0.210, 0, 1, 1, &thumb),
+    make_hwstate(0.220, 0, 1, 1, &thumb_moved),
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
@@ -1236,23 +1190,26 @@ TEST(ImmediateInterpreterTest, ThumbRetainReevaluateTest) {
     .is_haptic_pad = 0,
   };
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+  FingerState thumb_and_finger[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     // one thumb, one finger (it seems)
     {0, 0, 0, 0, 24, 0, 3.0, 3, 3, 0},
     {0, 0, 0, 0, 58, 0, 13.5, 3, 4, 0},
+  };
+  FingerState two_big_fingers[] = {
     // two big fingers, it turns out!
     {0, 0, 0, 0, 27, 0, 3.0, 6, 3, 0},
     {0, 0, 0, 0, 58, 0, 13.5, 6, 4, 0},
-    // they  move
+  };
+  FingerState moved_fingers[] = {
     {0, 0, 0, 0, 27, 0, 3.0, 7, 3, 0},
     {0, 0, 0, 0, 58, 0, 13.5, 7, 4, 0},
   };
   HardwareState hardware_states[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(1.000, 0, 2, 2, &finger_states[0]),  // 2 fingers arrive
-    make_hwstate(1.010, 0, 2, 2, &finger_states[2]),  // pressures fix
-    make_hwstate(1.100, 0, 2, 2, &finger_states[4]),  // they move
+    make_hwstate(1.000, 0, 2, 2, thumb_and_finger),  // 2 fingers arrive
+    make_hwstate(1.010, 0, 2, 2, two_big_fingers),   // pressures fix
+    make_hwstate(1.100, 0, 2, 2, moved_fingers),     // they move
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
@@ -1326,8 +1283,8 @@ TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest) {
 
   const unsigned kPalmFlags = GESTURES_FINGER_POSSIBLE_PALM;
 
-  FingerState finger_states[] = {
-    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
+  FingerState stationary_palm_states[] = {
+    // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
     // stationary palm - movement
     {0, 0, 0, 0, kPr, 0,  0, 40, 1, kPalmFlags},
     {0, 0, 0, 0, kPr, 0, 30, 35, 2, 0},
@@ -1337,7 +1294,8 @@ TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest) {
 
     {0, 0, 0, 0, kPr, 0,  0, 40, 1, kPalmFlags},
     {0, 0, 0, 0, kPr, 0, 30, 45, 2, 0},
-
+  };
+  FingerState moving_palm_states[] = {
     // Same, but moving palm - scroll
     {0, 0, 0, 0, kPr, 0,  0, 35, 3, kPalmFlags},
     {0, 0, 0, 0, kPr, 0, 30, 35, 4, 0},
@@ -1350,12 +1308,12 @@ TEST(ImmediateInterpreterTest, AmbiguousPalmCoScrollTest) {
   };
   HardwareState hardware_state[] = {
     // time, buttons, finger count, touch count, finger states pointer
-    make_hwstate(0.0, 0, 2, 2, &finger_states[0]),
-    make_hwstate(0.1, 0, 2, 2, &finger_states[2]),
-    make_hwstate(0.2, 0, 2, 2, &finger_states[4]),
-    make_hwstate(3.0, 0, 2, 2, &finger_states[6]),
-    make_hwstate(3.1, 0, 2, 2, &finger_states[8]),
-    make_hwstate(3.2, 0, 2, 2, &finger_states[10]),
+    make_hwstate(0.0, 0, 2, 2, &stationary_palm_states[0]),
+    make_hwstate(0.1, 0, 2, 2, &stationary_palm_states[2]),
+    make_hwstate(0.2, 0, 2, 2, &stationary_palm_states[4]),
+    make_hwstate(3.0, 0, 2, 2, &moving_palm_states[0]),
+    make_hwstate(3.1, 0, 2, 2, &moving_palm_states[2]),
+    make_hwstate(3.2, 0, 2, 2, &moving_palm_states[4]),
   };
   GestureType expected_gs[] = {
     kGestureTypeNull,
@@ -3050,9 +3008,13 @@ TEST(ImmediateInterpreterTest, ClickTest) {
     // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
     {0, 0, 0, 0, 10, 0, 50, 50, 1, 0},
     {0, 0, 0, 0, 10, 0, 70, 50, 2, 0},
+  };
+  FingerState close_fingers[] = {
     // Fingers very close together - shouldn't right click
     {0, 0, 0, 0, 10, 0, 50, 50, 1, 0},
     {0, 0, 0, 0, 10, 0, 55, 50, 2, 0},
+  };
+  FingerState large_vertical_dist_fingers[] = {
     // Large vertical dist - shouldn right click when timing is good.
     {0, 0, 0, 0, 10, 0,  8.4, 94, 1, 0},
     {0, 0, 0, 0, 10, 0, 51.2, 70, 2, 0},
@@ -3063,29 +3025,29 @@ TEST(ImmediateInterpreterTest, ClickTest) {
 
     // button down, 2 fingers touch, button up, 2 fingers lift
     {make_hwstate(1,1,0,0,nullptr),NO_DEADLINE,0,0},
-    {make_hwstate(1.01,1,2,2,&finger_states[0]), NO_DEADLINE, 0, 0},
-    {make_hwstate(2,0,2,2,&finger_states[0]),
+    {make_hwstate(1.01,1,2,2,finger_states), NO_DEADLINE, 0, 0},
+    {make_hwstate(2,0,2,2,finger_states),
      NO_DEADLINE, GESTURES_BUTTON_RIGHT, GESTURES_BUTTON_RIGHT},
     {make_hwstate(3,0,0,0,nullptr), NO_DEADLINE, 0, 0},
 
     // button down, 2 close fingers touch, fingers lift
     {make_hwstate(7,1,0,0,nullptr), NO_DEADLINE, 0, 0},
-    {make_hwstate(7.01,1,2,2,&finger_states[2]), NO_DEADLINE, 0, 0},
-    {make_hwstate(7.02,0,2,2,&finger_states[2]),
+    {make_hwstate(7.01,1,2,2,close_fingers), NO_DEADLINE, 0, 0},
+    {make_hwstate(7.02,0,2,2,close_fingers),
      NO_DEADLINE, GESTURES_BUTTON_LEFT,GESTURES_BUTTON_LEFT},
     {make_hwstate(8,0,0,0,nullptr), NO_DEADLINE, 0, 0},
 
     // button down with 2 fingers, button up, fingers lift
-    {make_hwstate(9.01,1,2,2,&finger_states[4]),NO_DEADLINE,0,0},
-    {make_hwstate(9.02,1,2,2,&finger_states[4]),NO_DEADLINE,0,0},
-    {make_hwstate(9.5,0,2,2,&finger_states[4]),
+    {make_hwstate(9.01,1,2,2,large_vertical_dist_fingers),NO_DEADLINE,0,0},
+    {make_hwstate(9.02,1,2,2,large_vertical_dist_fingers),NO_DEADLINE,0,0},
+    {make_hwstate(9.5,0,2,2,large_vertical_dist_fingers),
      NO_DEADLINE, GESTURES_BUTTON_RIGHT,GESTURES_BUTTON_RIGHT},
     {make_hwstate(10,0,0,0,nullptr), NO_DEADLINE, 0, 0},
 
     // button down with 2 fingers, timeout, button up, fingers lift
-    {make_hwstate(11,1,2,2,&finger_states[4]), NO_DEADLINE, 0, 0},
+    {make_hwstate(11,1,2,2,large_vertical_dist_fingers), NO_DEADLINE, 0, 0},
     {make_hwstate(0,0,0,0,nullptr),11.5,GESTURES_BUTTON_RIGHT,0},
-    {make_hwstate(12,0,2,2,&finger_states[4]), NO_DEADLINE, 0,
+    {make_hwstate(12,0,2,2,large_vertical_dist_fingers), NO_DEADLINE, 0,
      GESTURES_BUTTON_RIGHT},
     {make_hwstate(10,0,0,0,nullptr), NO_DEADLINE, 0, 0}
   };
@@ -3191,6 +3153,139 @@ TEST(ImmediateInterpreterTest, ClickDragLockTest) {
     }
   }
 }
+
+// Regression test for b/433623598, where a fling gesture was not produced if a
+// scroll gesture continued during the time after we'd received a hardware state
+// with a button down but before the button down timeout was reached, resulting
+// in the fling gesture and the button change gesture needing to be produced by
+// the same call to SyncInterpret.
+TEST(ImmediateInterpreterTest, ScrollEndAndButtonChangeOnSameSync) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  HardwareProperties hwprops = {
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 50,
+    .res_y = 50,
+    .orientation_minimum = 0,
+    .orientation_maximum = 0,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = false,
+    .support_semi_mt = false,
+    .is_button_pad = false,
+    .has_wheel = false,
+    .wheel_is_hi_res = false,
+    .is_haptic_pad = false,
+  };
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+
+  // Frame 1: Fingers are added.
+  FingerState fingers_appear[] = {
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 480, 400, 3, 0},
+  };
+  HardwareState curr_frame =
+      make_hwstate(0.1, GESTURES_BUTTON_NONE, 2, 2, fingers_appear);
+  Gesture* gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Scroll occurs.
+  FingerState scrolling_fingers[] = {
+    {0, 0, 0, 0, 50, 0, 450, 391, 2, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 480, 379, 3, GESTURES_FINGER_TREND_DEC_Y},
+  };
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_NONE, 2, 2, scrolling_fingers);
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+
+  // Frame 3: fingers stay still, but the button gets pressed
+  FingerState scrolling_fingers_2[] = {
+    {0, 0, 0, 0, 50, 0, 450, 381, 2, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 480, 369, 3, GESTURES_FINGER_TREND_DEC_Y},
+  };
+  curr_frame =
+      make_hwstate(0.3, GESTURES_BUTTON_LEFT, 2, 2, scrolling_fingers_2);
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeScroll, gs->type);
+
+  // Frame 4: Button down timeout reached. A fling should be sent before the
+  // button click is registered.
+  curr_frame =
+      make_hwstate(0.4, GESTURES_BUTTON_LEFT, 2, 2, scrolling_fingers_2);
+  std::vector<Gesture> gestures =
+      wrapper.SyncInterpretMulti(curr_frame, nullptr);
+  ASSERT_EQ(2, gestures.size());
+  EXPECT_EQ(kGestureTypeFling, gestures[0].type);
+  EXPECT_EQ(GESTURES_FLING_START, gestures[0].details.fling.fling_state);
+  EXPECT_EQ(kGestureTypeButtonsChange, gestures[1].type);
+}
+
+TEST(ImmediateInterpreterTest, SwipeEndAndButtonChangeOnSameSync) {
+  ImmediateInterpreter ii(nullptr, nullptr);
+  HardwareProperties hwprops = {
+    .right = 1000,
+    .bottom = 1000,
+    .res_x = 50,
+    .res_y = 50,
+    .orientation_minimum = 0,
+    .orientation_maximum = 0,
+    .max_finger_cnt = 5,
+    .max_touch_cnt = 5,
+    .supports_t5r2 = false,
+    .support_semi_mt = false,
+    .is_button_pad = false,
+    .has_wheel = false,
+    .wheel_is_hi_res = false,
+    .is_haptic_pad = false,
+  };
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+
+  // Frame 1: Fingers are added.
+  FingerState fingers_appear[] = {
+    {0, 0, 0, 0, 50, 0, 450, 400, 2, 0},
+    {0, 0, 0, 0, 50, 0, 480, 400, 3, 0},
+    {0, 0, 0, 0, 50, 0, 510, 400, 4, 0},
+  };
+  HardwareState curr_frame =
+      make_hwstate(0.1, GESTURES_BUTTON_NONE, 3, 3, fingers_appear);
+  Gesture* gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  EXPECT_EQ(nullptr, gs);
+
+  // Frame 2: Swiping begins.
+  FingerState swiping_fingers[] = {
+    {0, 0, 0, 0, 50, 0, 450, 391, 2, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 480, 379, 3, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 510, 379, 4, GESTURES_FINGER_TREND_DEC_Y},
+  };
+  curr_frame = make_hwstate(0.2, GESTURES_BUTTON_NONE, 3, 3, swiping_fingers);
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeSwipe, gs->type);
+
+  // Frame 3: fingers keep moving, but the button gets pressed.
+  FingerState swiping_fingers_2[] = {
+    {0, 0, 0, 0, 50, 0, 450, 371, 2, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 480, 359, 3, GESTURES_FINGER_TREND_DEC_Y},
+    {0, 0, 0, 0, 50, 0, 510, 359, 4, GESTURES_FINGER_TREND_DEC_Y},
+  };
+  curr_frame = make_hwstate(0.3, GESTURES_BUTTON_LEFT, 3, 3, swiping_fingers_2);
+  // It would also be fine if the swipe lift occurred in the next frame, just so
+  // long as it gets reported before the button change, but to keep the test
+  // simple we assert that it specifically happens here.
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeSwipeLift, gs->type);
+  EXPECT_EQ(GESTURES_FLING_START, gs->details.fling.fling_state);
+
+  // Frame 4: Button down timeout reached.
+  curr_frame = make_hwstate(0.4, GESTURES_BUTTON_LEFT, 3, 3, swiping_fingers_2);
+  gs = wrapper.SyncInterpret(curr_frame, nullptr);
+  ASSERT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+}
+
 
 struct BottomRightClickAreaParameters {
   bool enabled;
@@ -3668,18 +3763,217 @@ TEST(ImmediateInterpreterTest, PinchTests) {
   }
 }
 
-struct AvoidAccidentalPinchTestInput {
-  TestCaseStartOrContinueFlag flag;
-  stime_t now;
-  float x0, y0, p0, x1, y1, p1;  // (x, y) coordinate + pressure per finger
-  GestureType expected_gesture;
-};
+TEST(ImmediateInterpreterTest, PinchInterruptedByButtonDown) {
+  ImmediateInterpreter ii(/*prop_reg=*/nullptr, /*tracer=*/nullptr);
+  ii.pinch_enable_.val_ = 1;
+  ii.change_timeout_.val_ = 0.004;
+  HardwareProperties hwprops = {
+      .right = 100,
+      .bottom = 100,
+      .res_x = 1,
+      .res_y = 1,
+      .orientation_minimum = -1,
+      .orientation_maximum = 2,
+      .max_finger_cnt = 2,
+      .max_touch_cnt = 5,
+      .supports_t5r2 = 0,
+      .support_semi_mt = 0,
+      .is_button_pad = 1,
+      .has_wheel = 0,
+      .wheel_is_hi_res = 0,
+      .is_haptic_pad = 0,
+  };
+
+  TestInterpreterWrapper wrapper(&ii, &hwprops);
+  stime_t timeout = NO_DEADLINE;
+  Gesture* gs = nullptr;
+  FingerState finger_states[2] = {{.touch_major = 0,
+                                   .touch_minor = 0,
+                                   .width_major = 0,
+                                   .width_minor = 0,
+                                   .pressure = 20,
+                                   .orientation = 0,
+                                   .position_x = 40.f,
+                                   .position_y = 40.f,
+                                   .tracking_id = 1,
+                                   .flags = 0},
+                                  {.touch_major = 0,
+                                   .touch_minor = 0,
+                                   .width_major = 0,
+                                   .width_minor = 0,
+                                   .pressure = 20,
+                                   .orientation = 0,
+                                   .position_x = 90.f,
+                                   .position_y = 90.f,
+                                   .tracking_id = 2,
+                                   .flags = 0}};
+  HardwareState hwstate =
+      make_hwstate(/*timestamp=*/1.000f, /*buttons_down=*/0, /*finger_cnt=*/2,
+                   /*touch_cnt=*/2, /*fingers=*/finger_states);
+
+  auto MoveFingersApart = [](FingerState* finger_states) {
+    finger_states[0].position_x -= 1.f;
+    finger_states[0].position_y -= 1.f;
+    finger_states[1].position_x += 1.f;
+    finger_states[1].position_y += 1.f;
+  };
+
+  // Start gesture
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_EQ(nullptr, gs);
+
+  // Waiting for pinch to start
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_EQ(nullptr, gs);
+
+  // Waiting for pinch to start
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_EQ(nullptr, gs);
+
+  // Pinch starts
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypePinch, gs->type);
+  EXPECT_EQ(GESTURES_ZOOM_START, gs->details.pinch.zoom_state);
+
+  // Pinch continues
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypePinch, gs->type);
+  EXPECT_EQ(GESTURES_ZOOM_UPDATE, gs->details.pinch.zoom_state);
+
+  // Pinch continues
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypePinch, gs->type);
+  EXPECT_EQ(GESTURES_ZOOM_UPDATE, gs->details.pinch.zoom_state);
+
+  // Button down, pinch ends
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  hwstate.buttons_down = 1;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypePinch, gs->type);
+  EXPECT_EQ(GESTURES_ZOOM_END, gs->details.pinch.zoom_state);
+
+  // Waiting for timer to expire
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.003f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_EQ(nullptr, gs);
+
+  // Timer expired
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  wrapper.HandleTimer(hwstate.timestamp, /*timeout=*/nullptr);
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+
+  // Pinch doesn't get restarted while button is down
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+
+  // Pinch doesn't get restarted while button is down
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+
+  // Pinch doesn't get restarted while button is down
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeMove, gs->type);
+
+  // Button up
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  hwstate.buttons_down = 0;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypeButtonsChange, gs->type);
+
+  // Waiting for the change timeout to expire to restart the pinch.
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.003f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_EQ(nullptr, gs);
+
+  // Pinch restarted.
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypePinch, gs->type);
+  EXPECT_EQ(GESTURES_ZOOM_START, gs->details.pinch.zoom_state);
+
+  // Restarted pinch continues.
+  MoveFingersApart(finger_states);
+  hwstate.timestamp += 0.001f;
+  gs = wrapper.SyncInterpret(hwstate, &timeout);
+  EXPECT_NE(nullptr, gs);
+  EXPECT_EQ(kGestureTypePinch, gs->type);
+  EXPECT_EQ(GESTURES_ZOOM_UPDATE, gs->details.pinch.zoom_state);
+}
 
 // These data are from real logs where a move with resting thumb was appempted,
 // but pinch code prevented it.
-TEST(ImmediateInterpreterTest, AvoidAccidentalPinchTest) {
-  std::unique_ptr<ImmediateInterpreter> ii;
-  HardwareProperties hwprops = {
+class AvoidAccidentalPinchTest : public ::testing::Test {
+ protected:
+  const GestureType kMov = kGestureTypeMove;
+  const GestureType kAny = kGestureTypeNull;
+
+  struct TestInputs {
+    stime_t now;
+    float x0, y0, p0, x1, y1, p1;  // (x, y) coordinate + pressure per finger
+    GestureType expected_gesture;
+  };
+
+  void SetUp() override {
+    ii_.pinch_enable_.val_ = true;
+    MetricsProperties* mprops = new MetricsProperties(nullptr);
+    mprops->two_finger_close_vertical_distance_thresh.val_ = 35.0;
+    wrapper_.Reset(&ii_, mprops);
+  }
+
+  void run_test(const std::vector<TestInputs>& inputs) {
+    EXPECT_EQ(ImmediateInterpreter::TapToClickState::kTtcIdle,
+              ii_.tap_to_click_state_);
+
+    for (size_t i = 0; i < inputs.size(); i++) {
+      SCOPED_TRACE(StringPrintf("Input %zu", i));
+      const TestInputs& input = inputs[i];
+      FingerState fs[] = {
+        { 0, 0, 0, 0, input.p0, 0.0, input.x0, input.y0, 1, 0 },
+        { 0, 0, 0, 0, input.p1, 0.0, input.x1, input.y1, 2, 0 },
+      };
+      HardwareState hs = make_hwstate(input.now, 0, 2, 2, fs);
+      stime_t timeout = NO_DEADLINE;
+      Gesture* gs = wrapper_.SyncInterpret(hs, &timeout);
+      if (input.expected_gesture != kGestureTypeNull && gs != nullptr) {
+        EXPECT_EQ(input.expected_gesture, gs->type);
+      }
+    }
+  }
+
+  const HardwareProperties hwprops_ = {
     .right = 106.666672,
     .bottom = 68.000000,
     .res_x = 1,
@@ -3695,140 +3989,122 @@ TEST(ImmediateInterpreterTest, AvoidAccidentalPinchTest) {
     .wheel_is_hi_res = 0,
     .is_haptic_pad = false,
   };
-  TestInterpreterWrapper wrapper(ii.get(), &hwprops);
+  ImmediateInterpreter ii_ = ImmediateInterpreter(nullptr, nullptr);
+  TestInterpreterWrapper wrapper_ = TestInterpreterWrapper(&ii_, &hwprops_);
+};
 
-  const GestureType kMov = kGestureTypeMove;
-  const GestureType kAny = kGestureTypeNull;
-
-  AvoidAccidentalPinchTestInput inputs[] = {
-    { kS, 0.97697, 44.08, 64.30, 118.20, 35.91, 27.70, 44.46, kAny },
-    { kC, 0.98755, 44.08, 64.30, 118.20, 35.91, 27.70, 50.28, kAny },
-    { kC, 0.99816, 44.08, 64.30, 118.20, 35.91, 27.70, 54.16, kAny },
-    { kC, 1.00876, 45.33, 65.50,  98.79, 35.91, 27.60, 56.10, kAny },
-    { kC, 1.01936, 45.33, 65.50,  98.79, 35.91, 27.60, 58.04, kAny },
-    { kC, 1.03026, 45.33, 65.50, 100.73, 34.50, 26.70, 63.87, kAny },
-    { kC, 1.04124, 45.33, 65.50, 102.67, 33.00, 26.10, 65.81, kMov },
-    { kC, 1.05198, 45.33, 65.50, 102.67, 31.25, 25.60, 71.63, kMov },
-    { kC, 1.06279, 45.33, 65.50, 104.61, 28.75, 25.10, 73.57, kMov },
-    { kC, 1.07364, 45.33, 65.50, 104.61, 27.00, 24.60, 71.63, kMov },
-    { kC, 1.08451, 45.33, 65.50, 104.61, 25.41, 24.10, 71.63, kMov },
-    { kC, 1.09512, 45.33, 65.50, 102.67, 23.58, 23.50, 75.51, kMov },
-    { kC, 1.10573, 45.33, 65.50, 104.61, 22.25, 23.30, 73.57, kMov },
-    { kC, 1.11671, 45.33, 65.50, 104.61, 21.16, 23.20, 75.51, kMov },
-    { kC, 1.12744, 45.33, 65.50, 104.61, 20.25, 23.20, 81.33, kMov },
-    { kC, 1.13833, 45.33, 65.50, 104.61, 19.41, 23.20, 79.39, kMov },
-    { kC, 1.14913, 45.33, 65.50, 104.61, 18.33, 23.20, 81.33, kMov },
-    { kC, 1.15985, 45.41, 65.50, 104.61, 17.50, 23.40, 79.39, kMov },
-    { kC, 1.17044, 45.58, 65.50, 106.55, 16.75, 23.80, 81.33, kMov },
-    { kC, 1.18117, 45.58, 65.50, 106.55, 16.33, 24.20, 77.45, kMov },
-    { kC, 1.19188, 45.58, 65.50, 106.55, 16.00, 24.30, 71.63, kMov },
-    { kC, 1.20260, 45.58, 65.50, 106.55, 16.00, 24.50, 48.34, kAny },
-    { kC, 1.21331, 45.58, 65.50, 106.55, 15.91, 24.80,  9.54, kAny },
-
-    { kS, 3.92951, 58.50, 58.40, 118.20, 38.25, 14.40,  3.71, kAny },
-    { kC, 3.94014, 58.33, 58.40, 118.20, 38.25, 14.40, 38.64, kAny },
-    { kC, 3.95082, 58.25, 58.40, 118.20, 38.33, 14.40, 50.28, kAny },
-    { kC, 3.96148, 58.08, 58.40, 118.20, 38.41, 14.40, 52.22, kAny },
-    { kC, 3.97222, 57.91, 58.40, 118.20, 38.41, 14.50, 56.10, kAny },
-    { kC, 3.98303, 57.83, 58.40, 118.20, 38.58, 14.60, 59.99, kAny },
-    { kC, 3.99376, 57.66, 58.40, 118.20, 38.75, 14.80, 63.87, kAny },
-    { kC, 4.00452, 57.58, 58.40, 118.20, 38.91, 15.00, 65.81, kAny },
-    { kC, 4.01528, 57.50, 58.40, 118.20, 39.33, 15.30, 67.75, kAny },
-    { kC, 4.02621, 57.41, 58.40, 118.20, 39.50, 15.70, 69.69, kAny },
-    { kC, 4.03697, 57.41, 58.40, 118.20, 39.75, 16.10, 73.57, kMov },
-    { kC, 4.04781, 57.25, 58.40, 118.20, 40.00, 16.60, 71.63, kMov },
-    { kC, 4.05869, 57.25, 58.40, 118.20, 40.25, 17.00, 71.63, kMov },
-    { kC, 4.06966, 57.25, 58.40, 118.20, 40.50, 17.30, 69.69, kMov },
-    { kC, 4.08034, 57.16, 58.40, 118.20, 40.75, 17.70, 71.63, kMov },
-    { kC, 4.09120, 57.08, 58.40, 118.20, 41.16, 17.90, 73.57, kMov },
-    { kC, 4.10214, 57.00, 58.40, 118.20, 41.50, 18.30, 73.57, kMov },
-    { kC, 4.11304, 56.83, 58.29, 118.20, 42.00, 18.60, 71.63, kMov },
-    { kC, 4.12390, 56.83, 58.29, 118.20, 42.58, 19.00, 71.63, kMov },
-    { kC, 4.13447, 56.66, 58.29, 118.20, 43.16, 19.60, 67.75, kMov },
-    { kC, 4.14521, 56.66, 58.29, 118.20, 43.75, 20.20, 67.75, kMov },
-    { kC, 4.15606, 56.50, 58.20, 118.20, 44.41, 21.10, 69.69, kMov },
-    { kC, 4.16692, 56.50, 58.20, 118.20, 44.91, 22.10, 67.75, kMov },
-    { kC, 4.17778, 56.41, 58.20, 118.20, 45.58, 23.00, 65.81, kMov },
-    { kC, 4.18894, 56.33, 58.10, 118.20, 46.08, 23.60, 65.81, kMov },
-    { kC, 4.20017, 56.33, 58.10, 118.20, 46.50, 24.10, 65.81, kMov },
-    { kC, 4.21111, 56.33, 58.10, 118.20, 46.83, 24.50, 63.87, kMov },
-    { kC, 4.22204, 56.33, 58.10, 118.20, 47.08, 24.80, 61.93, kMov },
-    { kC, 4.23308, 56.25, 58.10, 118.20, 47.50, 25.20, 59.99, kMov },
-    { kC, 4.24371, 56.25, 58.10, 118.20, 48.00, 25.80, 58.04, kMov },
-    { kC, 4.25438, 56.25, 58.10, 118.20, 48.66, 26.50, 58.04, kMov },
-    { kC, 4.26508, 56.08, 58.00, 118.20, 49.50, 27.50, 54.16, kMov },
-    { kC, 4.27572, 56.00, 58.00, 118.20, 50.33, 28.60, 56.10, kMov },
-    { kC, 4.28662, 56.00, 58.00, 118.20, 51.33, 29.50, 58.04, kMov },
-    { kC, 4.29757, 55.91, 58.00, 118.20, 51.58, 31.90, 56.10, kMov },
-    { kC, 4.30850, 55.91, 58.00, 118.20, 52.08, 32.00, 54.16, kMov },
-    { kC, 4.31943, 55.91, 58.00, 118.20, 52.58, 32.40, 54.16, kMov },
-    { kC, 4.33022, 55.83, 57.90, 118.20, 52.75, 33.10, 52.22, kMov },
-    { kC, 4.34104, 55.83, 57.90, 118.20, 53.16, 33.60, 52.22, kMov },
-    { kC, 4.35167, 55.83, 57.90, 118.20, 53.58, 34.20, 50.28, kMov },
-    { kC, 4.36225, 55.83, 57.90, 118.20, 53.91, 35.00, 48.34, kMov },
-    { kC, 4.37290, 55.75, 57.90, 118.20, 54.58, 35.50, 50.28, kMov },
-    { kC, 4.38368, 55.66, 57.90, 118.20, 55.33, 36.10, 48.34, kMov },
-    { kC, 4.39441, 55.66, 57.90, 118.20, 55.91, 36.70, 48.34, kMov },
-    { kC, 4.40613, 56.16, 57.90, 118.20, 57.00, 37.20, 50.28, kMov },
-    { kC, 4.41787, 56.16, 57.90, 118.20, 57.33, 37.70, 50.28, kMov },
-    { kC, 4.42925, 56.16, 57.90, 118.20, 57.58, 37.90, 48.34, kMov },
-    { kC, 4.44080, 56.16, 57.90, 118.20, 57.66, 38.00, 50.28, kMov },
-    { kC, 4.45249, 56.16, 57.90, 118.20, 57.75, 38.10, 50.28, kMov },
-    { kC, 4.46393, 56.16, 57.90, 118.20, 57.75, 38.10, 50.28, kAny },
-    { kC, 4.47542, 56.16, 57.90, 118.20, 57.75, 38.15, 50.28, kMov },
-    { kC, 4.48691, 56.16, 57.90, 118.20, 57.75, 38.20, 50.28, kMov },
-    { kC, 4.49843, 56.16, 57.90, 118.20, 57.75, 38.20, 50.28, kAny },
-    { kC, 4.51581, 56.16, 57.90, 118.20, 57.75, 38.25, 51.25, kMov },
-    { kC, 4.53319, 56.16, 57.90, 118.20, 57.75, 38.29, 52.22, kMov },
-    { kC, 4.54472, 56.16, 57.90, 118.20, 57.75, 38.70, 50.28, kMov },
-    { kC, 4.55630, 56.16, 57.90, 118.20, 57.75, 38.70, 50.28, kAny },
-    { kC, 4.56787, 56.16, 57.90, 118.20, 57.75, 38.70, 52.22, kAny },
-    { kC, 4.57928, 56.16, 57.90, 118.20, 58.33, 38.50, 50.28, kMov },
-    { kC, 4.59082, 56.16, 57.90, 118.20, 58.25, 38.60, 50.28, kMov },
-    { kC, 4.60234, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kMov },
-    { kC, 4.61389, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.62545, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.64281, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.66018, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.67747, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.69476, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.70628, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.71781, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.72934, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.74087, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.75240, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
-    { kC, 4.76418, 56.16, 57.90, 118.20, 58.33, 38.60, 50.28, kAny },
-    { kC, 4.77545, 56.08, 57.90, 118.20, 58.33, 38.60, 50.28, kAny },
-    { kC, 4.78690, 56.08, 57.90, 118.20, 58.33, 38.60, 48.34, kAny },
-    { kC, 4.79818, 56.08, 57.90, 118.20, 58.33, 38.60, 27.00, kAny },
-    { kC, 4.80970, 56.08, 57.90, 118.20, 58.33, 38.60,  9.54, kAny },
+TEST_F(AvoidAccidentalPinchTest, TestCase1) {
+  const std::vector<TestInputs> inputs = {
+    { 0.97697, 44.08, 64.30, 118.20, 35.91, 27.70, 44.46, kAny },
+    { 0.98755, 44.08, 64.30, 118.20, 35.91, 27.70, 50.28, kAny },
+    { 0.99816, 44.08, 64.30, 118.20, 35.91, 27.70, 54.16, kAny },
+    { 1.00876, 45.33, 65.50,  98.79, 35.91, 27.60, 56.10, kAny },
+    { 1.01936, 45.33, 65.50,  98.79, 35.91, 27.60, 58.04, kAny },
+    { 1.03026, 45.33, 65.50, 100.73, 34.50, 26.70, 63.87, kAny },
+    { 1.04124, 45.33, 65.50, 102.67, 33.00, 26.10, 65.81, kMov },
+    { 1.05198, 45.33, 65.50, 102.67, 31.25, 25.60, 71.63, kMov },
+    { 1.06279, 45.33, 65.50, 104.61, 28.75, 25.10, 73.57, kMov },
+    { 1.07364, 45.33, 65.50, 104.61, 27.00, 24.60, 71.63, kMov },
+    { 1.08451, 45.33, 65.50, 104.61, 25.41, 24.10, 71.63, kMov },
+    { 1.09512, 45.33, 65.50, 102.67, 23.58, 23.50, 75.51, kMov },
+    { 1.10573, 45.33, 65.50, 104.61, 22.25, 23.30, 73.57, kMov },
+    { 1.11671, 45.33, 65.50, 104.61, 21.16, 23.20, 75.51, kMov },
+    { 1.12744, 45.33, 65.50, 104.61, 20.25, 23.20, 81.33, kMov },
+    { 1.13833, 45.33, 65.50, 104.61, 19.41, 23.20, 79.39, kMov },
+    { 1.14913, 45.33, 65.50, 104.61, 18.33, 23.20, 81.33, kMov },
+    { 1.15985, 45.41, 65.50, 104.61, 17.50, 23.40, 79.39, kMov },
+    { 1.17044, 45.58, 65.50, 106.55, 16.75, 23.80, 81.33, kMov },
+    { 1.18117, 45.58, 65.50, 106.55, 16.33, 24.20, 77.45, kMov },
+    { 1.19188, 45.58, 65.50, 106.55, 16.00, 24.30, 71.63, kMov },
+    { 1.20260, 45.58, 65.50, 106.55, 16.00, 24.50, 48.34, kAny },
+    { 1.21331, 45.58, 65.50, 106.55, 15.91, 24.80,  9.54, kAny },
   };
-
-  for (size_t i = 0; i < arraysize(inputs); i++) {
-    const AvoidAccidentalPinchTestInput& input = inputs[i];
-    if (input.flag == kS) {
-      ii.reset(new ImmediateInterpreter(nullptr, nullptr));
-      ii->pinch_enable_.val_ = true;
-      MetricsProperties* mprops = new MetricsProperties(nullptr);
-      mprops->two_finger_close_vertical_distance_thresh.val_ = 35.0;
-      wrapper.Reset(ii.get(), mprops);
-      EXPECT_EQ(ImmediateInterpreter::TapToClickState::kTtcIdle,
-                ii->tap_to_click_state());
-    }
-    // Prep inputs
-    FingerState fs[] = {
-      { 0, 0, 0, 0, input.p0, 0, input.x0, input.y0, 1, 0 },
-      { 0, 0, 0, 0, input.p1, 0, input.x1, input.y1, 2, 0 },
-    };
-    HardwareState hs = make_hwstate(input.now, 0, 2, 2, fs);
-    stime_t timeout = NO_DEADLINE;
-    Gesture* gs = wrapper.SyncInterpret(hs, &timeout);
-    if (input.expected_gesture != kAny) {
-      if (gs)
-        EXPECT_EQ(input.expected_gesture, gs->type);
-    }
-  }
+  run_test(inputs);
 }
+
+TEST_F(AvoidAccidentalPinchTest, TestCase2) {
+  const std::vector<TestInputs> inputs = {
+    { 3.92951, 58.50, 58.40, 118.20, 38.25, 14.40,  3.71, kAny },
+    { 3.94014, 58.33, 58.40, 118.20, 38.25, 14.40, 38.64, kAny },
+    { 3.95082, 58.25, 58.40, 118.20, 38.33, 14.40, 50.28, kAny },
+    { 3.96148, 58.08, 58.40, 118.20, 38.41, 14.40, 52.22, kAny },
+    { 3.97222, 57.91, 58.40, 118.20, 38.41, 14.50, 56.10, kAny },
+    { 3.98303, 57.83, 58.40, 118.20, 38.58, 14.60, 59.99, kAny },
+    { 3.99376, 57.66, 58.40, 118.20, 38.75, 14.80, 63.87, kAny },
+    { 4.00452, 57.58, 58.40, 118.20, 38.91, 15.00, 65.81, kAny },
+    { 4.01528, 57.50, 58.40, 118.20, 39.33, 15.30, 67.75, kAny },
+    { 4.02621, 57.41, 58.40, 118.20, 39.50, 15.70, 69.69, kAny },
+    { 4.03697, 57.41, 58.40, 118.20, 39.75, 16.10, 73.57, kMov },
+    { 4.04781, 57.25, 58.40, 118.20, 40.00, 16.60, 71.63, kMov },
+    { 4.05869, 57.25, 58.40, 118.20, 40.25, 17.00, 71.63, kMov },
+    { 4.06966, 57.25, 58.40, 118.20, 40.50, 17.30, 69.69, kMov },
+    { 4.08034, 57.16, 58.40, 118.20, 40.75, 17.70, 71.63, kMov },
+    { 4.09120, 57.08, 58.40, 118.20, 41.16, 17.90, 73.57, kMov },
+    { 4.10214, 57.00, 58.40, 118.20, 41.50, 18.30, 73.57, kMov },
+    { 4.11304, 56.83, 58.29, 118.20, 42.00, 18.60, 71.63, kMov },
+    { 4.12390, 56.83, 58.29, 118.20, 42.58, 19.00, 71.63, kMov },
+    { 4.13447, 56.66, 58.29, 118.20, 43.16, 19.60, 67.75, kMov },
+    { 4.14521, 56.66, 58.29, 118.20, 43.75, 20.20, 67.75, kMov },
+    { 4.15606, 56.50, 58.20, 118.20, 44.41, 21.10, 69.69, kMov },
+    { 4.16692, 56.50, 58.20, 118.20, 44.91, 22.10, 67.75, kMov },
+    { 4.17778, 56.41, 58.20, 118.20, 45.58, 23.00, 65.81, kMov },
+    { 4.18894, 56.33, 58.10, 118.20, 46.08, 23.60, 65.81, kMov },
+    { 4.20017, 56.33, 58.10, 118.20, 46.50, 24.10, 65.81, kMov },
+    { 4.21111, 56.33, 58.10, 118.20, 46.83, 24.50, 63.87, kMov },
+    { 4.22204, 56.33, 58.10, 118.20, 47.08, 24.80, 61.93, kMov },
+    { 4.23308, 56.25, 58.10, 118.20, 47.50, 25.20, 59.99, kMov },
+    { 4.24371, 56.25, 58.10, 118.20, 48.00, 25.80, 58.04, kMov },
+    { 4.25438, 56.25, 58.10, 118.20, 48.66, 26.50, 58.04, kMov },
+    { 4.26508, 56.08, 58.00, 118.20, 49.50, 27.50, 54.16, kMov },
+    { 4.27572, 56.00, 58.00, 118.20, 50.33, 28.60, 56.10, kMov },
+    { 4.28662, 56.00, 58.00, 118.20, 51.33, 29.50, 58.04, kMov },
+    { 4.29757, 55.91, 58.00, 118.20, 51.58, 31.90, 56.10, kMov },
+    { 4.30850, 55.91, 58.00, 118.20, 52.08, 32.00, 54.16, kMov },
+    { 4.31943, 55.91, 58.00, 118.20, 52.58, 32.40, 54.16, kMov },
+    { 4.33022, 55.83, 57.90, 118.20, 52.75, 33.10, 52.22, kMov },
+    { 4.34104, 55.83, 57.90, 118.20, 53.16, 33.60, 52.22, kMov },
+    { 4.35167, 55.83, 57.90, 118.20, 53.58, 34.20, 50.28, kMov },
+    { 4.36225, 55.83, 57.90, 118.20, 53.91, 35.00, 48.34, kMov },
+    { 4.37290, 55.75, 57.90, 118.20, 54.58, 35.50, 50.28, kMov },
+    { 4.38368, 55.66, 57.90, 118.20, 55.33, 36.10, 48.34, kMov },
+    { 4.39441, 55.66, 57.90, 118.20, 55.91, 36.70, 48.34, kMov },
+    { 4.40613, 56.16, 57.90, 118.20, 57.00, 37.20, 50.28, kMov },
+    { 4.41787, 56.16, 57.90, 118.20, 57.33, 37.70, 50.28, kMov },
+    { 4.42925, 56.16, 57.90, 118.20, 57.58, 37.90, 48.34, kMov },
+    { 4.44080, 56.16, 57.90, 118.20, 57.66, 38.00, 50.28, kMov },
+    { 4.45249, 56.16, 57.90, 118.20, 57.75, 38.10, 50.28, kMov },
+    { 4.46393, 56.16, 57.90, 118.20, 57.75, 38.10, 50.28, kAny },
+    { 4.47542, 56.16, 57.90, 118.20, 57.75, 38.15, 50.28, kMov },
+    { 4.48691, 56.16, 57.90, 118.20, 57.75, 38.20, 50.28, kMov },
+    { 4.49843, 56.16, 57.90, 118.20, 57.75, 38.20, 50.28, kAny },
+    { 4.51581, 56.16, 57.90, 118.20, 57.75, 38.25, 51.25, kMov },
+    { 4.53319, 56.16, 57.90, 118.20, 57.75, 38.29, 52.22, kMov },
+    { 4.54472, 56.16, 57.90, 118.20, 57.75, 38.70, 50.28, kMov },
+    { 4.55630, 56.16, 57.90, 118.20, 57.75, 38.70, 50.28, kAny },
+    { 4.56787, 56.16, 57.90, 118.20, 57.75, 38.70, 52.22, kAny },
+    { 4.57928, 56.16, 57.90, 118.20, 58.33, 38.50, 50.28, kMov },
+    { 4.59082, 56.16, 57.90, 118.20, 58.25, 38.60, 50.28, kMov },
+    { 4.60234, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kMov },
+    { 4.61389, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.62545, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.64281, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.66018, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.67747, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.69476, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.70628, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.71781, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.72934, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.74087, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.75240, 56.16, 57.90, 118.20, 58.33, 38.60, 52.22, kAny },
+    { 4.76418, 56.16, 57.90, 118.20, 58.33, 38.60, 50.28, kAny },
+    { 4.77545, 56.08, 57.90, 118.20, 58.33, 38.60, 50.28, kAny },
+    { 4.78690, 56.08, 57.90, 118.20, 58.33, 38.60, 48.34, kAny },
+    { 4.79818, 56.08, 57.90, 118.20, 58.33, 38.60, 27.00, kAny },
+    { 4.80970, 56.08, 57.90, 118.20, 58.33, 38.60,  9.54, kAny },
+  };
+  run_test(inputs);
+}
+
 
 TEST(ImmediateInterpreterTest, SemiMtActiveAreaTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
@@ -4171,23 +4447,31 @@ TEST(ImmediateInterpreterTest, ScrollResetTapTest) {
     .is_haptic_pad = 0,
   };
 
+  const unsigned kBothWarpNonMove =
+      GESTURES_FINGER_WARP_X_NON_MOVE | GESTURES_FINGER_WARP_X_NON_MOVE;
+  const unsigned kWarpXNonMove = GESTURES_FINGER_WARP_X_NON_MOVE;
   FingerState finger_state[] = {
     // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID, flags
-    { 0, 0, 0, 0, 71.180000, 0, 58.446808, 24.000002, 0, 3 },  // index 0
-    { 0, 0, 0, 0, 71.180000, 0, 75.042549, 23.676924, 1, 3 },
+    // index 0
+    { 0, 0, 0, 0, 71.180000, 0, 58.446808, 24.000002, 0, kBothWarpNonMove },
+    { 0, 0, 0, 0, 71.180000, 0, 75.042549, 23.676924, 1, kBothWarpNonMove },
 
-    { 0, 0, 0, 0, 82.070000, 0, 55.276596, 23.492308, 0, 3 },  // index 2
-    { 0, 0, 0, 0, 82.070000, 0, 70.361702, 23.015387, 1, 3 },
+    // index 2
+    { 0, 0, 0, 0, 82.070000, 0, 55.276596, 23.492308, 0, kBothWarpNonMove },
+    { 0, 0, 0, 0, 82.070000, 0, 70.361702, 23.015387, 1, kBothWarpNonMove },
 
-    { 0, 0, 0, 0, 76.625000, 0, 58.542553, 23.030769, 0, 3 },  // index 4
-    { 0, 0, 0, 0, 76.625000, 0, 59.127659, 22.500002, 1, 1 },
+    // index 4
+    { 0, 0, 0, 0, 76.625000, 0, 58.542553, 23.030769, 0, kBothWarpNonMove },
+    { 0, 0, 0, 0, 76.625000, 0, 59.127659, 22.500002, 1, kWarpXNonMove },
 
     // prev_result will be scroll, we expect the tap state will be idle
     // after the sample is processed.
-    { 0, 0, 0, 0, 71.180000, 0, 61.808510, 22.569231, 0, 3 },  // index 6
-    { 0, 0, 0, 0, 71.180000, 0, 47.893616, 21.984617, 1, 1 },
+    // index 6
+    { 0, 0, 0, 0, 71.180000, 0, 61.808510, 22.569231, 0, kBothWarpNonMove },
+    { 0, 0, 0, 0, 71.180000, 0, 47.893616, 21.984617, 1, kWarpXNonMove },
 
-    { 0, 0, 0, 0, 16.730000, 0, 57.617020, 20.830770, 0, 3 },  // index 8
+    // index 8
+    { 0, 0, 0, 0, 16.730000, 0, 57.617020, 20.830770, 0, kBothWarpNonMove },
   };
 
   HardwareState hardware_states[] = {
