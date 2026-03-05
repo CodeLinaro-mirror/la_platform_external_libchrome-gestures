@@ -134,6 +134,8 @@ void FlingStopFilterInterpreter::HandleTimerImpl(stime_t now,
   LogHandleTimerPre(name, now, timeout);
 
   stime_t next_timeout;
+  // TODO(b/483321024): deduplicate this logic with other filter interpreters
+  // and write unit tests for it.
   if (ShouldCallNextTimer(fling_stop_deadline_)) {
     if (next_timer_deadline_ > now) {
       Err("Spurious callback. now: %f, fs deadline: %f, next deadline: %f",
@@ -156,10 +158,7 @@ void FlingStopFilterInterpreter::HandleTimerImpl(stime_t now,
     ProduceGesture(fling_tap_down);
 
     fling_stop_already_sent_ = true;
-    next_timeout = next_timer_deadline_ == NO_DEADLINE ||
-                   next_timer_deadline_ <= now
-                      ? NO_DEADLINE
-                      : next_timer_deadline_ - now;
+    next_timeout = MaybeCallNextTimer(now);
   }
   *timeout = SetNextDeadlineAndReturnTimeoutVal(now, fling_stop_deadline_,
                                                 next_timeout);
