@@ -67,4 +67,16 @@ bool FilterInterpreter::ShouldCallNextTimer(stime_t local_deadline) {
     return next_timer_deadline_ > 0.0;
 }
 
+stime_t FilterInterpreter::MaybeCallNextTimer(stime_t now) {
+  if (next_timer_deadline_ >= 0.0 && next_timer_deadline_ <= now) {
+    stime_t next_timeout = NO_DEADLINE;
+    next_->HandleTimer(now, &next_timeout);
+    return next_timeout;
+  } else {
+    return next_timer_deadline_ == NO_DEADLINE
+                      ? NO_DEADLINE
+                      : next_timer_deadline_ - now;
+  }
+}
+
 }  // namespace gestures
