@@ -315,6 +315,9 @@ typedef struct {
   unsigned down;  // bit field, use GESTURES_BUTTON_*
   unsigned up;  // bit field, use GESTURES_BUTTON_*
   bool is_tap; // was the gesture generated with tap-to-click?
+  // The intensity of the haptic effect to trigger, as a percentage.
+  // The range is 0 to 100, where 0 means no haptic effect and 100 is maximum.
+  unsigned int haptic_intensity;
 } GestureButtonsChange;
 
 typedef struct {
@@ -477,6 +480,7 @@ struct Gesture {
     details.buttons.down = down;
     details.buttons.up = up;
     details.buttons.is_tap = is_tap;
+    details.buttons.haptic_intensity = 0;
   }
   Gesture(const GestureFling&,
           stime_t start, stime_t end, float vx, float vy, unsigned state)

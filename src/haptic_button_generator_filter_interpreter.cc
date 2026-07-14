@@ -41,8 +41,26 @@ HapticButtonGeneratorFilterInterpreter::HapticButtonGeneratorFilterInterpreter(
       use_dynamic_thresholds_(prop_reg, "Use Dynamic Haptic Thresholds", false),
       dynamic_down_ratio_(prop_reg, "Dynamic Haptic Down Ratio", 1.2),
       dynamic_up_ratio_(prop_reg, "Dynamic Haptic Up Ratio", 0.5),
-      max_dynamic_up_force_(prop_reg, "Max Dynamic Haptic Up Force", 350.0) {
+      max_dynamic_up_force_(prop_reg, "Max Dynamic Haptic Up Force", 350.0),
+      down_haptic_intensities_prop_(prop_reg, "Haptic Button Intensities Down",
+          down_haptic_intensities_,
+          sizeof(down_haptic_intensities_) / sizeof(int)),
+      up_haptic_intensities_prop_(prop_reg, "Haptic Button Intensities Up",
+          up_haptic_intensities_,
+          sizeof(up_haptic_intensities_) / sizeof(int)) {
   InitName();
+
+  down_haptic_intensities_[0] = 75;
+  down_haptic_intensities_[1] = 82;
+  down_haptic_intensities_[2] = 90;
+  down_haptic_intensities_[3] = 90;
+  down_haptic_intensities_[4] = 90;
+
+  up_haptic_intensities_[0] = 55;
+  up_haptic_intensities_[1] = 60;
+  up_haptic_intensities_[2] = 75;
+  up_haptic_intensities_[3] = 75;
+  up_haptic_intensities_[4] = 75;
 }
 
 void HapticButtonGeneratorFilterInterpreter::Initialize(
@@ -224,8 +242,23 @@ void HapticButtonGeneratorFilterInterpreter::ConsumeGesture(
     release_suppress_factor_ = fmax(release_suppress_factor_, 0.1);
   }
 
-  LogGestureProduce(name, gesture);
-  ProduceGesture(gesture);
+  Gesture out_gesture = gesture;
+  if (gesture.type == kGestureTypeButtonsChange &&
+      !gesture.details.buttons.is_tap) {
+    //Since GestureButtonsChange has only one haptic_intensity field, prioritize
+    // the "down" intensity over "up", matching
+    // the gesture API specification to process down before up.
+    if (gesture.details.buttons.down) {
+      out_gesture.details.buttons.haptic_intensity =
+          down_haptic_intensities_[sensitivity_.val_ - 1];
+    } else if (gesture.details.buttons.up) {
+      out_gesture.details.buttons.haptic_intensity =
+          up_haptic_intensities_[sensitivity_.val_ - 1];
+    }
+  }
+
+  LogGestureProduce(name, out_gesture);
+  ProduceGesture(out_gesture);
 }
 
 }  // namespace gestures

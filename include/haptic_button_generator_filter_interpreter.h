@@ -28,6 +28,7 @@ class HapticButtonGeneratorFilterInterpreter : public FilterInterpreterWithTimer
               GesturePreventsButtonDownTest);
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, DynamicThresholdTest);
   FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, PalmTest);
+  FRIEND_TEST(HapticButtonGeneratorFilterInterpreterTest, HapticIntensityTest);
  public:
   // Takes ownership of |next|:
   explicit HapticButtonGeneratorFilterInterpreter(PropRegistry* prop_reg,
@@ -55,6 +56,9 @@ class HapticButtonGeneratorFilterInterpreter : public FilterInterpreterWithTimer
       {90.0, 110.0, 130.0, 145.0, 160.0};
   const double up_thresholds_[kMaxSensitivitySettings] =
       {80.0, 95.0, 105.0, 120.0, 135.0};
+
+  int down_haptic_intensities_[kMaxSensitivitySettings];
+  int up_haptic_intensities_[kMaxSensitivitySettings];
 
   std::set<short> palms_;
 
@@ -93,6 +97,9 @@ class HapticButtonGeneratorFilterInterpreter : public FilterInterpreterWithTimer
   DoubleProperty dynamic_down_ratio_;
   DoubleProperty dynamic_up_ratio_;
   DoubleProperty max_dynamic_up_force_;
+
+  IntArrayProperty down_haptic_intensities_prop_;
+  IntArrayProperty up_haptic_intensities_prop_;
 };
 
 }  // namespace gestures

@@ -454,4 +454,57 @@ TEST(HapticButtonGeneratorFilterInterpreterTest, PalmTest) {
   }
 }
 
+TEST(HapticButtonGeneratorFilterInterpreterTest, HapticIntensityTest) {
+  HapticButtonGeneratorFilterInterpreterTestInterpreter* base_interpreter =
+      new HapticButtonGeneratorFilterInterpreterTestInterpreter;
+  HapticButtonGeneratorFilterInterpreter interpreter(
+      nullptr, base_interpreter, nullptr);
+  HardwareProperties hwprops = {
+    .right = 100, .bottom = 100,
+    .res_x = 10,
+    .res_y = 10,
+    .orientation_minimum = -1,
+    .orientation_maximum = 2,
+    .max_finger_cnt = 2, .max_touch_cnt = 5,
+    .supports_t5r2 = 0, .support_semi_mt = 0, .is_button_pad = 0,
+    .has_wheel = 0, .wheel_is_hi_res = 0,
+    .is_haptic_pad = 1,
+  };
+  TestInterpreterWrapper wrapper(&interpreter, &hwprops);
+
+  interpreter.enabled_.val_ = true;
+  interpreter.down_haptic_intensities_[2] = 42;
+  interpreter.up_haptic_intensities_[2] = 24;
+
+  FingerState fs = { 0, 0, 0, 0, 50, 0, 10, 1, 1, 0 };
+
+  // Test physical click down
+  base_interpreter->return_value_ = Gesture(kGestureButtonsChange, 0, 0,
+                                            GESTURES_BUTTON_LEFT, 0, false);
+  stime_t timeout = NO_DEADLINE;
+  HardwareState hs = make_hwstate(1.0, 0, 1, 1, &fs);
+  Gesture* out = wrapper.SyncInterpret(hs, &timeout);
+  ASSERT_NE(out, nullptr);
+  EXPECT_EQ(out->type, kGestureTypeButtonsChange);
+  EXPECT_EQ(out->details.buttons.haptic_intensity, 42);
+
+  // Test physical click up
+  base_interpreter->return_value_ = Gesture(kGestureButtonsChange, 0, 0,
+                                            0, GESTURES_BUTTON_LEFT, false);
+  hs = make_hwstate(2.0, 0, 1, 1, &fs);
+  out = wrapper.SyncInterpret(hs, &timeout);
+  ASSERT_NE(out, nullptr);
+  EXPECT_EQ(out->type, kGestureTypeButtonsChange);
+  EXPECT_EQ(out->details.buttons.haptic_intensity, 24);
+
+  // Test tap-to-click down
+  base_interpreter->return_value_ = Gesture(kGestureButtonsChange, 0, 0,
+                                            GESTURES_BUTTON_LEFT, 0, true);
+  hs = make_hwstate(3.0, 0, 1, 1, &fs);
+  out = wrapper.SyncInterpret(hs, &timeout);
+  ASSERT_NE(out, nullptr);
+  EXPECT_EQ(out->type, kGestureTypeButtonsChange);
+  EXPECT_EQ(out->details.buttons.haptic_intensity, 0);
+}
+
 }  // namespace gestures

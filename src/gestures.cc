@@ -245,9 +245,11 @@ string Gesture::String() const {
                           details.pinch.zoom_state);
     case kGestureTypeButtonsChange:
       return StringPrintf("(Gesture type: buttons start: %f stop: "
-                          "%f down: %d up: %d is_tap: %s)", start_time, end_time,
+                          "%f down: %d up: %d is_tap: %s haptic_intensity %d)",
+                          start_time, end_time,
                           details.buttons.down, details.buttons.up,
-                          details.buttons.is_tap ? "true" : "false");
+                          details.buttons.is_tap ? "true" : "false",
+                          details.buttons.haptic_intensity);
     case kGestureTypeFling:
       return StringPrintf("(Gesture type: fling start: %f stop: "
                           "%f vx: %f vy: %f ordinal_dx: %f ordinal_dy: %f "
@@ -667,7 +669,7 @@ std::string GestureInterpreter::EncodeActivityLog() {
 const GestureMove kGestureMove = { 0, 0, 0, 0 };
 const GestureScroll kGestureScroll = { 0, 0, 0, 0, 0 };
 const GestureMouseWheel kGestureMouseWheel = { 0, 0, 0, 0 };
-const GestureButtonsChange kGestureButtonsChange = { 0, 0, 0 };
+const GestureButtonsChange kGestureButtonsChange = { 0, 0, 0, 0 };
 const GestureFling kGestureFling = { 0, 0, 0, 0, 0 };
 const GestureSwipe kGestureSwipe = { 0, 0, 0, 0 };
 const GestureFourFingerSwipe kGestureFourFingerSwipe = { 0, 0, 0, 0 };
