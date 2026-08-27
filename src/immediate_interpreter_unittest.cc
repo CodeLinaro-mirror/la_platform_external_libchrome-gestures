@@ -350,7 +350,7 @@ TEST(ImmediateInterpreterTest, ScrollThenFalseTapTest) {
     make_hwstate(0.330000, 0, 0, 0, nullptr),
   };
 
-  ii.tap_enable_.val_ = 1;
+  ii.tap_to_click_manager_.tap_enable_.val_ = true;
   EXPECT_EQ(nullptr, wrapper.SyncInterpret(hardware_states[0], nullptr));
 
   Gesture* gs = wrapper.SyncInterpret(hardware_states[1], nullptr);
@@ -1159,7 +1159,7 @@ TEST(ImmediateInterpreterTest, ThumbRetainTest) {
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
-  ii.tap_enable_.val_ = 0;
+  ii.tap_to_click_manager_.tap_enable_.val_ = false;
 
   for (size_t i = 0; i < arraysize(hardware_states); i++) {
     Gesture* gs = wrapper.SyncInterpret(hardware_states[i], nullptr);
@@ -1213,7 +1213,7 @@ TEST(ImmediateInterpreterTest, ThumbRetainReevaluateTest) {
   };
 
   TestInterpreterWrapper wrapper(&ii, &hwprops);
-  ii.tap_enable_.val_ = 0;
+  ii.tap_to_click_manager_.tap_enable_.val_ = false;
 
   for (size_t i = 0; i < arraysize(hardware_states); i++) {
     Gesture* gs = wrapper.SyncInterpret(hardware_states[i], nullptr);
@@ -1531,13 +1531,13 @@ TEST(ImmediateInterpreterTest, TapRecordTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {};
   TestInterpreterWrapper wrapper(&ii, &hwprops);
-  TapRecord tr(&ii);
+  TapRecord tr(&ii.tap_to_click_manager_);
   EXPECT_FALSE(tr.TapComplete());
   // two finger IDs:
   const short kF1 = 91;
   const short kF2 = 92;
   const float kTapMoveDist = 1.0;  // mm
-  ii.tap_min_pressure_.val_ = 25;
+  ii.tap_to_click_manager_.tap_min_pressure_.val_ = 25;
 
   FingerState fs[] = {
     // TM, Tm, WM, Wm, Press, Orientation, X, Y, TrID
@@ -1609,21 +1609,20 @@ struct HWStateGs {
 
   unsigned expected_down;
   unsigned expected_up;
-  ImmediateInterpreter::TapToClickState expected_state;
+  TapToClickState expected_state;
   // Whether the state machine is expected to set a timeout after receiving
   // these inputs.
   bool timeout;
 };
 
 // Shorter names so that HWStateGs definitions take only 1 line each.
-typedef ImmediateInterpreter::TapToClickState TapState;
-constexpr TapState kIdl = ImmediateInterpreter::kTtcIdle;
-constexpr TapState kFTB = ImmediateInterpreter::kTtcFirstTapBegan;
-constexpr TapState kTpC = ImmediateInterpreter::kTtcTapComplete;
-constexpr TapState kSTB = ImmediateInterpreter::kTtcSubsequentTapBegan;
-constexpr TapState kDrg = ImmediateInterpreter::kTtcDrag;
-constexpr TapState kDRl = ImmediateInterpreter::kTtcDragRelease;
-constexpr TapState kDRt = ImmediateInterpreter::kTtcDragRetouch;
+constexpr TapToClickState kIdl = TapToClickState::kIdle;
+constexpr TapToClickState kFTB = TapToClickState::kFirstTapBegan;
+constexpr TapToClickState kTpC = TapToClickState::kTapComplete;
+constexpr TapToClickState kSTB = TapToClickState::kSubsequentTapBegan;
+constexpr TapToClickState kDrg = TapToClickState::kDrag;
+constexpr TapToClickState kDRl = TapToClickState::kDragRelease;
+constexpr TapToClickState kDRt = TapToClickState::kDragRetouch;
 constexpr unsigned kBL = GESTURES_BUTTON_LEFT;
 constexpr unsigned kBM = GESTURES_BUTTON_MIDDLE;
 constexpr unsigned kBR = GESTURES_BUTTON_RIGHT;
@@ -1633,15 +1632,15 @@ constexpr unsigned kBR = GESTURES_BUTTON_RIGHT;
 class TapToClickStateMachineTest : public ::testing::Test {
 protected:
   void set_gesture_properties() {
-    ii_->drag_lock_enable_.val_ = true;
-    ii_->motion_tap_prevent_timeout_.val_ = 0;
+    ii_->tap_to_click_manager_.drag_lock_enable_.val_ = true;
+    ii_->tap_to_click_manager_.motion_tap_prevent_timeout_.val_ = 0;
     ii_->tapping_finger_min_separation_.val_ = 1.0;
-    ii_->tap_drag_timeout_.val_ = 0.05;
-    ii_->tap_enable_.val_ = true;
-    ii_->tap_drag_enable_.val_ = tap_drag_enable_;
-    ii_->tap_move_dist_.val_ = 1.0;
-    ii_->tap_timeout_.val_ = tap_timeout_;
-    ii_->inter_tap_timeout_.val_ = 0.05;
+    ii_->tap_to_click_manager_.tap_drag_timeout_.val_ = 0.05;
+    ii_->tap_to_click_manager_.tap_enable_.val_ = true;
+    ii_->tap_to_click_manager_.tap_drag_enable_.val_ = tap_drag_enable_;
+    ii_->tap_to_click_manager_.tap_move_dist_.val_ = 1.0;
+    ii_->tap_to_click_manager_.tap_timeout_.val_ = tap_timeout_;
+    ii_->tap_to_click_manager_.inter_tap_timeout_.val_ = 0.05;
     ii_->three_finger_click_enable_.val_ = true;
     ii_->t5r2_three_finger_click_enable_.val_ = true;
     ii_->zero_finger_click_enable_.val_ = true;
@@ -1649,7 +1648,7 @@ protected:
 
   void check_hwstates(const std::vector<HWStateGs>& states,
                       std::optional<std::string> label = std::nullopt) {
-    EXPECT_EQ(kIdl, ii_->tap_to_click_state_);
+    EXPECT_EQ(kIdl, ii_->tap_to_click_manager_.state());
     for (size_t i = 0; i < states.size(); ++i) {
       std::string label_or_empty = label.has_value() ? " (" + *label + ")" : "";
       SCOPED_TRACE(StringPrintf("State %zu%s", i, label_or_empty.c_str()));
@@ -1679,8 +1678,13 @@ protected:
       for (auto finger: states[i].gesturing_fingers) {
         ii_->metrics_->SetFingerOriginTimestampForTesting(finger, 0);
       }
-      ii_->UpdateTapState(
-          hwstate, states[i].gesturing_fingers, same_fingers, now,
+      const bool phys_click_in_progress =
+          hwstate && hwstate->buttons_down != 0 &&
+          (ii_->zero_finger_click_enable_.val_ ||
+           ii_->finger_seen_shortly_after_button_down_);
+      ii_->tap_to_click_manager_.UpdateTapState(
+          hwstate, ii_->state_buffer_, states[i].gesturing_fingers, same_fingers,
+          phys_click_in_progress, false, false, now,
           &buttons_down, &buttons_up, &timeout);
       ii_->prev_gs_fingers_ = states[i].gesturing_fingers;
       EXPECT_EQ(states[i].expected_down, buttons_down);
@@ -1689,7 +1693,7 @@ protected:
         EXPECT_GT(timeout, 0.0);
       else
         EXPECT_DOUBLE_EQ(NO_DEADLINE, timeout);
-      EXPECT_EQ(states[i].expected_state, ii_->tap_to_click_state_);
+      EXPECT_EQ(states[i].expected_state, ii_->tap_to_click_manager_.state());
     }
   }
 
@@ -2709,7 +2713,7 @@ TEST(ImmediateInterpreterTest, TapToClickLowPressureBeginOrEndTest) {
     if (reset_next_time) {
       ii.reset(new ImmediateInterpreter(nullptr, nullptr));
       wrapper.Reset(ii.get());
-      ii->tap_enable_.val_ = 1;
+      ii->tap_to_click_manager_.tap_enable_.val_ = true;
       reset_next_time = false;
     }
     // Prep inputs
@@ -2777,9 +2781,9 @@ TEST(ImmediateInterpreterTest, TapToClickKeyboardTest) {
   for (size_t test = 0; test != kMaxTests; test++) {
     ii.reset(new ImmediateInterpreter(nullptr, nullptr));
     wrapper.Reset(ii.get());
-    ii->motion_tap_prevent_timeout_.val_ = 0;
-    ii->tap_enable_.val_ = 1;
-    ii->tap_drag_enable_.val_ = 1;
+    ii->tap_to_click_manager_.motion_tap_prevent_timeout_.val_ = 0;
+    ii->tap_to_click_manager_.tap_enable_.val_ = true;
+    ii->tap_to_click_manager_.tap_drag_enable_.val_ = true;
 
     if (test == kWithKeyboard)
       ii->keyboard_touched_ = 0.001;
@@ -2793,10 +2797,14 @@ TEST(ImmediateInterpreterTest, TapToClickKeyboardTest) {
       std::set<short> gs =
           hwstates[i].finger_cnt == 1 ? MkSet(91) : MkSet();
       ii->metrics_->Update(hwstates[i]);
-      ii->UpdateTapState(
+      ii->tap_to_click_manager_.UpdateTapState(
           &hwstates[i],
+          ii->state_buffer_,
           gs,
-          false,  // same fingers
+          /*same_fingers=*/false,
+          /*phys_click_in_progress=*/false,
+          /*keyboard_recently_used=*/test == kWithKeyboard,
+          /*prev_gesture_was_scroll=*/false,
           hwstates[i].timestamp,
           &down,
           &up,
@@ -2823,16 +2831,16 @@ class ImmediateInterpreterTtcEnableTest :
 
 TEST_P(ImmediateInterpreterTtcEnableTest, TapToClickEnableTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
-  ii.drag_lock_enable_.val_ = 1;
-  ii.motion_tap_prevent_timeout_.val_ = 0;
-  ii.tap_drag_timeout_.val_ = 0.05;
-  ii.tap_enable_.val_ = 1;
-  ii.tap_drag_enable_.val_ = 1;
-  ii.tap_paused_.val_ = 0;
-  ii.tap_move_dist_.val_ = 1.0;
-  ii.tap_timeout_.val_ = 0.05;
-  EXPECT_EQ(kIdl, ii.tap_to_click_state_);
-  EXPECT_TRUE(ii.tap_enable_.val_);
+  ii.tap_to_click_manager_.drag_lock_enable_.val_ = true;
+  ii.tap_to_click_manager_.motion_tap_prevent_timeout_.val_ = 0;
+  ii.tap_to_click_manager_.tap_drag_timeout_.val_ = 0.05;
+  ii.tap_to_click_manager_.tap_enable_.val_ = true;
+  ii.tap_to_click_manager_.tap_drag_enable_.val_ = true;
+  ii.tap_to_click_manager_.tap_paused_.val_ = false;
+  ii.tap_to_click_manager_.tap_move_dist_.val_ = 1.0;
+  ii.tap_to_click_manager_.tap_timeout_.val_ = 0.05;
+  EXPECT_EQ(kIdl, ii.tap_to_click_manager_.state());
+  EXPECT_TRUE(ii.tap_to_click_manager_.tap_enable_.val_);
 
   HardwareProperties hwprops = {
     .right = 200,
@@ -2926,10 +2934,10 @@ TEST_P(ImmediateInterpreterTtcEnableTest, TapToClickEnableTest) {
 
     // Disable tap in the middle of the gesture
     if (hwstate && hwstate->timestamp == disable_time)
-      ii.tap_enable_.val_ = 0;
+      ii.tap_to_click_manager_.tap_enable_.val_ = false;
 
     if (hwstate && hwstate->timestamp == pause_time)
-      ii.tap_paused_.val_ = true;
+      ii.tap_to_click_manager_.tap_paused_.val_ = true;
 
     if (hwstate) {
       ii.metrics_->Update(*hwstate);
@@ -2938,8 +2946,9 @@ TEST_P(ImmediateInterpreterTtcEnableTest, TapToClickEnableTest) {
     unsigned buttons_down = 0;
     unsigned buttons_up = 0;
     stime_t timeout = NO_DEADLINE;
-    ii.UpdateTapState(
-        hwstate, hwsgs.gesturing_fingers, same_fingers, now, &buttons_down,
+    ii.tap_to_click_manager_.UpdateTapState(
+        hwstate, ii.state_buffer_, hwsgs.gesturing_fingers, same_fingers,
+        false, false, false, now, &buttons_down,
         &buttons_up, &timeout);
     ii.prev_gs_fingers_ = hwsgs.gesturing_fingers;
 
@@ -2954,7 +2963,7 @@ TEST_P(ImmediateInterpreterTtcEnableTest, TapToClickEnableTest) {
           EXPECT_GT(timeout, 0.0);
         else
           EXPECT_DOUBLE_EQ(NO_DEADLINE, timeout);
-        EXPECT_EQ(hwsgs.expected_state, ii.tap_to_click_state_);
+        EXPECT_EQ(hwsgs.expected_state, ii.tap_to_click_manager_.state());
         break;
       case TtcEnableTestMode::TapDisabledBeforeGestureWhileIdle:
       case TtcEnableTestMode::TapPausedBeforeGestureWhileIdle:
@@ -2962,7 +2971,7 @@ TEST_P(ImmediateInterpreterTtcEnableTest, TapToClickEnableTest) {
         EXPECT_EQ(0, buttons_down);
         EXPECT_EQ(0, buttons_up);
         EXPECT_DOUBLE_EQ(NO_DEADLINE, timeout);
-        EXPECT_EQ(kIdl, ii.tap_to_click_state_);
+        EXPECT_EQ(kIdl, ii.tap_to_click_manager_.state());
         break;
     }
   }
@@ -4080,8 +4089,8 @@ class AvoidAccidentalPinchTest : public ::testing::Test {
   }
 
   void run_test(const std::vector<TestInputs>& inputs) {
-    EXPECT_EQ(ImmediateInterpreter::TapToClickState::kTtcIdle,
-              ii_.tap_to_click_state_);
+    EXPECT_EQ(TapToClickState::kIdle,
+              ii_.tap_to_click_manager_.state());
 
     for (size_t i = 0; i < inputs.size(); i++) {
       SCOPED_TRACE(StringPrintf("Input %zu", i));
@@ -4273,12 +4282,12 @@ TEST(ImmediateInterpreterTest, SemiMtActiveAreaTest) {
   };
 
   TestInterpreterWrapper wrapper(&ii, &old_hwprops);
-  ii.tap_enable_.val_ = 1;
+  ii.tap_to_click_manager_.tap_enable_.val_ = true;
 
-  // The finger will not change the tap_to_click_state_ at all.
+  // The finger will not change the tap-to-click state at all.
   for (size_t idx = 0; idx < arraysize(old_hardware_states); ++idx) {
     wrapper.SyncInterpret(old_hardware_states[idx], nullptr);
-    EXPECT_EQ(kIdl, ii.tap_to_click_state_);
+    EXPECT_EQ(kIdl, ii.tap_to_click_manager_.state());
   }
 
   HardwareProperties new_hwprops = {
@@ -4315,13 +4324,13 @@ TEST(ImmediateInterpreterTest, SemiMtActiveAreaTest) {
   };
 
   wrapper.Reset(&ii, &new_hwprops);
-  ii.tap_enable_.val_ = true;
+  ii.tap_to_click_manager_.tap_enable_.val_ = true;
 
   // With new active area, the finger changes the tap_to_click_state_ to
   // FirstTapBegan.
   for (size_t idx = 0; idx < arraysize(new_hardware_states); ++idx) {
     wrapper.SyncInterpret(new_hardware_states[idx], nullptr);
-    EXPECT_EQ(ii.kTtcFirstTapBegan, ii.tap_to_click_state_);
+    EXPECT_EQ(TapToClickState::kFirstTapBegan, ii.tap_to_click_manager_.state());
   }
 }
 
@@ -4446,7 +4455,7 @@ TEST(ImmediateInterpreterTest, WarpedFingersTappingTest) {
     make_hwstate(3897.160675, 0, 0, 0, nullptr),
   };
 
-  ii.tap_enable_.val_ = 1;
+  ii.tap_to_click_manager_.tap_enable_.val_ = true;
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
   Gesture *gesture;
@@ -4612,7 +4621,7 @@ TEST(ImmediateInterpreterTest, ScrollResetTapTest) {
   // SemiMt-specific properties
   ii.tapping_finger_min_separation_.val_ = 0.0;
 
-  ii.tap_enable_.val_ = 1;
+  ii.tap_to_click_manager_.tap_enable_.val_ = true;
   TestInterpreterWrapper wrapper(&ii, &hwprops);
 
   for (size_t idx = 0; idx < arraysize(hardware_states); ++idx) {
@@ -4624,7 +4633,7 @@ TEST(ImmediateInterpreterTest, ScrollResetTapTest) {
         EXPECT_NE(kGestureTypeButtonsChange, gs->type);
     }
     if (idx >= 3)
-      EXPECT_EQ(kIdl, ii.tap_to_click_state_);
+      EXPECT_EQ(kIdl, ii.tap_to_click_manager_.state());
   }
 }
 

@@ -72,209 +72,6 @@ void AssignIfNonNull(std::optional<Gesture>& existing,
 
 }  // namespace {}
 
-void TapRecord::NoteTouch(short the_id, const FingerState& fs) {
-  // New finger must be close enough to an existing finger
-  if (!touched_.empty()) {
-    bool reject_new_finger = true;
-    for (const auto& [tracking_id, existing_fs] : touched_) {
-      if (immediate_interpreter_->metrics_->CloseEnoughToGesture(
-              Vector2(existing_fs),
-              Vector2(fs))) {
-        reject_new_finger = false;
-        break;
-      }
-    }
-    if (reject_new_finger)
-      return;
-  }
-  touched_[the_id] = fs;
-}
-
-void TapRecord::NoteRelease(short the_id) {
-  if (touched_.find(the_id) != touched_.end())
-    released_.insert(the_id);
-}
-
-void TapRecord::Remove(short the_id) {
-  min_tap_pressure_met_.erase(the_id);
-  min_cotap_pressure_met_.erase(the_id);
-  touched_.erase(the_id);
-  released_.erase(the_id);
-}
-
-float TapRecord::CotapMinPressure() const {
-  return immediate_interpreter_->tap_min_pressure() * 0.5;
-}
-
-void TapRecord::Update(const HardwareState& hwstate,
-                       const HardwareState& prev_hwstate,
-                       const std::set<short>& added,
-                       const std::set<short>& removed,
-                       const std::set<short>& dead) {
-  if (!t5r2_ && (hwstate.touch_cnt > hwstate.finger_cnt ||
-                 prev_hwstate.touch_cnt > prev_hwstate.finger_cnt)) {
-    Log("TapRecord::Update: switching to T5R2 mode (%d > %d || %d > %d)",
-        hwstate.touch_cnt, hwstate.finger_cnt, prev_hwstate.touch_cnt,
-        prev_hwstate.finger_cnt);
-    t5r2_ = true;
-    t5r2_touched_size_ = touched_.size();
-    t5r2_released_size_ = released_.size();
-  }
-  if (t5r2_) {
-    short diff = static_cast<short>(hwstate.touch_cnt) -
-        static_cast<short>(prev_hwstate.touch_cnt);
-    if (diff > 0)
-      t5r2_touched_size_ += diff;
-    else if (diff < 0)
-      t5r2_released_size_ += -diff;
-  }
-  for (short tracking_id : added) {
-    Log("TapRecord::Update: Added: %d", tracking_id);
-  }
-  for (short tracking_id: removed) {
-    Log("TapRecord::Update: Removed: %d", tracking_id);
-  }
-  for (short tracking_id : dead) {
-    Log("TapRecord::Update: Dead: %d", tracking_id);
-  }
-  for_each(dead.begin(), dead.end(),
-           bind(&TapRecord::Remove, this, std::placeholders::_1));
-  for (short tracking_id : added) {
-    NoteTouch(tracking_id, *hwstate.GetFingerState(tracking_id));
-  }
-  for_each(removed.begin(), removed.end(),
-           bind(&TapRecord::NoteRelease, this, std::placeholders::_1));
-  // Check if min tap/cotap pressure met yet
-  const float cotap_min_pressure = CotapMinPressure();
-  for (auto& [tracking_id, existing_fs] : touched_) {
-    const FingerState* fs = hwstate.GetFingerState(tracking_id);
-    if (fs) {
-      if (fs->pressure >= immediate_interpreter_->tap_min_pressure() ||
-          !immediate_interpreter_->device_reports_pressure())
-        min_tap_pressure_met_.insert(fs->tracking_id);
-      if (fs->pressure >= cotap_min_pressure ||
-          !immediate_interpreter_->device_reports_pressure()) {
-        min_cotap_pressure_met_.insert(fs->tracking_id);
-        if (existing_fs.pressure < cotap_min_pressure &&
-            immediate_interpreter_->device_reports_pressure()) {
-          // Update existing record, since the old one hadn't met the cotap
-          // pressure
-          existing_fs = *fs;
-        }
-      }
-      stime_t finger_age = hwstate.timestamp -
-          immediate_interpreter_->finger_origin_timestamp(fs->tracking_id);
-      if (finger_age > immediate_interpreter_->tap_max_finger_age())
-        fingers_below_max_age_ = false;
-    }
-  }
-}
-
-void TapRecord::Clear() {
-  min_tap_pressure_met_.clear();
-  min_cotap_pressure_met_.clear();
-  t5r2_ = false;
-  t5r2_touched_size_ = 0;
-  t5r2_released_size_ = 0;
-  fingers_below_max_age_ = true;
-  touched_.clear();
-  released_.clear();
-}
-
-bool TapRecord::Moving(const HardwareState& hwstate,
-                       const float dist_max) const {
-  const float cotap_min_pressure = CotapMinPressure();
-  for (const auto& [tracking_id, existing_fs] : touched_) {
-    const FingerState* fs = hwstate.GetFingerState(tracking_id);
-    if (!fs)
-      continue;
-    // Only look for moving when current frame meets cotap pressure and
-    // our history contains a contact that's met cotap pressure.
-    if ((fs->pressure < cotap_min_pressure ||
-        existing_fs.pressure < cotap_min_pressure) &&
-        immediate_interpreter_->device_reports_pressure())
-      continue;
-    // Compute distance moved
-    float dist_x = fs->position_x - existing_fs.position_x;
-    float dist_y = fs->position_y - existing_fs.position_y;
-    // Respect WARP flags
-    if (fs->flags & GESTURES_FINGER_WARP_X_TAP_MOVE)
-      dist_x = 0.0;
-    if (fs->flags & GESTURES_FINGER_WARP_Y_TAP_MOVE)
-      dist_y = 0.0;
-
-    bool moving =
-        dist_x * dist_x + dist_y * dist_y > dist_max * dist_max;
-    if (moving)
-      return true;
-  }
-  return false;
-}
-
-bool TapRecord::Motionless(const HardwareState& hwstate, const HardwareState&
-                           prev_hwstate, const float max_speed) const {
-  const float cotap_min_pressure = CotapMinPressure();
-  for (const auto& [tracking_id, _] : touched_) {
-    const FingerState* fs = hwstate.GetFingerState(tracking_id);
-    const FingerState* prev_fs = prev_hwstate.GetFingerState(tracking_id);
-    if (!fs || !prev_fs)
-      continue;
-    // Only look for moving when current frame meets cotap pressure and
-    // our history contains a contact that's met cotap pressure.
-    if ((fs->pressure < cotap_min_pressure ||
-        prev_fs->pressure < cotap_min_pressure) &&
-        immediate_interpreter_->device_reports_pressure())
-      continue;
-    // Compute distance moved
-    if (DistSq(*fs, *prev_fs) > max_speed * max_speed)
-      return false;
-  }
-  return true;
-}
-
-bool TapRecord::TapBegan() const {
-  if (t5r2_)
-    return t5r2_touched_size_ > 0;
-  return !touched_.empty();
-}
-
-bool TapRecord::TapComplete() const {
-  bool ret = false;
-  if (t5r2_)
-    ret = t5r2_touched_size_ && t5r2_touched_size_ == t5r2_released_size_;
-  else
-    ret = !touched_.empty() && (touched_.size() == released_.size());
-  for (const auto& [tracking_id, finger_state] : touched_) {
-    Log("TapRecord::TapComplete: touched_: %d", tracking_id);
-  }
-  for (short tracking_id : released_) {
-    Log("TapRecord::TapComplete: released_: %d", tracking_id);
-  }
-  return ret;
-}
-
-bool TapRecord::MinTapPressureMet() const {
-  // True if any touching finger met minimum pressure
-  return t5r2_ || !min_tap_pressure_met_.empty();
-}
-
-bool TapRecord::FingersBelowMaxAge() const {
-  return fingers_below_max_age_;
-}
-
-int TapRecord::TapType() const {
-  size_t touched_size =
-      t5r2_ ? t5r2_touched_size_ : min_cotap_pressure_met_.size();
-  int ret = GESTURES_BUTTON_LEFT;
-  if (touched_size > 1)
-    ret = GESTURES_BUTTON_RIGHT;
-  if (touched_size == 3 &&
-      immediate_interpreter_->three_finger_click_enable_.val_ &&
-      (!t5r2_ || immediate_interpreter_->t5r2_three_finger_click_enable_.val_))
-    ret = GESTURES_BUTTON_MIDDLE;
-  return ret;
-}
-
 // static
 ScrollEvent ScrollEvent::Add(const ScrollEvent& evt_a,
                              const ScrollEvent& evt_b) {
@@ -1008,10 +805,6 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
       gs_changed_time_(-1.0),
       finger_leave_time_(-1.0),
       moving_finger_id_(-1),
-      tap_to_click_state_(kTtcIdle),
-      tap_to_click_state_entered_(-1.0),
-      tap_record_(this),
-      last_movement_timestamp_(-1.0),
       swipe_is_vertical_(false),
       current_gesture_type_(kGestureTypeNull),
       prev_gesture_type_(kGestureTypeNull),
@@ -1025,20 +818,7 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
       finger_seen_shortly_after_button_down_(false),
       keyboard_touched_(0.0),
       scroll_manager_(prop_reg),
-      tap_enable_(prop_reg, "Tap Enable", true),
-      tap_paused_(prop_reg, "Tap Paused", false),
-      tap_timeout_(prop_reg, "Tap Timeout", 0.2),
-      inter_tap_timeout_(prop_reg, "Inter-Tap Timeout", 0.15),
-      tap_drag_delay_(prop_reg, "Tap Drag Delay", 0),
-      tap_drag_timeout_(prop_reg, "Tap Drag Timeout", 0.3),
-      tap_drag_enable_(prop_reg, "Tap Drag Enable", false),
-      drag_lock_enable_(prop_reg, "Tap Drag Lock Enable", false),
       drag_scroll_enable_(prop_reg, "Drag and Scroll Enable", false),
-      tap_drag_stationary_time_(prop_reg, "Tap Drag Stationary Time", 0),
-      tap_move_dist_(prop_reg, "Tap Move Distance", 2.0),
-      tap_min_pressure_(prop_reg, "Tap Minimum Pressure", 25.0),
-      tap_max_movement_(prop_reg, "Tap Maximum Movement", 0.0001),
-      tap_max_finger_age_(prop_reg, "Tap Maximum Finger Age", 1.2),
       three_finger_click_enable_(prop_reg, "Three Finger Click Enable", true),
       zero_finger_click_enable_(prop_reg, "Zero Finger Click Enable", false),
       t5r2_three_finger_click_enable_(prop_reg,
@@ -1084,8 +864,6 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
       thumb_eval_timeout_(prop_reg, "Thumb Evaluation Timeout", 0.06),
       thumb_pinch_threshold_ratio_(prop_reg,
                                    "Thumb Pinch Threshold Ratio", 0.25),
-      thumb_click_prevention_timeout_(prop_reg,
-                                      "Thumb Click Prevention Timeout", 0.15),
       two_finger_scroll_distance_thresh_(prop_reg,
                                          "Two Finger Scroll Distance Thresh",
                                          1.5),
@@ -1123,8 +901,6 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
                                     0),
       keyboard_palm_prevent_timeout_(prop_reg, "Keyboard Palm Prevent Timeout",
                                      0.5),
-      motion_tap_prevent_timeout_(prop_reg, "Motion Tap Prevent Timeout",
-                                  0.05),
       tapping_finger_min_separation_(prop_reg, "Tap Min Separation", 10.0),
       pinch_noise_level_sq_(prop_reg, "Pinch Noise Level Squared", 2.0),
       pinch_guess_min_movement_(prop_reg, "Pinch Guess Minimum Movement", 2.0),
@@ -1158,7 +934,12 @@ ImmediateInterpreter::ImmediateInterpreter(PropRegistry* prop_reg,
       right_click_second_finger_age_(prop_reg,
                                      "Right Click Second Finger Age Thresh",
                                      0.5),
-      quick_acceleration_factor_(prop_reg, "Quick Acceleration Factor", 0.0) {
+      quick_acceleration_factor_(prop_reg, "Quick Acceleration Factor", 0.0),
+      tap_to_click_manager_(prop_reg,
+                            three_finger_click_enable_,
+                            t5r2_three_finger_click_enable_,
+                            evaluation_timeout_,
+                            tapping_finger_min_separation_) {
   InitName();
   requires_metrics_ = true;
   keyboard_touched_timeval_low_.SetDelegate(this);
@@ -1220,8 +1001,15 @@ void ImmediateInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   UpdateStartedMovingTime(hwstate.timestamp, gs_fingers, newly_moving_fingers);
 
   AssignIfNonNull(result, UpdateButtons(hwstate, timeout));
-  AssignIfNonNull(result, UpdateTapGesture(
-          &hwstate, gs_fingers, same_fingers, hwstate.timestamp, timeout));
+  const bool phys_click = hwstate.buttons_down != 0 &&
+      (zero_finger_click_enable_.val_ || finger_seen_shortly_after_button_down_);
+  const bool keyboard_recent = KeyboardRecentlyUsed(hwstate.timestamp);
+  const bool prev_scroll = prev_result_.has_value() &&
+      prev_result_->type == kGestureTypeScroll;
+  AssignIfNonNull(result, tap_to_click_manager_.UpdateTapGesture(
+          &hwstate, state_buffer_, gs_fingers, same_fingers,
+          phys_click, keyboard_recent, prev_scroll,
+          hwstate.timestamp, timeout));
 
   FingerMap active_gs_fingers;
   UpdateCurrentGestureType(hwstate, gs_fingers, &active_gs_fingers);
@@ -1231,8 +1019,7 @@ void ImmediateInterpreter::SyncInterpretImpl(HardwareState& hwstate,
   }
 
   // Prevent moves while in a tap
-  if ((tap_to_click_state_ == kTtcFirstTapBegan ||
-       tap_to_click_state_ == kTtcSubsequentTapBegan) &&
+  if (tap_to_click_manager_.IsTapInProgress() &&
       result.has_value() && result->type == kGestureTypeMove) {
     result = std::nullopt;
   }
@@ -1261,8 +1048,14 @@ void ImmediateInterpreter::HandleTimerImpl(stime_t now, stime_t* timeout) {
   // Tap-to-click always aborts when real button(s) are being used, so we
   // don't need to worry about conflicts with these two types of callback.
   AssignIfNonNull(result, UpdateButtonsTimeout(now));
-  AssignIfNonNull(result,
-                  UpdateTapGesture(nullptr, FingerMap(), false, now, timeout));
+  AssignIfNonNull(
+      result,
+      tap_to_click_manager_.UpdateTapGesture(
+          /*hwstate=*/nullptr, state_buffer_,
+          /*gs_fingers=*/FingerMap(), /*same_fingers=*/false,
+          /*phys_click_in_progress=*/false, KeyboardRecentlyUsed(now),
+          prev_result_.has_value() && prev_result_->type == kGestureTypeScroll,
+          now, timeout));
   if (result.has_value()) {
     LogGestureProduce(name, result.value());
     ProduceGesture(result.value());
@@ -1305,8 +1098,7 @@ void ImmediateInterpreter::ResetTime() {
   started_moving_time_ = -1.0;
   gs_changed_time_ = -1.0;
   finger_leave_time_ = -1.0;
-  tap_to_click_state_entered_ = -1.0;
-  last_movement_timestamp_ = -1.0;
+  tap_to_click_manager_.ResetTime();
   pinch_guess_start_ = -1.0;
   pinch_prev_time_ = -1.0;
 }
@@ -1780,7 +1572,7 @@ void ImmediateInterpreter::UpdateCurrentGestureType(
   size_t num_gesturing = gs_fingers.size();
 
   // Physical button or tap overrides current gesture state
-  if (sent_button_down_ || tap_to_click_state_ == kTtcDrag) {
+  if (sent_button_down_ || tap_to_click_manager_.IsDragging()) {
     if (!drag_scroll_enable_.val_) {
       // Drag-and-Scroll feature is disabled, so force all interactions to
       // be a Move gesture.
@@ -2605,411 +2397,6 @@ GestureType ImmediateInterpreter::GetMultiFingerGestureType(
   return kGestureTypeNull;
 }
 
-const char* ImmediateInterpreter::TapToClickStateName(TapToClickState state) {
-  switch (state) {
-    case kTtcIdle: return "Idle";
-    case kTtcFirstTapBegan: return "FirstTapBegan";
-    case kTtcTapComplete: return "TapComplete";
-    case kTtcSubsequentTapBegan: return "SubsequentTapBegan";
-    case kTtcDrag: return "Drag";
-    case kTtcDragRelease: return "DragRelease";
-    case kTtcDragRetouch: return "DragRetouch";
-    default: return "<unknown>";
-  }
-}
-
-stime_t ImmediateInterpreter::TimeoutForTtcState(TapToClickState state) {
-  switch (state) {
-    case kTtcIdle: return tap_timeout_.val_;
-    case kTtcFirstTapBegan: return tap_timeout_.val_;
-    case kTtcTapComplete: return inter_tap_timeout_.val_;
-    case kTtcSubsequentTapBegan: return tap_timeout_.val_;
-    case kTtcDrag: return tap_timeout_.val_;
-    case kTtcDragRelease: return tap_drag_timeout_.val_;
-    case kTtcDragRetouch: return tap_timeout_.val_;
-    default:
-      Err("Unknown TapToClickState %u!", state);
-      return 0.0;
-  }
-}
-
-void ImmediateInterpreter::SetTapToClickState(TapToClickState state,
-                                              stime_t now) {
-  if (tap_to_click_state_ != state) {
-    tap_to_click_state_ = state;
-    tap_to_click_state_entered_ = now;
-  }
-}
-
-std::optional<Gesture> ImmediateInterpreter::UpdateTapGesture(
-    const HardwareState* hwstate,
-    const FingerMap& gs_fingers,
-    const bool same_fingers,
-    stime_t now,
-    stime_t* timeout) {
-  unsigned down = 0;
-  unsigned up = 0;
-  UpdateTapState(hwstate, gs_fingers, same_fingers, now, &down, &up, timeout);
-  if (down == 0 && up == 0) {
-    return std::nullopt;
-  }
-  Log("UpdateTapGesture: Tap Generated");
-  return Gesture(kGestureButtonsChange, state_buffer_.Get(1).timestamp, now,
-                 down, up, /*is_tap=*/true);
-}
-
-void ImmediateInterpreter::UpdateTapState(
-    const HardwareState* hwstate,
-    const FingerMap& gs_fingers,
-    const bool same_fingers,
-    stime_t now,
-    unsigned* buttons_down,
-    unsigned* buttons_up,
-    stime_t* timeout) {
-  if (tap_to_click_state_ == kTtcIdle && (!tap_enable_.val_ ||
-                                          tap_paused_.val_))
-    return;
-
-  FingerMap tap_gs_fingers;
-
-  if (hwstate)
-    RemoveMissingIdsFromSet(&tap_dead_fingers_, *hwstate);
-
-  bool cancel_tapping = false;
-  if (hwstate) {
-    for (int i = 0; i < hwstate->finger_cnt; ++i) {
-      if (hwstate->fingers[i].flags &
-          (GESTURES_FINGER_NO_TAP | GESTURES_FINGER_MERGE))
-        cancel_tapping = true;
-    }
-    for (short tracking_id : gs_fingers) {
-      const FingerState* fs = hwstate->GetFingerState(tracking_id);
-      if (!fs) {
-        Err("Missing finger state?!");
-        continue;
-      }
-      tap_gs_fingers.insert(tracking_id);
-    }
-  }
-  std::set<short> added_fingers;
-
-  // Fingers removed from the pad entirely
-  std::set<short> removed_fingers;
-
-  // Fingers that were gesturing, but now aren't
-  std::set<short> dead_fingers;
-
-  const bool phys_click_in_progress = hwstate && hwstate->buttons_down != 0 &&
-    (zero_finger_click_enable_.val_ || finger_seen_shortly_after_button_down_);
-
-  bool is_timeout = (now - tap_to_click_state_entered_ >
-                     TimeoutForTtcState(tap_to_click_state_));
-
-  if (phys_click_in_progress) {
-    // Don't allow any current fingers to tap ever
-    for (size_t i = 0; i < hwstate->finger_cnt; i++)
-      tap_dead_fingers_.insert(hwstate->fingers[i].tracking_id);
-  }
-
-  if (hwstate && (!same_fingers || prev_tap_gs_fingers_ != tap_gs_fingers)) {
-    // See if fingers were added
-    for (short tracking_id : tap_gs_fingers) {
-      // If the finger was marked as a thumb before, it is not new.
-      if (hwstate->timestamp - finger_origin_timestamp(tracking_id) >
-               thumb_click_prevention_timeout_.val_)
-        continue;
-
-      if (!SetContainsValue(prev_tap_gs_fingers_, tracking_id)) {
-        // Gesturing finger wasn't in prev state. It's new.
-        const FingerState* fs = hwstate->GetFingerState(tracking_id);
-        if (FingerTooCloseToTap(*hwstate, *fs) ||
-            FingerTooCloseToTap(state_buffer_.Get(1), *fs) ||
-            SetContainsValue(tap_dead_fingers_, fs->tracking_id))
-          continue;
-        added_fingers.insert(tracking_id);
-        Log("TTC: Added %d", tracking_id);
-      }
-    }
-
-    // See if fingers were removed or are now non-gesturing (dead)
-    for (short tracking_id : prev_tap_gs_fingers_) {
-      if (tap_gs_fingers.find(tracking_id) != tap_gs_fingers.end())
-        // still gesturing; neither removed nor dead
-        continue;
-      if (!hwstate->GetFingerState(tracking_id)) {
-        // Previously gesturing finger isn't in current state. It's gone.
-        removed_fingers.insert(tracking_id);
-        Log("TTC: Removed %d", tracking_id);
-      } else {
-        // Previously gesturing finger is in current state. It's dead.
-        dead_fingers.insert(tracking_id);
-        Log("TTC: Dead %d", tracking_id);
-      }
-    }
-  }
-
-  prev_tap_gs_fingers_ = tap_gs_fingers;
-
-  // The state machine:
-
-  // If you are updating the code, keep this diagram correct.
-  // We have a TapRecord which stores current tap state.
-  // Also, if the physical button is down or previous gesture type is scroll,
-  // we go to (or stay in) Idle state.
-
-  //     Start
-  //       ↓
-  //    [Idle**] <----------------------------------------------------------,
-  //       ↓ added finger(s)                                                ^
-  //  ,>[FirstTapBegan] -<right click: send right click, timeout/movement>->|
-  //  |    ↓ released all fingers                                           |
-  // ,->[TapComplete*] --<timeout: send click>----------------------------->|
-  // ||    | | two finger touching: send left click.                        |
-  // |'<---+-'                                                              ^
-  // |     ↓ add finger(s)                                                  |
-  // ^  [SubsequentTapBegan] --<timeout/move w/o delay: send click>-------->|
-  // |     | | | release all fingers: send left click                       |
-  // |<----+-+-'                                                            ^
-  // |     | `-> start non-left click: send left click; goto FirstTapBegan  |
-  // |     ↓ timeout/movement with delay: send button down                  |
-  // | ,->[Drag] --<detect 2 finger gesture: send button up>--------------->|
-  // | |   ↓ release all fingers                                            ^
-  // | |  [DragRelease*]  --<timeout: send button up>---------------------->|
-  // ^ ^   ↓ add finger(s)                                                  ^
-  // | |  [DragRetouch]  --<remove fingers (left tap): send button up>----->'
-  // | |   | | timeout/movement
-  // | '-<-+-'
-  // |     |  remove all fingers (non-left tap): send button up
-  // '<----'
-  //
-  // * When entering TapComplete or DragRelease, we set a timer, since
-  //   we will have no fingers on the pad and want to run possibly before
-  //   fingers are put on the pad. Note that we use different timeouts
-  //   based on which state we're in (tap_timeout_ or tap_drag_timeout_).
-  // ** When entering idle, we reset the TapRecord.
-
-  if (tap_to_click_state_ != kTtcIdle)
-    Log("TTC State: %s", TapToClickStateName(tap_to_click_state_));
-  if (!hwstate)
-    Log("TTC: This is a timer callback");
-  if (phys_click_in_progress || KeyboardRecentlyUsed(now) ||
-      (prev_result_.has_value() && prev_result_->type == kGestureTypeScroll) ||
-      cancel_tapping) {
-    Log("TTC: Forced to idle");
-    SetTapToClickState(kTtcIdle, now);
-    return;
-  }
-
-  switch (tap_to_click_state_) {
-    case kTtcIdle:
-      tap_record_.Clear();
-      if (hwstate &&
-          hwstate->timestamp - last_movement_timestamp_ >=
-          motion_tap_prevent_timeout_.val_) {
-        tap_record_.Update(
-            *hwstate, state_buffer_.Get(1), added_fingers, removed_fingers,
-            dead_fingers);
-        if (tap_record_.TapBegan())
-          SetTapToClickState(kTtcFirstTapBegan, now);
-      }
-      break;
-    case kTtcFirstTapBegan:
-      if (is_timeout) {
-        SetTapToClickState(kTtcIdle, now);
-        break;
-      }
-      if (!hwstate) {
-        Err("hwstate is null but not a timeout?!");
-        break;
-      }
-      tap_record_.Update(
-          *hwstate, state_buffer_.Get(1), added_fingers,
-          removed_fingers, dead_fingers);
-      Log("TTC: Is tap? %d Is moving? %d",
-          tap_record_.TapComplete(),
-          tap_record_.Moving(*hwstate, tap_move_dist_.val_));
-      if (tap_record_.TapComplete()) {
-        if (!tap_record_.MinTapPressureMet() ||
-            !tap_record_.FingersBelowMaxAge()) {
-          SetTapToClickState(kTtcIdle, now);
-        } else if (tap_record_.TapType() == GESTURES_BUTTON_LEFT &&
-                   tap_drag_enable_.val_) {
-          SetTapToClickState(kTtcTapComplete, now);
-        } else {
-          *buttons_down = *buttons_up = tap_record_.TapType();
-          SetTapToClickState(kTtcIdle, now);
-        }
-      } else if (tap_record_.Moving(*hwstate, tap_move_dist_.val_)) {
-        SetTapToClickState(kTtcIdle, now);
-      }
-      break;
-    case kTtcTapComplete:
-      if (!added_fingers.empty()) {
-
-        tap_record_.Clear();
-        tap_record_.Update(
-            *hwstate, state_buffer_.Get(1), added_fingers, removed_fingers,
-            dead_fingers);
-
-        // If more than one finger is touching: Send click
-        // and return to FirstTapBegan state.
-        if (tap_record_.TapType() != GESTURES_BUTTON_LEFT) {
-          *buttons_down = *buttons_up = GESTURES_BUTTON_LEFT;
-          SetTapToClickState(kTtcFirstTapBegan, now);
-        } else {
-          tap_drag_last_motion_time_ = now;
-          tap_drag_finger_was_stationary_ = false;
-          SetTapToClickState(kTtcSubsequentTapBegan, now);
-        }
-      } else if (is_timeout) {
-        *buttons_down = *buttons_up =
-            tap_record_.MinTapPressureMet() ? tap_record_.TapType() : 0;
-        SetTapToClickState(kTtcIdle, now);
-      }
-      break;
-    case kTtcSubsequentTapBegan:
-      if (!is_timeout && !hwstate) {
-        Err("hwstate is null but not a timeout?!");
-        break;
-      }
-      if (hwstate)
-        tap_record_.Update(*hwstate, state_buffer_.Get(1), added_fingers,
-                           removed_fingers, dead_fingers);
-
-      if (!tap_record_.Motionless(*hwstate, state_buffer_.Get(1),
-                                  tap_max_movement_.val_)) {
-        tap_drag_last_motion_time_ = now;
-      }
-      if (tap_record_.TapType() == GESTURES_BUTTON_LEFT &&
-          now - tap_drag_last_motion_time_ >= tap_drag_stationary_time_.val_) {
-        tap_drag_finger_was_stationary_ = true;
-      }
-
-      if (is_timeout || tap_record_.Moving(*hwstate, tap_move_dist_.val_)) {
-        if (tap_record_.TapType() == GESTURES_BUTTON_LEFT) {
-          if (is_timeout) {
-            // moving with just one finger. Start dragging.
-            *buttons_down = GESTURES_BUTTON_LEFT;
-            SetTapToClickState(kTtcDrag, now);
-          } else {
-            bool drag_delay_met = (now - tap_to_click_state_entered_
-                                   >= tap_drag_delay_.val_);
-            if (drag_delay_met && tap_drag_finger_was_stationary_) {
-              *buttons_down = GESTURES_BUTTON_LEFT;
-              SetTapToClickState(kTtcDrag, now);
-            } else {
-              *buttons_down = GESTURES_BUTTON_LEFT;
-              *buttons_up = GESTURES_BUTTON_LEFT;
-              SetTapToClickState(kTtcIdle, now);
-            }
-          }
-        } else if (!tap_record_.TapComplete()) {
-          // not just one finger. Send button click and go to idle.
-          *buttons_down = *buttons_up = GESTURES_BUTTON_LEFT;
-          SetTapToClickState(kTtcIdle, now);
-        }
-        break;
-      }
-      if (tap_record_.TapType() != GESTURES_BUTTON_LEFT) {
-        // We aren't going to drag, so send left click now and handle current
-        // tap afterwards.
-        *buttons_down = *buttons_up = GESTURES_BUTTON_LEFT;
-        SetTapToClickState(kTtcFirstTapBegan, now);
-      }
-      if (tap_record_.TapComplete()) {
-        *buttons_down = *buttons_up = GESTURES_BUTTON_LEFT;
-        SetTapToClickState(kTtcTapComplete, now);
-        Log("TTC: Subsequent left tap complete");
-      }
-      break;
-    case kTtcDrag:
-      if (hwstate)
-        tap_record_.Update(
-            *hwstate, state_buffer_.Get(1), added_fingers, removed_fingers,
-            dead_fingers);
-      if (tap_record_.TapComplete()) {
-        tap_record_.Clear();
-        if (drag_lock_enable_.val_) {
-          SetTapToClickState(kTtcDragRelease, now);
-        } else {
-          *buttons_up = GESTURES_BUTTON_LEFT;
-          SetTapToClickState(kTtcIdle, now);
-        }
-      }
-      if (tap_record_.TapType() != GESTURES_BUTTON_LEFT &&
-          now - tap_to_click_state_entered_ <= evaluation_timeout_.val_) {
-        // We thought we were dragging, but actually we're doing a
-        // non-tap-to-click multitouch gesture.
-        *buttons_up = GESTURES_BUTTON_LEFT;
-        SetTapToClickState(kTtcIdle, now);
-      }
-      break;
-    case kTtcDragRelease:
-      if (!added_fingers.empty()) {
-        tap_record_.Update(
-            *hwstate, state_buffer_.Get(1), added_fingers, removed_fingers,
-            dead_fingers);
-        SetTapToClickState(kTtcDragRetouch, now);
-      } else if (is_timeout) {
-        *buttons_up = GESTURES_BUTTON_LEFT;
-        SetTapToClickState(kTtcIdle, now);
-      }
-      break;
-    case kTtcDragRetouch:
-      if (hwstate)
-        tap_record_.Update(
-            *hwstate, state_buffer_.Get(1), added_fingers, removed_fingers,
-            dead_fingers);
-      if (tap_record_.TapComplete()) {
-        *buttons_up = GESTURES_BUTTON_LEFT;
-        if (tap_record_.TapType() == GESTURES_BUTTON_LEFT)
-          SetTapToClickState(kTtcIdle, now);
-        else
-          SetTapToClickState(kTtcTapComplete, now);
-        break;
-      }
-      if (is_timeout) {
-        SetTapToClickState(kTtcDrag, now);
-        break;
-      }
-      if (!hwstate) {
-        Err("hwstate is null but not a timeout?!");
-        break;
-      }
-      if (tap_record_.Moving(*hwstate, tap_move_dist_.val_))
-        SetTapToClickState(kTtcDrag, now);
-      break;
-  }
-  if (tap_to_click_state_ != kTtcIdle)
-    Log("TTC: New state: %s", TapToClickStateName(tap_to_click_state_));
-  // Take action based on new state:
-  switch (tap_to_click_state_) {
-    case kTtcTapComplete:
-      *timeout = TimeoutForTtcState(tap_to_click_state_);
-      break;
-    case kTtcDragRelease:
-      *timeout = TimeoutForTtcState(tap_to_click_state_);
-      break;
-    default:  // so gcc doesn't complain about missing enums
-      break;
-  }
-}
-
-bool ImmediateInterpreter::FingerTooCloseToTap(const HardwareState& hwstate,
-                                               const FingerState& fs) {
-  const float kMinAllowableSq =
-      tapping_finger_min_separation_.val_ * tapping_finger_min_separation_.val_;
-  for (size_t i = 0; i < hwstate.finger_cnt; i++) {
-    const FingerState* iter_fs = &hwstate.fingers[i];
-    if (iter_fs->tracking_id == fs.tracking_id)
-      continue;
-    float dist_sq = DistSq(fs, *iter_fs);
-    if (dist_sq < kMinAllowableSq)
-      return true;
-  }
-  return false;
-}
-
 bool ImmediateInterpreter::FingerInDampenedZone(
     const FingerState& finger) const {
   // TODO(adlr): cache thresh
@@ -3483,8 +2870,9 @@ std::optional<Gesture> ImmediateInterpreter::FillResultGesture(
   scroll_manager_.UpdateScrollEventBuffer(current_gesture_type_,
                                           &scroll_buffer_);
   if (result.has_value() && ((result->type == kGestureTypeMove && !zero_move) ||
-      result->type == kGestureTypeScroll))
-    last_movement_timestamp_ = hwstate.timestamp;
+      result->type == kGestureTypeScroll)) {
+    tap_to_click_manager_.NoteMovement(hwstate.timestamp);
+  }
   return result;
 }
 
@@ -3503,6 +2891,7 @@ void ImmediateInterpreter::Initialize(const HardwareProperties* hwprops,
                                       MetricsProperties* mprops,
                                       GestureConsumer* consumer) {
   Interpreter::Initialize(hwprops, metrics, mprops, consumer);
+  tap_to_click_manager_.Initialize(hwprops, metrics_);
   state_buffer_.Reset(hwprops_->max_finger_cnt);
   // Zero finger click needs to be disabled for touchpads that
   // integrate their buttons into the pad itself but enabled

@@ -13,6 +13,7 @@
 #include "include/interpreter.h"
 #include "include/macros.h"
 #include "include/prop_registry.h"
+#include "include/tap_to_click_manager.h"
 #include "include/tracer.h"
 #include "include/vector.h"
 
@@ -29,64 +30,6 @@ typedef std::set<short> FingerMap;
 
 class ImmediateInterpreter;
 class MultitouchMouseInterpreter;
-
-class TapRecord {
-  FRIEND_TEST(ImmediateInterpreterTest, TapRecordTest);
- public:
-  explicit TapRecord(const ImmediateInterpreter* immediate_interpreter)
-      : immediate_interpreter_(immediate_interpreter),
-        t5r2_(false),
-        t5r2_touched_size_(0),
-        t5r2_released_size_(0),
-        fingers_below_max_age_(true) {}
-  void Update(const HardwareState& hwstate,
-              const HardwareState& prev_hwstate,
-              const std::set<short>& added,
-              const std::set<short>& removed,
-              const std::set<short>& dead);
-  void Clear();
-
-  // if any gesturing fingers are moving
-  bool Moving(const HardwareState& hwstate, const float dist_max) const;
-  bool Motionless(const HardwareState& hwstate,
-                  const HardwareState& prev_hwstate,
-                  const float max_speed) const;
-
-  bool TapBegan() const;  // if a tap has begun
-  bool TapComplete() const;  // is a completed tap
-  // return GESTURES_BUTTON_* value or 0, if tap was too light
-  int TapType() const;
-  // If any contact has met the minimum pressure threshold
-  bool MinTapPressureMet() const;
-  bool FingersBelowMaxAge() const;
- private:
-  void NoteTouch(short the_id, const FingerState& fs);  // Adds to touched_
-  void NoteRelease(short the_id);  // Adds to released_
-  void Remove(short the_id);  // Removes from touched_ and released_
-
-  float CotapMinPressure() const;
-
-  std::map<short, FingerState> touched_;
-  std::set<short> released_;
-  // At least one finger must meet the minimum pressure requirement during a
-  // tap. This set contains the fingers that have.
-  std::set<short> min_tap_pressure_met_;
-  // All fingers must meet the cotap pressure, which is half of the min tap
-  // pressure.
-  std::set<short> min_cotap_pressure_met_;
-  // Used to fetch properties
-  const ImmediateInterpreter* immediate_interpreter_;
-  // T5R2: For these pads, we try to track individual IDs, but if we get an
-  // input event with insufficient data, we switch into T5R2 mode, where we
-  // just track the number of contacts. We still maintain the non-T5R2 records
-  // which are useful for tracking if contacts move a lot.
-  // The following are for T5R2 mode:
-  bool t5r2_;  // if set, use T5R2 hacks
-  unsigned short t5r2_touched_size_;  // number of contacts that have arrived
-  unsigned short t5r2_released_size_;  // number of contacts that have left
-  // Whether all the fingers have age less than "Tap Maximum Finger Age".
-  bool fingers_below_max_age_;
-};
 
 struct ScrollEvent {
   float dx, dy, dt;
@@ -376,23 +319,12 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   FRIEND_TEST(DragScrollTest, DragScrollEnabledNormalDrag);
   FRIEND_TEST(DragScrollTest, DragScrollTwoFingersOnly);
 
-  friend class TapRecord;
   friend class AvoidAccidentalPinchTest;
   friend class TapToClickStateMachineTest;
   friend class FingerButtonClick;
   friend class DragScrollTest;
 
  public:
-  enum TapToClickState {
-    kTtcIdle,
-    kTtcFirstTapBegan,
-    kTtcTapComplete,
-    kTtcSubsequentTapBegan,
-    kTtcDrag,
-    kTtcDragRelease,
-    kTtcDragRetouch
-  };
-
   ImmediateInterpreter(PropRegistry* prop_reg, Tracer* tracer);
   virtual ~ImmediateInterpreter() {}
 
@@ -406,14 +338,6 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
                           GestureConsumer* consumer);
 
  public:
-  TapToClickState tap_to_click_state() const { return tap_to_click_state_; }
-
-  float tap_min_pressure() const { return tap_min_pressure_.val_; }
-
-  stime_t tap_max_finger_age() const { return tap_max_finger_age_.val_; }
-
-  bool device_reports_pressure() const { return hwprops_->reports_pressure; }
-
   stime_t finger_origin_timestamp(short tracking_id) const {
     return metrics_->GetFinger(tracking_id)->origin_time();
   }
@@ -563,29 +487,6 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   GestureType GetMultiFingerGestureType(const FingerState* const fingers[],
                                         const int num_fingers);
 
-  const char* TapToClickStateName(TapToClickState state);
-
-  stime_t TimeoutForTtcState(TapToClickState state);
-
-  void SetTapToClickState(TapToClickState state,
-                          stime_t now);
-
-  [[nodiscard]] std::optional<Gesture> UpdateTapGesture(
-      const HardwareState* hwstate, const FingerMap& gs_fingers,
-      const bool same_fingers, stime_t now, stime_t* timeout);
-
-  void UpdateTapState(const HardwareState* hwstate,
-                      const FingerMap& gs_fingers,
-                      const bool same_fingers,
-                      stime_t now,
-                      unsigned* buttons_down,
-                      unsigned* buttons_up,
-                      stime_t* timeout);
-
-  // Returns true iff the given finger is too close to any other finger to
-  // realistically be doing a tap gesture.
-  bool FingerTooCloseToTap(const HardwareState& hwstate, const FingerState& fs);
-
   // Returns true iff finger is in the bottom, dampened zone of the pad
   bool FingerInDampenedZone(const FingerState& finger) const;
 
@@ -625,9 +526,6 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
 
   virtual void IntWasWritten(IntProperty* prop);
 
-  // Fingers which are prohibited from ever tapping.
-  std::set<short> tap_dead_fingers_;
-
   // Active gs fingers are the subset of gs_fingers that are actually performing
   // a gesture
   FingerMap prev_active_gs_fingers_;
@@ -637,7 +535,6 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   FingerMap non_gs_fingers_;
 
   FingerMap prev_gs_fingers_;
-  FingerMap prev_tap_gs_fingers_;
   HardwareProperties hw_props_;
   std::optional<Gesture> prev_result_;
 
@@ -700,25 +597,6 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   // once a moving finger is determined lock onto this one for cursor movement.
   short moving_finger_id_;
 
-  // Tap-to-click
-  // The current state:
-  TapToClickState tap_to_click_state_;
-
-  // When we entered the state:
-  stime_t tap_to_click_state_entered_;
-
-  TapRecord tap_record_;
-
-  // Record time when the finger showed motion (uses different motion detection
-  // than last_movement_timestamp_)
-  stime_t tap_drag_last_motion_time_;
-
-  // True when the finger was stationary for a while during tap to drag
-  bool tap_drag_finger_was_stationary_;
-
-  // Time when the last motion (scroll, movement) occurred
-  stime_t last_movement_timestamp_;
-
   bool swipe_is_vertical_;
 
   // If we are currently pointing, scrolling, etc.
@@ -770,36 +648,8 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
 
   // Properties
 
-  // Is Tap-To-Click enabled
-  BoolProperty tap_enable_;
-  // Allows Tap-To-Click to be paused
-  BoolProperty tap_paused_;
-  // General time limit [s] for tap gestures
-  DoubleProperty tap_timeout_;
-  // General time limit [s] for time between taps.
-  DoubleProperty inter_tap_timeout_;
-  // Time [s] before a tap gets recognized as a drag.
-  DoubleProperty tap_drag_delay_;
-  // Time [s] it takes to stop dragging when you let go of the touchpad
-  DoubleProperty tap_drag_timeout_;
-  // True if tap dragging is enabled. With it disbled we can respond quickly
-  // to tap clicks.
-  BoolProperty tap_drag_enable_;
-  // True if drag lock is enabled
-  BoolProperty drag_lock_enable_;
   // True if the Drag-and-Scroll gesture enabled
   BoolProperty drag_scroll_enable_;
-  // Time [s] the finger has to be stationary to be considered dragging
-  DoubleProperty tap_drag_stationary_time_;
-  // Distance [mm] a finger can move and still register a tap
-  DoubleProperty tap_move_dist_;
-  // Minimum pressure a finger must have for it to click when tap to click is on
-  DoubleProperty tap_min_pressure_;
-  // Maximum distance [mm] per frame that a finger can move and still be
-  // considered stationary.
-  DoubleProperty tap_max_movement_;
-  // Maximum finger age for a finger to trigger tap.
-  DoubleProperty tap_max_finger_age_;
   // If three finger click should be enabled. This is a temporary flag so that
   // we can deploy this feature behind a file while we work out the bugs.
   BoolProperty three_finger_click_enable_;
@@ -876,9 +726,6 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   // that thumb needs to move to be a gesturing finger are multiplied by this
   // factor
   DoubleProperty thumb_pinch_threshold_ratio_;
-  // If a finger is recognized as thumb, it has only this much time to change
-  // its status and perform a click
-  DoubleProperty thumb_click_prevention_timeout_;
   // Consider scroll vs pointing if finger moves at least this distance [mm]
   DoubleProperty two_finger_scroll_distance_thresh_;
   // Consider move if there is no scroll and one finger moves at least this
@@ -931,9 +778,6 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   // We wouldn't want a single bad future value to stop all tap-to-click, so
   // we sanity check.
   DoubleProperty keyboard_palm_prevent_timeout_;
-  // Motion (pointer movement, scroll) must halt for this length of time [s]
-  // before a tap can generate a click.
-  DoubleProperty motion_tap_prevent_timeout_;
   // A finger must be at least this far from other fingers when it taps [mm].
   DoubleProperty tapping_finger_min_separation_;
 
@@ -987,6 +831,10 @@ class ImmediateInterpreter : public Interpreter, public PropertyDelegate {
   DoubleProperty right_click_second_finger_age_;
   // Suppress moves with a speed more than this much times the previous speed.
   DoubleProperty quick_acceleration_factor_;
+
+  // Manages tap-to-click logic. Declared after the properties, since it depends
+  // on some of them.
+  TapToClickManager tap_to_click_manager_;
 };
 
 bool AnyGesturingFingerLeft(const HardwareState& state,

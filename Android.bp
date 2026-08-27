@@ -115,6 +115,7 @@ cc_library_static {
         "src/string_util.cc",
         "src/stuck_button_inhibitor_filter_interpreter.cc",
         "src/t5r2_correcting_filter_interpreter.cc",
+        "src/tap_to_click_manager.cc",
         "src/timestamp_filter_interpreter.cc",
         "src/trace_marker.cc",
         "src/tracer.cc",
