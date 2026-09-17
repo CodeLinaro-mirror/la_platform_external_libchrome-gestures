@@ -391,7 +391,7 @@ void TapToClickManager::UpdateTapState(
 
   bool is_timeout = (now - state_entered_time_ > TimeoutForTtcState(state_));
 
-  if (phys_click_in_progress) {
+  if (hwstate && phys_click_in_progress) {
     // Don't allow any current fingers to tap ever.
     for (size_t i = 0; i < hwstate->finger_cnt; i++)
       tap_dead_fingers_.insert(hwstate->fingers[i].tracking_id);
