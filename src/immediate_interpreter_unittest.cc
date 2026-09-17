@@ -1531,7 +1531,7 @@ TEST(ImmediateInterpreterTest, TapRecordTest) {
   ImmediateInterpreter ii(nullptr, nullptr);
   HardwareProperties hwprops = {};
   TestInterpreterWrapper wrapper(&ii, &hwprops);
-  TapRecord tr(&ii.tap_to_click_manager_);
+  TapRecord tr(ii.tap_to_click_manager_);
   EXPECT_FALSE(tr.TapComplete());
   // two finger IDs:
   const short kF1 = 91;

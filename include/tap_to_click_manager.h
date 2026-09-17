@@ -36,7 +36,7 @@ class TapRecord {
   FRIEND_TEST(ImmediateInterpreterTest, TapRecordTest);
 
  public:
-  explicit TapRecord(const TapToClickManager* manager);
+  explicit TapRecord(const TapToClickManager& manager);
   void Update(const HardwareState& hwstate,
               const HardwareState& prev_hwstate,
               const std::set<short>& added,
@@ -74,7 +74,7 @@ class TapRecord {
   // pressure.
   std::set<short> min_cotap_pressure_met_;
   // Used to fetch properties.
-  const TapToClickManager* manager_;
+  const TapToClickManager& manager_;
   // T5R2: For these pads, we try to track individual IDs, but if we get an
   // input event with insufficient data, we switch into T5R2 mode, where we
   // just track the number of contacts. We still maintain the non-T5R2 records

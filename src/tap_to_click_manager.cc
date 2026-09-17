@@ -38,7 +38,7 @@ const char* TapToClickStateName(TapToClickState state) {
 
 } // namespace
 
-TapRecord::TapRecord(const TapToClickManager* manager)
+TapRecord::TapRecord(const TapToClickManager& manager)
     : manager_(manager),
       t5r2_(false),
       t5r2_touched_size_(0),
@@ -50,7 +50,7 @@ void TapRecord::NoteTouch(short the_id, const FingerState& fs) {
   if (!touched_.empty()) {
     bool reject_new_finger = true;
     for (const auto& [tracking_id, existing_fs] : touched_) {
-      if (manager_->metrics_->CloseEnoughToGesture(
+      if (manager_.metrics_->CloseEnoughToGesture(
               Vector2(existing_fs),
               Vector2(fs))) {
         reject_new_finger = false;
@@ -76,7 +76,7 @@ void TapRecord::Remove(short the_id) {
 }
 
 float TapRecord::CotapMinPressure() const {
-  return manager_->tap_min_pressure() * 0.5;
+  return manager_.tap_min_pressure() * 0.5;
 }
 
 void TapRecord::Update(const HardwareState& hwstate,
@@ -123,22 +123,22 @@ void TapRecord::Update(const HardwareState& hwstate,
     const FingerState* fs = hwstate.GetFingerState(tracking_id);
     if (fs == nullptr)
       continue;
-    if (fs->pressure >= manager_->tap_min_pressure() ||
-        !manager_->device_reports_pressure())
+    if (fs->pressure >= manager_.tap_min_pressure() ||
+        !manager_.device_reports_pressure())
       min_tap_pressure_met_.insert(fs->tracking_id);
     if (fs->pressure >= cotap_min_pressure ||
-        !manager_->device_reports_pressure()) {
+        !manager_.device_reports_pressure()) {
       min_cotap_pressure_met_.insert(fs->tracking_id);
       if (existing_fs.pressure < cotap_min_pressure &&
-          manager_->device_reports_pressure()) {
+          manager_.device_reports_pressure()) {
         // Update existing record, since the old one hadn't met the cotap
         // pressure.
         existing_fs = *fs;
       }
     }
     stime_t finger_age = hwstate.timestamp -
-        manager_->finger_origin_timestamp(fs->tracking_id);
-    if (finger_age > manager_->tap_max_finger_age())
+        manager_.finger_origin_timestamp(fs->tracking_id);
+    if (finger_age > manager_.tap_max_finger_age())
       fingers_below_max_age_ = false;
   }
 }
@@ -165,7 +165,7 @@ bool TapRecord::Moving(const HardwareState& hwstate,
     // our history contains a contact that's met cotap pressure.
     if ((fs->pressure < cotap_min_pressure ||
         existing_fs.pressure < cotap_min_pressure) &&
-        manager_->device_reports_pressure())
+        manager_.device_reports_pressure())
       continue;
     // Compute distance moved.
     float dist_x = fs->position_x - existing_fs.position_x;
@@ -197,7 +197,7 @@ bool TapRecord::Motionless(const HardwareState& hwstate,
     // our history contains a contact that's met cotap pressure.
     if ((fs->pressure < cotap_min_pressure ||
         prev_fs->pressure < cotap_min_pressure) &&
-        manager_->device_reports_pressure())
+        manager_.device_reports_pressure())
       continue;
     // Compute distance moved.
     if (DistSq(*fs, *prev_fs) > max_speed * max_speed)
@@ -242,8 +242,8 @@ int TapRecord::TapType() const {
   if (touched_size > 1)
     ret = GESTURES_BUTTON_RIGHT;
   if (touched_size == 3 &&
-      manager_->three_finger_click_enable_.val_ &&
-      (!t5r2_ || manager_->t5r2_three_finger_click_enable_.val_))
+      manager_.three_finger_click_enable_.val_ &&
+      (!t5r2_ || manager_.t5r2_three_finger_click_enable_.val_))
     ret = GESTURES_BUTTON_MIDDLE;
   return ret;
 }
@@ -256,7 +256,7 @@ TapToClickManager::TapToClickManager(
     const DoubleProperty& tapping_finger_min_separation)
     : state_(TapToClickState::kIdle),
       state_entered_time_(-1.0),
-      tap_record_(this),
+      tap_record_(*this),
       tap_drag_last_motion_time_(-1.0),
       tap_drag_finger_was_stationary_(false),
       last_movement_timestamp_(-1.0),
